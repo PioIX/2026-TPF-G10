@@ -1,0 +1,75 @@
+/* app/globals.css */
+
+:root {
+    --color-fondo-claro: #2e7d32; /* Verde césped intenso y elegante */
+    --color-fondo-oscuro: #0a2e13; /* Verde bosque muy oscuro para dar profundidad */
+    
+    --color-texto: #f8fafc; /* Un blanco suave (no puro) para no cansar la vista */
+    --color-texto-oscuro: #0f172a; /* Gris pizarra casi negro */
+    
+    --color-boton: #fbbf24; /* Dorado/Amarillo para botones */
+    --color-boton-hover: #f59e0b; /* Dorado más oscuro al pasar el mouse */
+    
+    --color-tarjeta: rgba(255, 255, 255, 0.12); /* Efecto cristal un poco más sutil */
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    /* Degradado verde que simula los bocetos */
+    background: linear-gradient(135deg, var(--color-fondo-claro) 0%, var(--color-fondo-oscuro) 100%);
+    color: var(--color-texto);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-attachment: fixed; /* Evita que el fondo se corte al scrollear */
+}
+
+/* --- HEADER Y HR GLOBALES --- */
+header {
+    position: relative;
+    height: 100px;
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+header h1 {
+    margin: 0;
+    text-align: center;
+    line-height: 100px;
+    width: 100%;
+    text-transform: uppercase;
+}
+
+header h1::first-letter {
+    color: #ffbe00;
+}
+
+header img {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 80px;
+    height: auto;
+    cursor: pointer;
+}
+
+hr {
+    width: 80%;
+    border: none;
+    border-top: 2px solid rgba(255, 255, 255, 0.3);
+    margin: 10px auto 20px auto;
+}
+
+/* Pequeña clase utilitaria para ocultar el header en páginas específicas si lo necesitamos después */
+.ocultar-header {
+    display: none;
+}
