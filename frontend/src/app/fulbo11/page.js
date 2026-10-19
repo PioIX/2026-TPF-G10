@@ -220,15 +220,6 @@ export default function Fulbo11Page() {
 
   return (
     <>
-      {/* Tu compañero puede reemplazar este header por su componente <Title> */}
-      <header>
-        <h1>FULBO 11</h1>
-        <Link href="/">
-          <img src="/logo.png" alt="Logo" />
-        </Link>
-      </header>
-      <hr />
-
       <div className="panelJuego">
         <p id="instruccionJuego">
           Elegí un jugador del país mostrado y colocalo en un espacio libre de la

@@ -163,15 +163,6 @@ export default function LoginPage() {
 
   return (
     <>
-      {/* ACÁ TU COMPAÑERO PUEDE REEMPLAZAR ESTO POR SU COMPONENTE <Title> */}
-      <header>
-        <h1>{esRegistro ? "REGISTRO - FULBO 11" : "LOGIN - FULBO 11"}</h1>
-        <Link href="/">
-          <img src="/img/logo.png" alt="Logo" />
-        </Link>
-      </header>
-      <hr />
-
       <div className="contenedor-auth">
         {/* CONDITIONAL RENDERING: Cambia la clase y la función onSubmit según el estado */}
         <form

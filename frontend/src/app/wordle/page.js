@@ -203,15 +203,6 @@ export default function WordlePage() {
 
   return (
     <>
-      {/* Tu compañero puede reemplazar el header por <Title> */}
-      <header>
-        <h1>WORDLE - FULBO 11</h1>
-        <Link href="/">
-          <img src="/logo.png" alt="Logo" />
-        </Link>
-      </header>
-      <hr />
-
       <main className="wordle-main">
         <div id="mensaje">{mensaje}</div>
 

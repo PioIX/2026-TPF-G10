@@ -306,15 +306,6 @@ export default function AdivinaElJugadorPage() {
 
   return (
     <>
-      {/* Tu compañero puede reemplazar este header por su componente <Title> */}
-      <header>
-        <h1>Adivina el Jugador</h1>
-        <Link href="/">
-          <img src="/logo.png" alt="Logo" />
-        </Link>
-      </header>
-      <hr />
-
       <main id="main">
         <div id="contenedor-jugador-top">
           <div id="contenedor-jugador">

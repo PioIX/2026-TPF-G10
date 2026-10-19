@@ -311,15 +311,6 @@ export default function GridPage() {
 
   return (
     <>
-      {/* Tu compañero puede reemplazar este header por su componente <Title> */}
-      <header>
-        <h1>GRID - FULBO 11</h1>
-        <Link href="/">
-          <img src="/logo.png" alt="Logo" />
-        </Link>
-      </header>
-      <hr />
-
       {grilla && !error && (
         <div className="grid">
           {/* Esquina superior izquierda */}
