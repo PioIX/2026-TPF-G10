@@ -2,7 +2,9 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const session = require('express-session');
 const http = require('http'); // Necesario para Socket.IO
+const crypto = require('node:crypto');
 const { Server } = require('socket.io'); // Importamos Socket.IO
 const { realizarQuery } = require('./modulos/mysql');
 
@@ -12,36 +14,326 @@ const port = process.env.PORT || 4000;
 // Creamos el servidor HTTP envolviendo la app de Express
 const server = http.createServer(app);
 
-// Inicializamos Socket.IO y configuramos CORS para WebSockets
+// Permite que los dos puertos de Next.js se conecten y envíen la cookie de sesión.
+const opcionesCors = {
+  origin: ['http://localhost:3000', 'http://localhost:3001'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
+};
+
+// Comparte la configuración de sesión entre Express y Socket.IO.
+const sessionMiddleware = session({
+  secret: process.env.SESSION_SECRET || 'supersarasa',
+  resave: false,
+  saveUninitialized: false
+});
+
+// Inicializa Socket.IO con las mismas reglas de origen que el backend HTTP.
 const io = new Server(server, {
-  cors: {
-    origin: "*", // En producción, cambiá "*" por la URL de tu frontend (ej: "http://localhost:3000")
-    methods: ["GET", "POST"]
-  }
+  cors: opcionesCors
 });
 
 // Middleware de Express
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
-app.use(cors({
-    origin: "*" // En producción, especificá el dominio de tu frontend
-}));
+app.use(cors(opcionesCors));
+app.use(sessionMiddleware);
+
+// Carga en cada socket la sesión que ya abrió Express para ese navegador.
+io.use((socket, next) => {
+    sessionMiddleware(socket.request, {}, next);
+});
 
 
 // --- CONFIGURACIÓN DE WEBSOCKETS ---
+const juegosDisponibles = new Set([
+    'wordle',
+    'adivinaeljugador',
+    'futbol11',
+    'grid'
+]);
+const alfabetoCodigos = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const maximoJugadoresPorSala = 2;
+const salas = new Map();
+const historialChat = [];
+const ultimoMensajeChat = new Map();
+const salaChatGlobal = 'chat:global';
+
+// Crea un código corto y evita letras o números que se confunden al leerlos.
+function generarCodigoSala() {
+    let codigo;
+    do {
+        codigo = Array.from({ length: 6 }, () => (
+            alfabetoCodigos[crypto.randomInt(alfabetoCodigos.length)]
+        )).join('');
+    } while (salas.has(codigo));
+
+    return codigo;
+}
+
+// Devuelve solo los datos que los dos participantes necesitan compartir.
+function obtenerEstadoSala(sala) {
+    return {
+        room: sala.codigo,
+        game: sala.juego,
+        status: sala.estado,
+        players: sala.jugadores.map((jugador) => ({
+            position: jugador.posicion,
+            name: jugador.nombre,
+            host: jugador.anfitrion
+        }))
+    };
+}
+
+// Actualiza la pantalla de espera de cada conexión unida a la sala.
+function emitirEstadoSala(sala) {
+    io.to(sala.codigo).emit('roomUpdated', obtenerEstadoSala(sala));
+}
+
+// Retira la conexión de su sala actual y actualiza la sesión de Express.
+function retirarDeSala(socket, motivo, limpiarSesion = true) {
+    const req = socket.request;
+    const codigo = req.session?.room;
+    const sala = codigo ? salas.get(codigo) : null;
+    if (!sala) {
+        if (limpiarSesion && req.session) {
+            delete req.session.room;
+            req.session.save(() => {});
+        }
+        return;
+    }
+
+    const indice = sala.jugadores.findIndex((jugador) => jugador.socketId === socket.id);
+    const jugador = indice === -1 ? null : sala.jugadores.splice(indice, 1)[0];
+    socket.leave(sala.codigo);
+
+    if (sala.jugadores.length === 0) {
+        salas.delete(sala.codigo);
+        io.to(sala.codigo).emit('roomClosed', { room: sala.codigo });
+    } else if (jugador) {
+        sala.estado = 'esperando';
+        sala.jugadores[0].posicion = 1;
+        sala.jugadores[0].anfitrion = true;
+        io.to(sala.codigo).emit('roomPlayerLeft', {
+            position: jugador.posicion,
+            reason: motivo
+        });
+        emitirEstadoSala(sala);
+    }
+
+    if (limpiarSesion && req.session) {
+        delete req.session.room;
+        req.session.save(() => {});
+    }
+}
+
+// Acepta métricas públicas y descarta respuestas que revelarían la solución.
+function limpiarProgreso(juego, progreso) {
+    if (!progreso || typeof progreso !== 'object' || Array.isArray(progreso)) return null;
+
+    const estaEnRango = (valor, minimo, maximo) => (
+        Number.isInteger(valor) && valor >= minimo && valor <= maximo
+    );
+
+    if (juego === 'wordle' && estaEnRango(progreso.intentosUsados, 0, 6) && typeof progreso.terminado === 'boolean') {
+        return {
+            intentosUsados: progreso.intentosUsados,
+            terminado: progreso.terminado,
+            gano: progreso.terminado ? Boolean(progreso.gano) : false
+        };
+    }
+
+    if (juego === 'adivinaeljugador' && estaEnRango(progreso.preguntasUsadas, 0, 10) && typeof progreso.terminado === 'boolean') {
+        return {
+            preguntasUsadas: progreso.preguntasUsadas,
+            terminado: progreso.terminado,
+            adivino: progreso.terminado ? Boolean(progreso.adivino) : false
+        };
+    }
+
+    if (juego === 'futbol11' && estaEnRango(progreso.jugadoresColocados, 0, 11) && typeof progreso.terminado === 'boolean') {
+        return {
+            jugadoresColocados: progreso.jugadoresColocados,
+            terminado: progreso.terminado
+        };
+    }
+
+    if (juego === 'grid' && estaEnRango(progreso.celdasCompletadas, 0, 9) && estaEnRango(progreso.puntaje, 0, 100)) {
+        return {
+            celdasCompletadas: progreso.celdasCompletadas,
+            puntaje: progreso.puntaje,
+            terminado: Boolean(progreso.terminado)
+        };
+    }
+
+    return null;
+}
+
 io.on('connection', (socket) => {
+  const req = socket.request;
   console.log(`Nuevo cliente conectado vía WebSocket: ${socket.id}`);
 
-  // Ejemplo: Escuchar evento desde el cliente
-  socket.on('mensajeDesdeCliente', (data) => {
-      console.log('Mensaje recibido:', data);
-      
-      // Ejemplo: Emitir evento de vuelta a todos los clientes (Broadcast)
-      io.emit('mensajeDesdeServidor', { mensaje: 'Hola desde el backend a todos!' });
+  // Conserva el evento de prueba que explica el envío de mensajes a todos los sockets.
+  socket.on('pingAll', (data) => {
+      io.emit('pingAll', { event: 'Ping to all', message: data });
   });
 
+  // Crea una sala para el minijuego y guarda su código en la sesión.
+  socket.on('createRoom', (data = {}, confirmar = () => {}) => {
+      if (!juegosDisponibles.has(data.game)) {
+          return confirmar({ ok: false, error: 'Ese juego no está disponible.' });
+      }
+
+      if (req.session.room) retirarDeSala(socket, 'cambio de sala', false);
+
+      const codigo = generarCodigoSala();
+      const usuario = req.session.user || {};
+      const sala = {
+          codigo,
+          juego: data.game,
+          estado: 'esperando',
+          jugadores: [{
+              posicion: 1,
+              socketId: socket.id,
+              nombre: String(usuario.name || usuario.nombre || data.name || 'Jugador').trim().slice(0, 32),
+              anfitrion: true
+          }]
+      };
+
+      salas.set(codigo, sala);
+      req.session.room = codigo;
+      socket.join(req.session.room);
+      req.session.save((error) => {
+          if (error) {
+              retirarDeSala(socket, 'error de sesión');
+              return confirmar({ ok: false, error: 'No se pudo guardar la sala en la sesión.' });
+          }
+
+          emitirEstadoSala(sala);
+          return confirmar({ ok: true, room: obtenerEstadoSala(sala) });
+      });
+  });
+
+  // Sigue el patrón joinRoom del apunte: sale de la sala anterior y entra a la indicada.
+  socket.on('joinRoom', (data = {}, confirmar = () => {}) => {
+      const codigo = String(data.room || '').trim().toUpperCase();
+      const sala = salas.get(codigo);
+
+      if (!sala) {
+          return confirmar({ ok: false, error: 'No encontramos una sala con ese código.' });
+      }
+      if (data.game && data.game !== sala.juego) {
+          return confirmar({ ok: false, error: 'El código pertenece a otro juego.' });
+      }
+      if (sala.jugadores.length >= maximoJugadoresPorSala || sala.estado === 'jugando') {
+          return confirmar({ ok: false, error: 'La sala ya está completa.' });
+      }
+
+      if (req.session.room) retirarDeSala(socket, 'cambio de sala', false);
+
+      const usuario = req.session.user || {};
+      sala.jugadores.push({
+          posicion: 2,
+          socketId: socket.id,
+          nombre: String(usuario.name || usuario.nombre || data.name || 'Jugador').trim().slice(0, 32),
+          anfitrion: false
+      });
+      sala.estado = 'jugando';
+      req.session.room = codigo;
+      socket.join(req.session.room);
+      req.session.save((error) => {
+          if (error) {
+              retirarDeSala(socket, 'error de sesión');
+              return confirmar({ ok: false, error: 'No se pudo guardar la sala en la sesión.' });
+          }
+
+          emitirEstadoSala(sala);
+          io.to(req.session.room).emit('roomMatched', obtenerEstadoSala(sala));
+          return confirmar({ ok: true, room: obtenerEstadoSala(sala) });
+      });
+  });
+
+  // Sale de la sala actual y deja su lugar disponible.
+  socket.on('leaveRoom', (confirmar = () => {}) => {
+      const room = req.session.room || null;
+      retirarDeSala(socket, 'salida');
+      return confirmar({ ok: true, room });
+  });
+
+  // Reenvía al rival las métricas públicas del juego, no las respuestas secretas.
+  socket.on('sendProgress', (data = {}, confirmar = () => {}) => {
+      const sala = salas.get(req.session.room);
+      if (!sala || sala.estado !== 'jugando') {
+          return confirmar({ ok: false, error: 'No hay una partida en curso.' });
+      }
+
+      const progreso = limpiarProgreso(sala.juego, data.progress);
+      if (!progreso) {
+          return confirmar({ ok: false, error: 'El progreso enviado no es válido.' });
+      }
+
+      const jugador = sala.jugadores.find((integrante) => integrante.socketId === socket.id);
+      socket.to(req.session.room).emit('opponentProgress', {
+          position: jugador.posicion,
+          name: jugador.nombre,
+          progress: progreso,
+          updatedAt: Date.now()
+      });
+      return confirmar({ ok: true });
+  });
+
+  // Une al chat global solo a sesiones con usuario y entrega los mensajes recientes.
+  socket.on('joinGlobalChat', (confirmar = () => {}) => {
+      if (!req.session.user) {
+          return confirmar({ ok: false, error: 'Iniciá sesión para usar el chat.' });
+      }
+
+      socket.join(salaChatGlobal);
+      socket.emit('chat-messages', {
+          user: req.session.user,
+          room: salaChatGlobal,
+          messages: historialChat
+      });
+      return confirmar({ ok: true });
+  });
+
+  // Envía mensajes a los miembros autenticados del chat global.
+  socket.on('sendMessage', (data = {}, confirmar = () => {}) => {
+      const texto = typeof data.message === 'string' ? data.message.trim() : '';
+      const ahora = Date.now();
+
+      if (!req.session.user || !socket.rooms.has(salaChatGlobal)) {
+          return confirmar({ ok: false, error: 'Unite al chat con una sesión iniciada.' });
+      }
+      if (!texto || texto.length > 500) {
+          return confirmar({ ok: false, error: 'El mensaje debe tener entre 1 y 500 caracteres.' });
+      }
+      if (ahora - (ultimoMensajeChat.get(socket.id) || 0) < 500) {
+          return confirmar({ ok: false, error: 'Esperá un momento antes de enviar otro mensaje.' });
+      }
+
+      ultimoMensajeChat.set(socket.id, ahora);
+      const mensaje = {
+          id: crypto.randomUUID(),
+          user: req.session.user,
+          message: texto,
+          createdAt: new Date(ahora).toISOString()
+      };
+      historialChat.push(mensaje);
+      if (historialChat.length > 50) historialChat.shift();
+
+      io.to(salaChatGlobal).emit('newMessage', {
+          room: salaChatGlobal,
+          message: mensaje
+      });
+      return confirmar({ ok: true, message: mensaje });
+  });
+
+  // Libera la sala de juego cuando la conexión se cierra.
   socket.on('disconnect', () => {
-      console.log(`Cliente desconectado: ${socket.id}`);
+      ultimoMensajeChat.delete(socket.id);
+      retirarDeSala(socket, 'desconexión');
+      console.log('Disconnect');
   });
 });
 // ------------------------------------
