@@ -1,6 +1,7 @@
 // src/app/layout.jsx
 import Link from 'next/link';
 import './global.css';
+import { SocketProvider } from '../components/SocketProvider';
 
 export const metadata = {
   title: 'Fulbo 11',
@@ -20,8 +21,8 @@ export default function RootLayout({ children }) {
         </header>
         <hr />
         
-        {/* Aquí adentro se inyectará el contenido de cada página (ej. el menú, wordle, etc.) */}
-        {children}
+        {/* Una conexión compartida se mantiene abierta al navegar entre páginas. */}
+        <SocketProvider>{children}</SocketProvider>
       </body>
     </html>
   );

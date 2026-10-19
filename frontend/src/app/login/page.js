@@ -4,8 +4,30 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import "../global.css";
+import { useSocket } from "../../components/SocketProvider";
 
 const API_URL = "http://localhost:4000";
+
+// Pide al backend el perfil actual después de iniciar sesión y guarda una copia local para la interfaz.
+async function guardarPerfilLocal(usuarioSesion) {
+  const idUsuario = usuarioSesion.id_usuarios || usuarioSesion.id;
+  if (!idUsuario) throw new Error("La sesión no devolvió el identificador del usuario.");
+
+  const respuesta = await fetch(
+    `${API_URL}/usuarios?id=${encodeURIComponent(idUsuario)}`,
+    { method: "GET", credentials: "include" }
+  );
+  const datos = await respuesta.json();
+  const perfil = Array.isArray(datos) ? datos[0] : datos;
+
+  if (!respuesta.ok || !perfil) {
+    throw new Error(datos.error || "No se pudieron cargar los datos de la cuenta.");
+  }
+
+  localStorage.setItem("usuarioId", perfil.id_usuarios);
+  localStorage.setItem("usuarioNombre", perfil.name);
+  return perfil;
+}
 
 function validateEmail(email) {
   const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -18,6 +40,7 @@ function validatePassword(password) {
 
 export default function LoginPage() {
   const router = useRouter();
+  const { socket } = useSocket();
 
   // Estado que controla el Conditional Rendering:
   // false = muestra Login | true = muestra Registro
@@ -50,30 +73,26 @@ export default function LoginPage() {
     }
 
     try {
-      const response = await fetch(`${API_URL}/usuarios`, {
-        method: "GET",
+      const respuestaSesion = await fetch(`${API_URL}/login`, {
+        method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
       });
+      const datosSesion = await respuestaSesion.json();
 
-      const usuarios = await response.json();
-
-      // Verificamos password o contrasena según cómo esté llamada la columna en tu tabla Usuarios
-      const usuarioEncontrado = usuarios.find(
-        (u) =>
-          u.email === email &&
-          (u.password === password || u.contrasena === password)
-      );
-
-      if (usuarioEncontrado) {
+      if (respuestaSesion.ok && datosSesion.user) {
+        await guardarPerfilLocal(datosSesion.user);
         setModalInfo({
           titulo: "Éxito",
           mensaje: "Inicio de sesión exitoso. Redirigiendo...",
         });
-        localStorage.setItem(
-          "usuarioId",
-          usuarioEncontrado.id_usuarios || usuarioEncontrado.id
-        );
-        localStorage.setItem("usuarioNombre", usuarioEncontrado.name);
+
+        // El socket debe abrir un handshake nuevo para recibir la cookie recién creada.
+        if (socket) {
+          socket.disconnect();
+          socket.connect();
+        }
 
         setTimeout(() => {
           router.push("/");
@@ -81,7 +100,7 @@ export default function LoginPage() {
       } else {
         setModalInfo({
           titulo: "Error",
-          mensaje: "Correo o contraseña incorrectos.",
+          mensaje: datosSesion.error || "Correo o contraseña incorrectos.",
         });
       }
     } catch (error) {
@@ -140,6 +159,29 @@ export default function LoginPage() {
           mensaje: "Este correo electrónico ya está registrado.",
         });
       } else if (msj === "Usuario registrado") {
+        // Inicia la sesión recién creada para habilitar el chat global al entrar al menú.
+        const respuestaSesion = await fetch(`${API_URL}/login`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+        const datosSesion = await respuestaSesion.json();
+
+        if (!respuestaSesion.ok || !datosSesion.user) {
+          setModalInfo({
+            titulo: "Cuenta creada",
+            mensaje: "La cuenta se creó, pero no se pudo iniciar la sesión. Iniciá sesión desde esta pantalla.",
+          });
+          setEsRegistro(false);
+          return;
+        }
+
+        await guardarPerfilLocal(datosSesion.user);
+        if (socket) {
+          socket.disconnect();
+          socket.connect();
+        }
         setModalInfo({
           titulo: "Éxito",
           mensaje: "Usuario registrado correctamente. Redirigiendo...",

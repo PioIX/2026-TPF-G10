@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import "../global.css";
+import GameLobby, { useGameSession } from "../../components/GameLobby";
 
 const BACKEND = "http://localhost:4000";
 const MINIMO_JUGADORES = 3;
@@ -179,7 +180,8 @@ async function consultarAPI(url, claveCache, propiedadDato) {
   return "";
 }
 
-export default function GridPage() {
+function GridGame() {
+  const { modo, sala, enviarProgreso, marcarPartidaTerminada } = useGameSession();
   const [grilla, setGrilla] = useState(null);
   const [error, setError] = useState("");
   const [escudos, setEscudos] = useState({});
@@ -308,6 +310,32 @@ export default function GridPage() {
     : null;
   const jugadoresCeldaActiva =
     (claveActiva && grilla?.jugadores[claveActiva]) || [];
+  const celdasCompletadas = Object.keys(celdasReveladas).length;
+  const terminoLaPartida = celdasCompletadas === 9;
+
+  // El puntaje compartido representa las celdas correctas hasta que se defina otro sistema.
+  useEffect(() => {
+    enviarProgreso({
+      celdasCompletadas,
+      puntaje: celdasCompletadas,
+      terminado: terminoLaPartida,
+      filas: grilla ? grilla.filas.map((fila) => fila.nombre) : [],
+      columnas: grilla ? grilla.columnas.map((columna) => columna.nombre) : [],
+      celdasReveladas: Object.fromEntries(
+        Object.entries(celdasReveladas).map(([clave, celda]) => [clave, celda.apellido])
+      ),
+    });
+    if (terminoLaPartida) marcarPartidaTerminada();
+  }, [
+    celdasCompletadas,
+    celdasReveladas,
+    grilla,
+    terminoLaPartida,
+    modo,
+    sala && sala.status,
+    enviarProgreso,
+    marcarPartidaTerminada,
+  ]);
 
   return (
     <>
@@ -438,5 +466,14 @@ export default function GridPage() {
         )}
       </div>
     </>
+  );
+}
+
+// Cada persona genera su propia grilla al comenzar su partida.
+export default function GridPage() {
+  return (
+    <GameLobby game="grid">
+      <GridGame />
+    </GameLobby>
   );
 }

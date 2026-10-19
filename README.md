@@ -31,6 +31,10 @@ El proyecto integra los contenidos y metodologías de tres asignaturas técnicas
 * **Backend & Tiempo Real:** Node.js, WebSockets (Socket.io)
 * **Control de Versiones:** Git & GitHub
 
+## Sockets y partidas en línea
+
+La arquitectura de Socket.IO, los eventos disponibles, la integración con los juegos y sus límites actuales están documentados en [`docs/socket.md`](docs/socket.md).
+
 ---
 
 ##  Alcance y Objetivos

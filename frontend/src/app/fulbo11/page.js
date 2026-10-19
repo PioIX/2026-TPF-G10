@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import "../global.css";
+import GameLobby, { useGameSession } from "../../components/GameLobby";
 
 const URL_API = "http://localhost:4000";
 
@@ -37,7 +38,8 @@ function obtenerPaisAleatorio(listaJugadores) {
   return paises[Math.floor(Math.random() * paises.length)];
 }
 
-export default function Fulbo11Page() {
+function Fulbo11Game() {
+  const { modo, sala, enviarProgreso, marcarPartidaTerminada } = useGameSession();
   const [jugadores, setJugadores] = useState([]);
   const [equipo, setEquipo] = useState(Array(POSICIONES.length).fill(null));
   const [posicionSeleccionada, setPosicionSeleccionada] = useState(null);
@@ -218,6 +220,28 @@ export default function Fulbo11Page() {
     });
   };
 
+  const terminoLaPartida = cantidadColocados === POSICIONES.length;
+
+  // Comparte el número de espacios ocupados sin transmitir las respuestas escritas.
+  useEffect(() => {
+    enviarProgreso({
+      jugadoresColocados: cantidadColocados,
+      terminado: terminoLaPartida,
+      formacion: equipo.map((jugador) => (jugador ? jugador.nombre : "")),
+      paisActual,
+    });
+    if (terminoLaPartida) marcarPartidaTerminada();
+  }, [
+    cantidadColocados,
+    equipo,
+    paisActual,
+    terminoLaPartida,
+    modo,
+    sala && sala.status,
+    enviarProgreso,
+    marcarPartidaTerminada,
+  ]);
+
   return (
     <>
       <div className="panelJuego">
@@ -296,5 +320,14 @@ export default function Fulbo11Page() {
         </div>
       </div>
     </>
+  );
+}
+
+// La cancha se monta cuando se elige jugar solo o la sala recibe al segundo jugador.
+export default function Fulbo11Page() {
+  return (
+    <GameLobby game="futbol11">
+      <Fulbo11Game />
+    </GameLobby>
   );
 }

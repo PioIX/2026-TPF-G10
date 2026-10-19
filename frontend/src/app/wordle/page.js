@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import "../global.css";
+import GameLobby, { useGameSession } from "../../components/GameLobby";
 
 const API_URL = "http://localhost:4000";
 const MAX_INTENTOS = 6;
@@ -25,7 +26,8 @@ function limpiarTexto(texto) {
     .toUpperCase();
 }
 
-export default function WordlePage() {
+function WordleGame() {
+  const { modo, sala, enviarProgreso, marcarPartidaTerminada } = useGameSession();
   const [palabraSecreta, setPalabraSecreta] = useState("");
   const [filas, setFilas] = useState([]); // Matriz [fila][col] con { letra, color }
   const [intentoActual, setIntentoActual] = useState(0);
@@ -201,6 +203,32 @@ export default function WordlePage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [manejarTecla]);
 
+  // Comparte solo intentos usados y resultado; nunca envía la palabra secreta.
+  const intentosUsados = filas.filter((fila) =>
+    fila.some((celda) => celda.color !== "transparent")
+  ).length;
+  const gano = juegoTerminado && mensaje === "¡Ganaste!";
+
+  useEffect(() => {
+    const progreso = {
+      intentosUsados,
+      terminado: juegoTerminado,
+      gano,
+      tablero: filas,
+    };
+    enviarProgreso(progreso);
+    if (juegoTerminado) marcarPartidaTerminada();
+  }, [
+    intentosUsados,
+    filas,
+    juegoTerminado,
+    gano,
+    modo,
+    sala && sala.status,
+    enviarProgreso,
+    marcarPartidaTerminada,
+  ]);
+
   return (
     <>
       <main className="wordle-main">
@@ -244,5 +272,14 @@ export default function WordlePage() {
         </div>
       </main>
     </>
+  );
+}
+
+// La pantalla de entrada decide el modo antes de montar la lógica aleatoria del juego.
+export default function WordlePage() {
+  return (
+    <GameLobby game="wordle">
+      <WordleGame />
+    </GameLobby>
   );
 }

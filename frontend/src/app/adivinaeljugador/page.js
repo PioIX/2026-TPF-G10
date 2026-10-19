@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import "../global.css";
+import GameLobby, { useGameSession } from "../../components/GameLobby";
 
 const API_URL = "http://localhost:4000";
 
@@ -77,7 +78,8 @@ function construirJugadores(datos) {
   return { listaJugadores, sugerenciasLimpias };
 }
 
-export default function AdivinaElJugadorPage() {
+function AdivinaElJugadorGame() {
+  const { modo, sala, enviarProgreso, marcarPartidaTerminada } = useGameSession();
   const [jugadores, setJugadores] = useState([]);
   const [sugerencias, setSugerencias] = useState({
     club: [],
@@ -303,6 +305,31 @@ export default function AdivinaElJugadorPage() {
   const esEdad = categoria === "edad";
   const catTexto = ["club", "pais", "posicion"].includes(categoria);
   const opcionesSugerencias = catTexto ? sugerencias[categoria] || [] : [];
+  const preguntasUsadas = 10 - preguntasRestantes;
+  const adivino = respuestas.some((respuesta) => respuesta.startsWith("✅ ACIERTO:"));
+  const terminoLaPartida = juegoTerminado || preguntasRestantes <= 0;
+
+  // Comparte cantidades y resultado, sin mandar el jugador secreto al rival.
+  useEffect(() => {
+    enviarProgreso({
+      preguntasUsadas,
+      terminado: terminoLaPartida,
+      adivino: terminoLaPartida && adivino,
+      respuestas,
+      pistaActiva,
+    });
+    if (terminoLaPartida) marcarPartidaTerminada();
+  }, [
+    preguntasUsadas,
+    respuestas,
+    pistaActiva,
+    terminoLaPartida,
+    adivino,
+    modo,
+    sala && sala.status,
+    enviarProgreso,
+    marcarPartidaTerminada,
+  ]);
 
   return (
     <>
@@ -525,5 +552,14 @@ export default function AdivinaElJugadorPage() {
         </div>
       </main>
     </>
+  );
+}
+
+// La elección entre jugar solo y usar una sala ocurre antes de sortear el jugador secreto.
+export default function AdivinaElJugadorPage() {
+  return (
+    <GameLobby game="adivinaeljugador">
+      <AdivinaElJugadorGame />
+    </GameLobby>
   );
 }
