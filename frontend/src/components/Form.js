@@ -1,24 +1,25 @@
-// Componente COMPUESTO: combina Title + Button (dos componentes más chicos)
-// para armar algo más grande. No usa hooks directamente, así que no necesita
-// "use client" (Button sí lo tiene, y eso alcanza).
-import Title from "./Title";
-import Button from "./Button";
+"use client";
 
-export default function FormularioBase({ title, buttonText, onButtonClick }) {
+export function Field({ label, name, type = "text", required = true, ...rest }) {
   return (
-    <div>
-      <Title text={title} />
-      <div>
-        <input
-          type="text"
-          placeholder="Ingresa tu nombre"
-        />
-        <input
-          type="email"
-          placeholder="Ingresa tu email"
-        />
-      </div>
-      <Button text={buttonText} onClick={onButtonClick} />
-    </div>
+    <label className="field">
+      <span>{label}</span>
+      <input className="campo" name={name} type={type} required={required} {...rest} />
+    </label>
+  );
+}
+
+// onSubmit recibe un objeto { campo: valor } con todo lo que haya en el formulario.
+export default function Form({ onSubmit, children, className = "form" }) {
+  return (
+    <form
+      className={className}
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSubmit(Object.fromEntries(new FormData(e.currentTarget)), e.currentTarget);
+      }}
+    >
+      {children}
+    </form>
   );
 }
