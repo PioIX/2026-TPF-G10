@@ -1,6 +1,6 @@
 // src/app/layout.jsx
 import Link from 'next/link';
-import './globals.css';
+import './global.css';
 
 export const metadata = {
   title: 'Fulbo 11',
@@ -15,7 +15,7 @@ export default function RootLayout({ children }) {
           {/* El título puede ser dinámico luego, por ahora dejamos el genérico */}
           <h1>FULBO 11</h1>
           <Link href="/">
-            <img src="/img/logo.png" alt="Logo Fulbo 11" />
+            <img src="/logo.png" alt="Logo Fulbo 11" />
           </Link>
         </header>
         <hr />

@@ -207,7 +207,7 @@ export default function WordlePage() {
       <header>
         <h1>WORDLE - FULBO 11</h1>
         <Link href="/">
-          <img src="/img/logo.png" alt="Logo" />
+          <img src="/logo.png" alt="Logo" />
         </Link>
       </header>
       <hr />

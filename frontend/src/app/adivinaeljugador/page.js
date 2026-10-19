@@ -310,7 +310,7 @@ export default function AdivinaElJugadorPage() {
       <header>
         <h1>Adivina el Jugador</h1>
         <Link href="/">
-          <img src="/img/logo.png" alt="Logo" />
+          <img src="/logo.png" alt="Logo" />
         </Link>
       </header>
       <hr />

@@ -224,7 +224,7 @@ export default function Fulbo11Page() {
       <header>
         <h1>FULBO 11</h1>
         <Link href="/">
-          <img src="/img/logo.png" alt="Logo" />
+          <img src="/logo.png" alt="Logo" />
         </Link>
       </header>
       <hr />

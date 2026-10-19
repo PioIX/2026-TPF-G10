@@ -34,8 +34,8 @@ CREATE TABLE Datos (
     id_datos INT AUTO_INCREMENT PRIMARY KEY,
     id_jugador INT NOT NULL UNIQUE,
     edad INT,
-    altura DECIMAL(4,2),
-    peso DECIMAL(5,2),
+    altura int,
+    peso int,
     pierna_habil VARCHAR(20),
     CONSTRAINT fk_datos_jugadores
         FOREIGN KEY (id_jugador) REFERENCES Jugadores(id_jugador)

@@ -315,7 +315,7 @@ export default function GridPage() {
       <header>
         <h1>GRID - FULBO 11</h1>
         <Link href="/">
-          <img src="/img/logo.png" alt="Logo" />
+          <img src="/logo.png" alt="Logo" />
         </Link>
       </header>
       <hr />
