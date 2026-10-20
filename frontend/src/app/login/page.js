@@ -2,7 +2,6 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import "../global.css";
 
 const API_URL = "http://localhost:4000";
@@ -76,7 +75,7 @@ export default function LoginPage() {
         localStorage.setItem("usuarioNombre", usuarioEncontrado.name);
 
         setTimeout(() => {
-          router.push("/");
+          router.push("/menu");
         }, 2000);
       } else {
         setModalInfo({
@@ -145,7 +144,7 @@ export default function LoginPage() {
           mensaje: "Usuario registrado correctamente. Redirigiendo...",
         });
         setTimeout(() => {
-          router.push("/");
+          router.push("/menu");
         }, 2000);
       } else {
         setModalInfo({

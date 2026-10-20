@@ -31,6 +31,17 @@ El proyecto integra los contenidos y metodologías de tres asignaturas técnicas
 * **Backend & Tiempo Real:** Node.js, WebSockets (Socket.io)
 * **Control de Versiones:** Git & GitHub
 
+<<<<<<< Updated upstream
+=======
+## Sockets y partidas en línea
+
+La arquitectura de Socket.IO, los eventos disponibles, la integración con los juegos y sus límites actuales están documentados en [`docs/socket.md`](docs/socket.md).
+
+## Recorrido de entrada
+
+La ruta `/` es la portada del juego. El botón **JUGAR** lleva a `/login`, donde se puede iniciar sesión o registrarse. Al completar cualquiera de las dos opciones, la aplicación abre el menú de juegos en `/menu`.
+
+>>>>>>> Stashed changes
 ---
 
 ##  Alcance y Objetivos
