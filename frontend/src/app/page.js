@@ -1,11 +1,13 @@
+"use client"
 import Link from "next/link";
+import "./global.css";
 
 export default function HomePage() {
   return (
     <main className="portada">
       <section className="portadaContenido" aria-labelledby="tituloPortada">
         <div className="portadaLogoMarco">
-          <img src="/logo.png" alt="Escudo de Fulbo 11" />
+          <image src="/logo.png" alt="Escudo de Fulbo 11" />
         </div>
 
         <p className="portadaEtiqueta">MINIJUEGOS DE FÚTBOL</p>
