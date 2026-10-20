@@ -1,17 +1,21 @@
 "use client";
+// Dibuja la grilla, sus encabezados y las celdas de respuesta.
 import { Fragment } from "react";
+import Image from "next/image";
 import useSportsDbImage from "@/hooks/useSportsDbImage";
 
+// Encabezado de columna: muestra el escudo del club y su nombre.
 function EncabezadoEquipo({ nombre }) {
   const escudo = useSportsDbImage("team", nombre);
   return (
     <div className="cell logo">
-      {escudo && <img src={escudo} alt="" style={{ width: 40, height: 40, objectFit: "contain" }} />}
+      {escudo && <Image src={escudo} alt="" width={40} height={40} unoptimized style={{ objectFit: "contain" }} />}
       <span>{nombre}</span>
     </div>
   );
 }
 
+// Celda individual: permite responder o muestra al jugador ya acertado.
 function CeldaJugador({ encontrado, onClick }) {
   const foto = useSportsDbImage("player", encontrado ? `${encontrado.nombre} ${encontrado.apellido}` : "");
   if (!encontrado) {
@@ -19,7 +23,7 @@ function CeldaJugador({ encontrado, onClick }) {
   }
   return (
     <div className="cell player found">
-      {foto && <img src={foto} alt="" style={{ width: 60, height: 60, objectFit: "contain" }} />}
+      {foto && <Image src={foto} alt="" width={60} height={60} unoptimized style={{ objectFit: "contain" }} />}
       <strong>{encontrado.apellido}</strong>
     </div>
   );

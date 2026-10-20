@@ -6,11 +6,13 @@ import "../global.css";
 
 const API_URL = "http://localhost:4000";
 
+// Comprueba el formato básico de correo antes de enviar el formulario.
 function validateEmail(email) {
   const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return re.test(email);
 }
 
+// Aplica el mínimo de caracteres que exige el formulario de registro.
 function validatePassword(password) {
   return password.length >= 6;
 }
@@ -30,13 +32,19 @@ export default function LoginPage() {
   // Estado para mostrar mensajes de error o éxito
   const [modalInfo, setModalInfo] = useState({ titulo: "", mensaje: "" });
 
+  // Conserva en el navegador solo los datos públicos que necesita la interfaz.
+  const guardarUsuarioLocal = (usuario) => {
+    localStorage.setItem("usuarioId", usuario.id);
+    localStorage.setItem("usuarioNombre", usuario.name);
+  };
+
   // Alterna entre Login y Registro limpiando los mensajes previos
   const cambiarModo = () => {
     setEsRegistro((prev) => !prev);
     setModalInfo({ titulo: "", mensaje: "" });
   };
 
-  // --- LÓGICA DE LOGIN ---
+  // Envía las credenciales al backend; las contraseñas no se descargan al navegador.
   const loginUsuario = async (e) => {
     e.preventDefault();
 
@@ -49,30 +57,20 @@ export default function LoginPage() {
     }
 
     try {
-      const response = await fetch(`${API_URL}/usuarios`, {
-        method: "GET",
+      const response = await fetch(`${API_URL}/login`, {
+        method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
       });
 
-      const usuarios = await response.json();
-
-      // Verificamos password o contrasena según cómo esté llamada la columna en tu tabla Usuarios
-      const usuarioEncontrado = usuarios.find(
-        (u) =>
-          u.email === email &&
-          (u.password === password || u.contrasena === password)
-      );
-
-      if (usuarioEncontrado) {
+      const usuario = await response.json();
+      if (response.ok) {
         setModalInfo({
           titulo: "Éxito",
           mensaje: "Inicio de sesión exitoso. Redirigiendo...",
         });
-        localStorage.setItem(
-          "usuarioId",
-          usuarioEncontrado.id_usuarios || usuarioEncontrado.id
-        );
-        localStorage.setItem("usuarioNombre", usuarioEncontrado.name);
+        guardarUsuarioLocal(usuario);
 
         setTimeout(() => {
           router.push("/menu");
@@ -80,7 +78,7 @@ export default function LoginPage() {
       } else {
         setModalInfo({
           titulo: "Error",
-          mensaje: "Correo o contraseña incorrectos.",
+          mensaje: usuario.error || "Correo o contraseña incorrectos.",
         });
       }
     } catch (error) {
@@ -91,7 +89,7 @@ export default function LoginPage() {
     }
   };
 
-  // --- LÓGICA DE REGISTRO ---
+  // Crea la cuenta y después inicia sesión para guardar la sesión del servidor.
   const registrarUsuario = async (e) => {
     e.preventDefault();
 
@@ -139,6 +137,20 @@ export default function LoginPage() {
           mensaje: "Este correo electrónico ya está registrado.",
         });
       } else if (msj === "Usuario registrado") {
+        const respuestaLogin = await fetch(`${API_URL}/login`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+        const usuario = await respuestaLogin.json();
+
+        if (!respuestaLogin.ok) {
+          setModalInfo({ titulo: "Error", mensaje: usuario.error || "No se pudo iniciar la sesión." });
+          return;
+        }
+
+        guardarUsuarioLocal(usuario);
         setModalInfo({
           titulo: "Éxito",
           mensaje: "Usuario registrado correctamente. Redirigiendo...",

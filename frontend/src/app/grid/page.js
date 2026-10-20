@@ -2,6 +2,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import "../global.css";
 
 const BACKEND = "http://localhost:4000";
@@ -12,6 +13,7 @@ const MAXIMOS_INTENTOS = 1000;
 const cacheFotosJugadores = {};
 const cacheFotosEquipos = {};
 
+// Normaliza nombres de países y clubes antes de comparar o formar claves.
 function normalizarTexto(texto) {
   return String(texto || "")
     .normalize("NFD")
@@ -20,6 +22,7 @@ function normalizarTexto(texto) {
     .trim();
 }
 
+// Devuelve una copia mezclada con el algoritmo Fisher-Yates.
 function mezclarArray(array) {
   const nuevoArray = [...array];
   for (let i = nuevoArray.length - 1; i > 0; i--) {
@@ -29,6 +32,7 @@ function mezclarArray(array) {
   return nuevoArray;
 }
 
+// Agrupa los clubes registrados para cada jugador.
 function crearEquiposJugador(trayectorias) {
   const equiposJugador = {};
   trayectorias.forEach(({ id_jugador, id_equipo }) => {
@@ -38,6 +42,7 @@ function crearEquiposJugador(trayectorias) {
   return equiposJugador;
 }
 
+// Indexa los jugadores por combinación país-club para consultar cada celda.
 function crearConexiones(jugadores, equiposJugador) {
   const conexiones = {};
   jugadores.forEach((j) => {
@@ -58,6 +63,7 @@ function crearConexiones(jugadores, equiposJugador) {
   return conexiones;
 }
 
+// Obtiene una lista única de países disponibles en los datos.
 function obtenerPaises(jugadores) {
   const vistos = new Set();
   const paises = [];
@@ -71,10 +77,12 @@ function obtenerPaises(jugadores) {
   return paises;
 }
 
+// Recupera los jugadores que cumplen la combinación de una celda.
 function obtenerJugadoresCelda(pais, equipo, conexiones) {
   return conexiones[`${normalizarTexto(pais.nombre)}_${equipo.id}`] || [];
 }
 
+// Descarta países que no permitan completar suficientes columnas.
 function filtrarPaises(paises, equipos, conexiones) {
   return paises.filter((pais) => {
     let cantidadConexiones = 0;
@@ -90,6 +98,7 @@ function filtrarPaises(paises, equipos, conexiones) {
   });
 }
 
+// Descarta equipos que no permitan completar suficientes filas.
 function filtrarEquipos(paises, equipos, conexiones) {
   return equipos.filter((equipo) => {
     let cantidadConexiones = 0;
@@ -105,6 +114,7 @@ function filtrarEquipos(paises, equipos, conexiones) {
   });
 }
 
+// Confirma que las nueve combinaciones tengan respuestas disponibles.
 function validarGrilla(paises, equipos, conexiones) {
   for (let f = 0; f < 3; f++) {
     for (let c = 0; c < 3; c++) {
@@ -119,6 +129,7 @@ function validarGrilla(paises, equipos, conexiones) {
   return true;
 }
 
+// Crea el objeto de respuestas válidas para las nueve celdas.
 function crearDatosGrilla(paises, equipos, conexiones) {
   const jugadoresPorCelda = {};
   for (let f = 0; f < 3; f++) {
@@ -133,6 +144,7 @@ function crearDatosGrilla(paises, equipos, conexiones) {
   return jugadoresPorCelda;
 }
 
+// Busca una combinación aleatoria de tres países y tres equipos válida.
 function buscarGrilla(paises, equipos, conexiones) {
   const paisesDisponibles = filtrarPaises(paises, equipos, conexiones);
   const equiposDisponibles = filtrarEquipos(
@@ -180,6 +192,7 @@ async function consultarAPI(url, claveCache, propiedadDato) {
 }
 
 export default function GridPage() {
+  // Conserva grilla aleatoria, respuestas reveladas, celda activa y estado de carga.
   const [grilla, setGrilla] = useState(null);
   const [error, setError] = useState("");
   const [escudos, setEscudos] = useState({});
@@ -251,7 +264,8 @@ export default function GridPage() {
   }, []);
 
   useEffect(() => {
-    cargarGrilla();
+    // El microtask inicia la carga después de terminar el efecto de montaje.
+    Promise.resolve().then(cargarGrilla);
   }, [cargarGrilla]);
 
   const seleccionarCelda = (fila, col) => {
@@ -324,10 +338,13 @@ export default function GridPage() {
           {grilla.columnas.map((eq) => (
             <div key={eq.id} className="cell logo">
               {escudos[eq.id] && (
-                <img
+                <Image
                   src={escudos[eq.id]}
                   alt={eq.nombre}
-                  style={{ width: "40px", height: "40px", objectFit: "contain" }}
+                  width={40}
+                  height={40}
+                  unoptimized
+                  style={{ objectFit: "contain" }}
                 />
               )}
               <span>{eq.nombre}</span>
@@ -359,14 +376,13 @@ export default function GridPage() {
                     {revelada ? (
                       <>
                         {revelada.foto && (
-                          <img
+                          <Image
                             src={revelada.foto}
                             alt={revelada.apellido}
-                            style={{
-                              width: "60px",
-                              height: "60px",
-                              objectFit: "contain",
-                            }}
+                            width={60}
+                            height={60}
+                            unoptimized
+                            style={{ objectFit: "contain" }}
                           />
                         )}
                         <div style={{ fontWeight: 700 }}>

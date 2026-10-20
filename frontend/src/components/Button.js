@@ -1,3 +1,4 @@
+// Botón reutilizable que puede renderizarse como enlace de navegación.
 import Link from "next/link";
 
 export default function Button({ children, href, variant = "primary", ...props }) {

@@ -1,4 +1,5 @@
 "use client";
+// Formulario reutilizable para iniciar sesión o crear una cuenta.
 import Form, { Field } from "./Form";
 import Button from "./Button";
 

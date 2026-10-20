@@ -1,4 +1,5 @@
 "use client";
+// Muestra la pista disponible y permite solicitarla una sola vez.
 import Message from "./Message";
 
 export default function ClueBox({ pista, usada, onPedir }) {

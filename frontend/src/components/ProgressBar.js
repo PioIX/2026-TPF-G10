@@ -1,3 +1,4 @@
+// Barra accesible que visualiza el avance numérico de una partida.
 export default function ProgressBar({ valor, total, texto }) {
   return (
     <>

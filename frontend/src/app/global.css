@@ -1064,3 +1064,60 @@ a.btn:hover {
 .admin button:active {
     transform: translateY(-1px);
 }
+
+/* Coloca la lista de juegos junto al chat en el menú de usuario. */
+.menuConChat {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 340px);
+    gap: 24px;
+    align-items: start;
+    width: min(1200px, 94%);
+    margin: 24px auto;
+}
+
+.chat-global {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 18px;
+    color: var(--color-texto);
+    background: var(--color-tarjeta);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+}
+
+.chat-mensajes {
+    min-height: 180px;
+    max-height: 360px;
+    overflow-y: auto;
+    overflow-wrap: anywhere;
+}
+
+.chat-global form {
+    display: flex;
+    gap: 8px;
+}
+
+.chat-global input {
+    min-width: 0;
+    flex: 1;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+@media (max-width: 800px) {
+    /* En pantallas angostas el chat queda debajo de los juegos. */
+    .menuConChat {
+        grid-template-columns: 1fr;
+    }
+}

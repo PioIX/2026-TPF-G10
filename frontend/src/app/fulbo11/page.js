@@ -6,6 +6,7 @@ import "../global.css";
 
 const URL_API = "http://localhost:4000";
 
+// Define las once posiciones y el grupo visual al que pertenece cada una.
 const POSICIONES = [
   { numero: 7, nombre: "ED", grupo: "delanteros" },
   { numero: 9, nombre: "DC", grupo: "delanteros" },
@@ -23,6 +24,7 @@ const POSICIONES = [
   { numero: 1, nombre: "ARQ", grupo: "arquero" },
 ];
 
+// Normaliza nombres para admitir tildes o diferencias de mayúsculas.
 function normalizarTexto(texto) {
   return String(texto || "")
     .normalize("NFD")
@@ -31,6 +33,7 @@ function normalizarTexto(texto) {
     .toUpperCase();
 }
 
+// Sortea el país que debe cumplir el próximo jugador de la formación.
 function obtenerPaisAleatorio(listaJugadores) {
   const paises = [...new Set(listaJugadores.map((j) => j.pais))];
   if (paises.length === 0) return "Sin datos";
@@ -38,6 +41,7 @@ function obtenerPaisAleatorio(listaJugadores) {
 }
 
 export default function Fulbo11Page() {
+  // Guarda el plantel, el país activo, la posición seleccionada y los mensajes.
   const [jugadores, setJugadores] = useState([]);
   const [equipo, setEquipo] = useState(Array(POSICIONES.length).fill(null));
   const [posicionSeleccionada, setPosicionSeleccionada] = useState(null);
@@ -93,10 +97,12 @@ export default function Fulbo11Page() {
   }, [iniciarJuego]);
 
   useEffect(() => {
-    cargarJugadores();
+    // El microtask inicia la carga después de terminar el efecto de montaje.
+    Promise.resolve().then(cargarJugadores);
   }, [cargarJugadores]);
 
   // Avanza a la siguiente ronda sorteando un nuevo país
+  // Pasa a la siguiente posición y sortea un país nuevo.
   const siguienteRonda = () => {
     setRonda((prev) => prev + 1);
     setPaisActual(obtenerPaisAleatorio(jugadores));
@@ -105,6 +111,7 @@ export default function Fulbo11Page() {
   };
 
   // Maneja el click en cada posición de la cancha
+  // Valida el jugador escrito y lo ubica si cumple país, posición y unicidad.
   const seleccionarPosicion = (indice) => {
     const posicion = POSICIONES[indice];
 

@@ -1,4 +1,5 @@
 "use client";
+// Campos dinámicos para cargar varios pasos de la trayectoria de un jugador.
 import { useState } from "react";
 import { Field } from "./Form";
 import Button from "./Button";

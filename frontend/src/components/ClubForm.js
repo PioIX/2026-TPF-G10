@@ -1,4 +1,5 @@
 "use client";
+// Formulario con los campos de alta de un club.
 import Form, { Field } from "./Form";
 import Button from "./Button";
 

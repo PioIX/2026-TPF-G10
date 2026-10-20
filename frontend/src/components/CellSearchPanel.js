@@ -1,4 +1,5 @@
 "use client";
+// Panel de búsqueda para responder una celda seleccionada del Grid.
 import { useState } from "react";
 import AutocompleteInput from "./AutocompleteInput";
 import Button from "./Button";

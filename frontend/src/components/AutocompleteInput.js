@@ -1,4 +1,5 @@
 "use client";
+// Input con sugerencias y envío opcional al presionar Enter.
 import { useId } from "react";
 
 export default function AutocompleteInput({ opciones, valor, onCambio, onEnter, placeholder }) {

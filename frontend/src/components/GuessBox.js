@@ -1,4 +1,5 @@
 "use client";
+// Entrada con autocompletado para enviar una adivinanza.
 import { useState } from "react";
 import AutocompleteInput from "./AutocompleteInput";
 import Button from "./Button";

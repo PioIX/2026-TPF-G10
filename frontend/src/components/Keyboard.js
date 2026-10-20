@@ -1,4 +1,5 @@
 "use client";
+// Teclado en pantalla que comunica cada tecla a la lógica del Wordle.
 
 const FILAS = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"];
 

@@ -1,3 +1,4 @@
+// Tarjeta de un minijuego con imagen, título y enlace para jugar.
 import Link from "next/link";
 import Image from "next/image";
 

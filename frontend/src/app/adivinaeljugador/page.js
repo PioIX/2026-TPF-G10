@@ -2,10 +2,12 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import "../global.css";
 
 const API_URL = "http://localhost:4000";
 
+// Quita tildes y signos para comparar respuestas aunque cambie la escritura.
 function limpiarTexto(texto) {
   return String(texto || "")
     .normalize("NFD")
@@ -15,6 +17,7 @@ function limpiarTexto(texto) {
     .trim();
 }
 
+// Agrupa las filas de jugadores y arma las opciones para los filtros.
 function construirJugadores(datos) {
   const jugadoresMap = new Map();
   const sugerenciasTemp = { club: [], pais: [], posicion: [], nombres: [] };
@@ -78,6 +81,7 @@ function construirJugadores(datos) {
 }
 
 export default function AdivinaElJugadorPage() {
+  // Cada estado representa datos cargados, selección del jugador o avance de la partida.
   const [jugadores, setJugadores] = useState([]);
   const [sugerencias, setSugerencias] = useState({
     club: [],
@@ -103,6 +107,7 @@ export default function AdivinaElJugadorPage() {
   const [inputAdivinar, setInputAdivinar] = useState("");
   const [fotoJugador, setFotoJugador] = useState("");
 
+  // Consulta el backend, prepara las sugerencias y elige el jugador secreto.
   const cargarJugadores = useCallback(async () => {
     try {
       const respuesta = await fetch(`${API_URL}/jugadores`);
@@ -129,9 +134,11 @@ export default function AdivinaElJugadorPage() {
   }, []);
 
   useEffect(() => {
-    cargarJugadores();
+    // El microtask inicia la carga después de terminar el efecto de montaje.
+    Promise.resolve().then(cargarJugadores);
   }, [cargarJugadores]);
 
+  // Comprueba que una respuesta escrita corresponda a una opción conocida.
   const opcionValida = (cat, texto) => {
     if (!texto) return false;
     const opciones = sugerencias[cat] || [];
@@ -311,10 +318,13 @@ export default function AdivinaElJugadorPage() {
           <div id="contenedor-jugador">
             <div id="silueta">
               {fotoJugador ? (
-                <img
+                <Image
                   id="fotoJugador"
                   src={fotoJugador}
                   alt={jugadorSecreto?.nombre}
+                  width={240}
+                  height={240}
+                  unoptimized
                   style={{ width: "100%", height: "100%", objectFit: "cover" }}
                 />
               ) : (

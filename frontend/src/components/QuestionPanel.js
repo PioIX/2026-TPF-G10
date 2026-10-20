@@ -1,4 +1,5 @@
 "use client";
+// Controles para elegir categoría, condición y enviar una pregunta.
 import Button from "./Button";
 
 const CATEGORIAS = ["Club", "País", "Posición", "Edad", "Altura"];
