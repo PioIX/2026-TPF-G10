@@ -1,3 +1,5 @@
+//“AuthGuard protege las páginas que requieren sesión. Al montarse revisa si hay un usuario guardado en localStorage. Si lo hay, muestra el contenido; si no, redirige al login. Mientras decide, no renderiza nada, así nadie ve la página protegida por un instante.”
+//es un componente “guardia”: revisa si hay un usuario logueado y, si no lo hay, te manda a /login.
 "use client";
 // Comprueba la sesión local y redirige al login si no hay usuario.
 import { useEffect, useState } from "react";

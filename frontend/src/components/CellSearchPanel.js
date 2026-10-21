@@ -1,3 +1,5 @@
+//CellSearchPanel es el panel que aparece debajo de la grilla del juego Grid cuando tocás una celda, para que busques y pruebes al jugador que va ahí.
+//es el panel que aparece debajo de la grilla del juego Grid cuando tocás una celda, para que busques y pruebes al jugador que va ahí.
 "use client";
 // Panel de búsqueda para responder una celda seleccionada del Grid.
 import { useState } from "react";

@@ -1,3 +1,5 @@
+//GridBoard dibuja el tablero del Grid: clubes arriba, países a la izquierda y nueve celdas. Cada celda es un botón con un signo de pregunta, y al acertar muestra la foto y el apellido del jugador. Las imágenes se piden a TheSportsDB con un hook propio que guarda los resultados en caché. El componente solo dibuja; cuando se toca una celda avisa a la página con onCelda, y la página decide qué hacer.”
+//dibuja el tablero del juego Grid: una grilla de 4x4 con los clubes arriba, los países a la izquierda y 9 celdas para responder. 
 "use client";
 // Dibuja la grilla, sus encabezados y las celdas de respuesta.
 import { Fragment } from "react";

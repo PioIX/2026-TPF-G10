@@ -6,6 +6,8 @@ import TrayectoriaFields from "./TrayectoriaFields";
 
 // onGuardar recibe todos los campos planos; en la página se separan en
 // jugador / datos / estadisticas / trayectoria antes de llamar a la API.
+
+//El panel de admin, que permite agregar jugadores personalizados o si falta algun jugador en nuestra base de datos, aclarando cada detalle de cada jugador
 export default function AdminPlayerForm({ onGuardar }) {
   return (
     <Form onSubmit={onGuardar}>
@@ -40,4 +42,3 @@ export default function AdminPlayerForm({ onGuardar }) {
     </Form>
   );
 }
-//El panel de admin, que permite agregar jugadores personalizados o si falta algun jugador en nuestra base de datos, aclarando cada detalle de cada jugador

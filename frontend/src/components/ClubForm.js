@@ -1,3 +1,5 @@
+//“ClubForm es el formulario de alta de clubes del panel de administración. Está armado con Form y Field, así que no maneja estados por cada input: al enviar, Form junta todos los valores en un objeto y se lo entrega a la función onGuardar. Los names de los campos coinciden con las columnas de la tabla de equipos.”
+//ClubForm es el formulario para dar de alta un club de fútbol (equipo) en la base de datos,estan en el panel de admin.
 "use client";
 // Formulario con los campos de alta de un club.
 import Form, { Field } from "./Form";

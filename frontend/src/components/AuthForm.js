@@ -1,3 +1,5 @@
+//es el el formulario que aparece al abrir el juego, que sirve para iniciar sesion y registrarse, este componente combona otros como componentes como(field, button)
+
 "use client";
 // Formulario reutilizable para iniciar sesión o crear una cuenta.
 import Form, { Field } from "./Form";

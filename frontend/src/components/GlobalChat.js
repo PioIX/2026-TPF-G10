@@ -1,3 +1,5 @@
+//“GlobalChat es el chat compartido del menú. Se conecta por Socket.IO con la sesión del usuario, recibe el historial al entrar y escucha los mensajes nuevos en tiempo real. Al enviar, solo limpia el campo si el servidor confirma. Las validaciones importantes, como la sesión, el largo del mensaje y el límite de velocidad, están en el backend, así nadie puede saltearlas desde el navegador.”
+//es el chat en tiempo real que aparece al costado del menú, donde todos los usuarios logueados pueden escribirse
 "use client";
 
 import { useEffect, useState } from "react";

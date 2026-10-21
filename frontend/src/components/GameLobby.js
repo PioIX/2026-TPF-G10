@@ -1,3 +1,6 @@
+//es el componente más importante del proyecto: es la sala de espera de los juegos y maneja todo el modo multijugador. Es uno de los 3 componentes que sí están conectados
+//Antes de que empiece cualquier juego, te pregunta cómo querés jugar: solo, creando una sala, o entrando con un código. Cuando la partida arranca, muestra el juego y el progreso del rival.
+//“GameLobby es el componente que envuelve cada minijuego y gestiona el modo online. Primero muestra la elección entre jugar solo, crear una sala o unirse con un código. Usa Socket.IO para crear y unir salas, y cuando entran dos jugadores arranca la partida. Con un Context comparte los datos de la sala con el juego, y muestra el progreso del rival en tiempo real. Así los cuatro juegos reutilizan el mismo código multijugador.”
 "use client";
 
 import {
