@@ -1,7 +1,6 @@
 // src/app/adivinaeljugador/page.js
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
 import Image from "next/image";
 import "../global.css";
 import GameLobby, { useGameSession } from "../../components/GameLobby";
@@ -22,7 +21,7 @@ function limpiarTexto(texto) {
 // Son colecciones nativas de JavaScript que no se explican en los apuntes.
 function construirJugadores(datos) {
   const jugadoresMap = new Map();
-  const sugerenciasTemp = { club: [], pais: [], posicion: [], nombres: [] };
+  const sugerenciasTemp = { club: [], pais: [], posicion: [], liga: [], nombres: [] };
 
   datos.forEach((fila) => {
     const id = fila.id_jugador;
@@ -47,6 +46,7 @@ function construirJugadores(datos) {
 
     if (jugador.pais) sugerenciasTemp.pais.push(jugador.pais);
     if (jugador.posicion) sugerenciasTemp.posicion.push(jugador.posicion);
+    if (jugador.ligaActual) sugerenciasTemp.liga.push(jugador.ligaActual);
     if (club) sugerenciasTemp.club.push(club);
     if (jugador.nombre) sugerenciasTemp.nombres.push(jugador.nombre);
 
@@ -63,6 +63,7 @@ function construirJugadores(datos) {
     club: Array.from(new Set(sugerenciasTemp.club)).sort(),
     pais: Array.from(new Set(sugerenciasTemp.pais)).sort(),
     posicion: Array.from(new Set(sugerenciasTemp.posicion)).sort(),
+    liga: Array.from(new Set(sugerenciasTemp.liga)).sort(),
     nombres: Array.from(new Set(sugerenciasTemp.nombres)).sort(),
   };
 
@@ -94,6 +95,7 @@ function AdivinaElJugadorGame() {
     club: [],
     pais: [],
     posicion: [],
+    liga: [],
     nombres: [],
   });
 
@@ -158,6 +160,7 @@ function AdivinaElJugadorGame() {
   const seleccionarCategoria = (cat) => {
     setCategoria(cat);
     setComparador(null);
+    setInputTexto("");
     setMensaje(`Categoría actual: ${cat.toUpperCase()}.`);
 
     // Ajustar el rango por defecto según si eligió edad o altura
@@ -193,7 +196,7 @@ function AdivinaElJugadorGame() {
     const cat = categoria;
     const textoInput = inputTexto.trim();
 
-    if (["club", "pais", "posicion"].includes(cat)) {
+    if (["club", "pais", "posicion", "liga"].includes(cat)) {
       if (!opcionValida(cat, textoInput)) {
         return { valido: false, respuesta: `Selecciona un/a ${cat} válido/a.` };
       }
@@ -219,6 +222,23 @@ function AdivinaElJugadorGame() {
               : `No, en el pasado no jugó en ${textoInput}.`,
           };
         }
+      }
+
+      if (cat === "liga") {
+        // La liga consultada es la actual; los registros sin club también son una respuesta válida.
+        const ligaActual = secreto.ligaActual;
+        const esRetirado = ["retiradosinclub", "sinclub", "retirado"].includes(
+          limpiarTexto(ligaActual).replace(/\s/g, "")
+        );
+        return {
+          valido: true,
+          respuesta:
+            textoLimpio === limpiarTexto(ligaActual)
+              ? esRetirado
+                ? "Sí, está retirado o actualmente no tiene club."
+                : `Sí, su club compite en ${ligaActual}.`
+              : `No, su club no compite en ${textoInput}.`,
+        };
       }
 
       const valorSecreto = limpiarTexto(secreto[cat]);
@@ -323,7 +343,7 @@ function AdivinaElJugadorGame() {
   };
 
   const esEdad = categoria === "edad";
-  const catTexto = ["club", "pais", "posicion"].includes(categoria);
+  const catTexto = ["club", "pais", "posicion", "liga"].includes(categoria);
   const opcionesSugerencias = catTexto ? sugerencias[categoria] || [] : [];
   const preguntasUsadas = 10 - preguntasRestantes;
   const adivino = respuestas.some((respuesta) => respuesta.startsWith("✅ ACIERTO:"));
@@ -378,31 +398,35 @@ function AdivinaElJugadorGame() {
         <div id="caja-preguntas">
           <p id="titulo-preguntas">Haz preguntas haciendo clic abajo:</p>
 
-          <div className="fila-botones">
-            <div id="grupo-botones-1">
-              <button
-                id="actual"
-                type="button"
-                className={`btn-pill ${periodo === "actual" ? "selected" : ""}`}
-                onClick={() => setPeriodo("actual")}
-              >
-                Actual
-              </button>
-              <button
-                id="pasado"
-                type="button"
-                className={`btn-pill ${periodo === "pasado" ? "selected" : ""}`}
-                onClick={() => setPeriodo("pasado")}
-              >
-                Pasado
-              </button>
+          {/* Actual y Pasado solo modifican preguntas sobre la trayectoria de clubes. */}
+          {categoria === "club" && (
+            <div className="fila-botones">
+              <div id="grupo-botones-1">
+                <button
+                  id="actual"
+                  type="button"
+                  className={`btn-pill ${periodo === "actual" ? "selected" : ""}`}
+                  onClick={() => setPeriodo("actual")}
+                >
+                  Actual
+                </button>
+                <button
+                  id="pasado"
+                  type="button"
+                  className={`btn-pill ${periodo === "pasado" ? "selected" : ""}`}
+                  onClick={() => setPeriodo("pasado")}
+                >
+                  Pasado
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="fila-botones">
             <div id="grupo-botones-2">
               {[
                 { id: "club", label: "Club" },
+                { id: "liga", label: "Liga actual" },
                 { id: "pais", label: "País" },
                 { id: "posicion", label: "Posición" },
                 { id: "edad", label: "Edad" },

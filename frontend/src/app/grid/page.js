@@ -1,14 +1,12 @@
 // src/app/grid/page.js
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
 import Image from "next/image";
 import "../global.css";
 import GameLobby, { useGameSession } from "../../components/GameLobby";
 
 const BACKEND = "http://localhost:4000";
 const MINIMO_JUGADORES = 3;
-const MAXIMOS_INTENTOS = 1000;
 
 // Cachés en memoria de imágenes externas; evitan pedir de nuevo el mismo recurso mientras viva la página.
 const cacheFotosJugadores = {};
@@ -23,14 +21,51 @@ function normalizarTexto(texto) {
     .trim();
 }
 
-// Devuelve una copia mezclada con el algoritmo Fisher-Yates.
-function mezclarArray(array) {
-  const nuevoArray = [...array];
-  for (let i = nuevoArray.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [nuevoArray[i], nuevoArray[j]] = [nuevoArray[j], nuevoArray[i]];
-  }
-  return nuevoArray;
+// Ordena texto normalizado por código de caracteres para que ambos navegadores evalúen el mismo orden.
+function compararTexto(a, b) {
+  const textoA = normalizarTexto(a);
+  const textoB = normalizarTexto(b);
+  return textoA < textoB ? -1 : textoA > textoB ? 1 : 0;
+}
+
+// Crea un generador aleatorio repetible para que ambos clientes compartan el tablero de la sala.
+function crearGeneradorAleatorio(semilla) {
+  let estado = 2166136261;
+  String(semilla).split("").forEach((caracter) => {
+    estado = Math.imul(estado ^ caracter.charCodeAt(0), 16777619);
+  });
+  estado >>>= 0;
+  if (estado === 0) estado = 1;
+
+  return () => {
+    let valor = (estado += 0x6d2b79f5);
+    valor = Math.imul(valor ^ (valor >>> 15), valor | 1);
+    valor ^= valor + Math.imul(valor ^ (valor >>> 7), valor | 61);
+    return ((valor ^ (valor >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// Devuelve las selecciones únicas para revisar sistemáticamente las combinaciones disponibles.
+function obtenerCombinaciones(elementos, cantidad) {
+  const combinaciones = [];
+
+  const construir = (inicio, actual) => {
+    if (actual.length === cantidad) {
+      combinaciones.push(actual);
+      return;
+    }
+
+    for (
+      let indice = inicio;
+      indice <= elementos.length - (cantidad - actual.length);
+      indice++
+    ) {
+      construir(indice + 1, [...actual, elementos[indice]]);
+    }
+  };
+
+  construir(0, []);
+  return combinaciones;
 }
 
 // Crea un índice jugador -> clubes. Set guarda clubes únicos; es una colección nativa de JS.
@@ -64,70 +99,25 @@ function crearConexiones(jugadores, equiposJugador) {
   return conexiones;
 }
 
-// Obtiene una lista única de países con Set, sin repetir mayúsculas ni tildes equivalentes.
+// Unifica países ignorando mayúsculas o tildes y elige una escritura estable para ambos clientes.
 function obtenerPaises(jugadores) {
-  const vistos = new Set();
-  const paises = [];
+  const paisesPorClave = new Map();
   jugadores.forEach((j) => {
     const normalizado = normalizarTexto(j.pais);
-    if (j.pais && !vistos.has(normalizado)) {
-      vistos.add(normalizado);
-      paises.push({ nombre: j.pais });
+    if (!j.pais || !normalizado) return;
+
+    const nombre = String(j.pais).trim();
+    const nombreGuardado = paisesPorClave.get(normalizado);
+    if (!nombreGuardado || nombre < nombreGuardado) {
+      paisesPorClave.set(normalizado, nombre);
     }
   });
-  return paises;
+  return Array.from(paisesPorClave.values()).map((nombre) => ({ nombre }));
 }
 
 // Recupera los jugadores que cumplen la combinación de una celda.
 function obtenerJugadoresCelda(pais, equipo, conexiones) {
   return conexiones[`${normalizarTexto(pais.nombre)}_${equipo.id}`] || [];
-}
-
-// Deja países que tengan al menos tres respuestas posibles entre todos los equipos candidatos.
-function filtrarPaises(paises, equipos, conexiones) {
-  return paises.filter((pais) => {
-    let cantidadConexiones = 0;
-    equipos.forEach((equipo) => {
-      if (
-        obtenerJugadoresCelda(pais, equipo, conexiones).length >=
-        MINIMO_JUGADORES
-      ) {
-        cantidadConexiones++;
-      }
-    });
-    return cantidadConexiones >= 3;
-  });
-}
-
-// Deja equipos que tengan al menos tres respuestas posibles entre los países candidatos.
-function filtrarEquipos(paises, equipos, conexiones) {
-  return equipos.filter((equipo) => {
-    let cantidadConexiones = 0;
-    paises.forEach((pais) => {
-      if (
-        obtenerJugadoresCelda(pais, equipo, conexiones).length >=
-        MINIMO_JUGADORES
-      ) {
-        cantidadConexiones++;
-      }
-    });
-    return cantidadConexiones >= 3;
-  });
-}
-
-// Revisa las 9 celdas antes de aceptar una combinación aleatoria de filas y columnas.
-function validarGrilla(paises, equipos, conexiones) {
-  for (let f = 0; f < 3; f++) {
-    for (let c = 0; c < 3; c++) {
-      if (
-        obtenerJugadoresCelda(paises[f], equipos[c], conexiones).length <
-        MINIMO_JUGADORES
-      ) {
-        return false;
-      }
-    }
-  }
-  return true;
 }
 
 // Crea el objeto de respuestas válidas para las nueve celdas.
@@ -145,29 +135,107 @@ function crearDatosGrilla(paises, equipos, conexiones) {
   return jugadoresPorCelda;
 }
 
-// Prueba combinaciones al azar hasta hallar una grilla completa o agotar el límite de intentos.
-function buscarGrilla(paises, equipos, conexiones) {
-  const paisesDisponibles = filtrarPaises(paises, equipos, conexiones);
-  const equiposDisponibles = filtrarEquipos(
-    paisesDisponibles,
-    equipos,
-    conexiones
+// Busca la mejor grilla completa y relaja el número de respuestas o encabezados solo si hace falta.
+function buscarGrilla(paises, equipos, conexiones, semilla) {
+  const aleatorio = crearGeneradorAleatorio(semilla);
+  const equiposOrdenados = [...equipos].sort(
+    (a, b) => a.id - b.id || compararTexto(a.nombre, b.nombre)
   );
+  const paisesDisponibles = paises
+    .filter((pais) =>
+      equiposOrdenados.some(
+        (equipo) => obtenerJugadoresCelda(pais, equipo, conexiones).length > 0
+      )
+    )
+    .sort((a, b) => compararTexto(a.nombre, b.nombre));
 
-  if (paisesDisponibles.length < 3 || equiposDisponibles.length < 3) return null;
+  // Se priorizan nueve cruces únicos; si no existen, se duplica un encabezado válido para completar la grilla.
+  const dimensiones = [
+    [3, 3], [3, 2], [2, 3], [2, 2], [3, 1], [1, 3], [2, 1], [1, 2], [1, 1],
+  ];
 
-  for (let i = 0; i < MAXIMOS_INTENTOS; i++) {
-    const pPrueba = mezclarArray(paisesDisponibles).slice(0, 3);
-    const ePrueba = mezclarArray(equiposDisponibles).slice(0, 3);
+  for (const [cantidadFilas, cantidadColumnas] of dimensiones) {
+    for (const minimoRespuestas of [MINIMO_JUGADORES, 1]) {
+      let mejorGrilla = null;
+      let cantidadEmpates = 0;
+      const combinacionesFilas = obtenerCombinaciones(
+        paisesDisponibles,
+        cantidadFilas
+      );
 
-    if (validarGrilla(pPrueba, ePrueba, conexiones)) {
-      return {
-        filas: pPrueba,
-        columnas: ePrueba,
-        jugadores: crearDatosGrilla(pPrueba, ePrueba, conexiones),
-      };
+      combinacionesFilas.forEach((filasElegidas) => {
+        const equiposComunes = equiposOrdenados
+          .map((equipo) => ({
+            equipo,
+            jugadoresPorFila: filasElegidas.map(
+              (pais) => obtenerJugadoresCelda(pais, equipo, conexiones)
+            ),
+          }))
+          .filter(({ jugadoresPorFila }) =>
+            jugadoresPorFila.every((lista) => lista.length >= minimoRespuestas)
+          )
+          .map((conexion) => ({
+            ...conexion,
+            minimo: Math.min(...conexion.jugadoresPorFila.map((lista) => lista.length)),
+            total: conexion.jugadoresPorFila.reduce((suma, lista) => suma + lista.length, 0),
+            desempate: aleatorio(),
+          }))
+          .sort((a, b) => b.minimo - a.minimo || b.total - a.total || a.desempate - b.desempate);
+
+        if (equiposComunes.length < cantidadColumnas) return;
+
+        // Se prefieren las columnas con más respuestas posibles y mejor equilibrio entre países.
+        const columnasElegidas = equiposComunes
+          .slice(0, cantidadColumnas)
+          .map(({ equipo }) => equipo);
+        const filasFinales = [...filasElegidas];
+        const columnasFinales = [...columnasElegidas];
+        while (filasFinales.length < 3) filasFinales.push(filasElegidas[0]);
+        while (columnasFinales.length < 3) columnasFinales.push(columnasElegidas[0]);
+
+        const cantidades = filasFinales.flatMap((pais) =>
+          columnasFinales.map(
+            (equipo) => obtenerJugadoresCelda(pais, equipo, conexiones).length
+          )
+        );
+        const candidato = {
+          filas: filasFinales,
+          columnas: columnasFinales,
+          minimo: Math.min(...cantidades),
+          total: cantidades.reduce((suma, cantidad) => suma + cantidad, 0),
+        };
+
+        if (
+          !mejorGrilla ||
+          candidato.minimo > mejorGrilla.minimo ||
+          (candidato.minimo === mejorGrilla.minimo && candidato.total > mejorGrilla.total)
+        ) {
+          mejorGrilla = candidato;
+          cantidadEmpates = 1;
+        } else if (
+          candidato.minimo === mejorGrilla.minimo &&
+          candidato.total === mejorGrilla.total
+        ) {
+          cantidadEmpates++;
+          if (aleatorio() < 1 / cantidadEmpates) mejorGrilla = candidato;
+        }
+      });
+
+      if (mejorGrilla) {
+        return {
+          filas: mejorGrilla.filas,
+          columnas: mejorGrilla.columnas,
+          jugadores: crearDatosGrilla(
+            mejorGrilla.filas,
+            mejorGrilla.columnas,
+            conexiones
+          ),
+        };
+      }
     }
   }
+
+  // Solo devuelve null si la base no tiene ni una combinación país-club con jugadores.
   return null;
 }
 
@@ -193,11 +261,11 @@ async function consultarAPI(url, claveCache, propiedadDato) {
   return "";
 }
 
-// Uso: contenido del lobby del Grid. Construye una grilla propia para cada jugador.
+// Uso: contenido del lobby del Grid. En una sala, ambos clientes comparten los encabezados.
 function GridGame() {
   const { modo, sala, enviarProgreso, marcarPartidaTerminada } = useGameSession();
 
-  // Conserva grilla aleatoria, respuestas reveladas, celda activa y estado de carga.
+  // Conserva la grilla compartida, las respuestas locales, la celda activa y el estado de carga.
   const [grilla, setGrilla] = useState(null);
   const [error, setError] = useState("");
   const [escudos, setEscudos] = useState({});
@@ -206,7 +274,7 @@ function GridGame() {
   const [busqueda, setBusqueda] = useState("");
   const [respuestaFeed, setRespuestaFeed] = useState("");
 
-  // Obtiene los datos relacionales y sortea 3 países x 3 equipos con respuestas disponibles.
+  // Busca la mejor grilla posible; el código de sala hace que los dos clientes obtengan el mismo tablero.
   const cargarGrilla = useCallback(async () => {
     try {
       setError("");
@@ -222,7 +290,7 @@ function GridGame() {
         ? datos.trayectorias
         : [];
 
-      if (equipos.length < 3 || jugadores.length === 0) {
+      if (equipos.length === 0 || jugadores.length === 0) {
         setError("No hay suficientes datos.");
         return;
       }
@@ -238,11 +306,12 @@ function GridGame() {
       const nuevaGrilla = buscarGrilla(
         obtenerPaises(jugadores),
         listaEquipos,
-        conexiones
+        conexiones,
+        sala?.room || `${Date.now()}-${Math.random()}`
       );
 
       if (!nuevaGrilla) {
-        setError("No existe una combinación válida con los datos actuales.");
+        setError("No hay jugadores vinculados a clubes para crear una grilla.");
         return;
       }
 
@@ -267,7 +336,7 @@ function GridGame() {
       console.error(e);
       setError("Error al cargar la grilla.");
     }
-  }, []);
+  }, [sala?.room]);
 
   // Carga inicial en el navegador una vez montado el juego.
   useEffect(() => {
@@ -333,7 +402,7 @@ function GridGame() {
   const celdasCompletadas = Object.keys(celdasReveladas).length;
   const terminoLaPartida = Boolean(grilla && celdasCompletadas === 9);
 
-  // En online publica encabezados y aciertos. No manda la lista de respuestas válidas de cada celda.
+  // En online publica encabezados y casillas resueltas, nunca el nombre que permitiría copiar la respuesta.
   useEffect(() => {
     enviarProgreso({
       celdasCompletadas,
@@ -342,10 +411,7 @@ function GridGame() {
       filas: grilla ? grilla.filas.map((fila) => fila.nombre) : [],
       columnas: grilla ? grilla.columnas.map((columna) => columna.nombre) : [],
       celdasReveladas: Object.fromEntries(
-        Object.entries(celdasReveladas).map(([clave, celda]) => [
-          clave,
-          celda.apellido,
-        ])
+        Object.keys(celdasReveladas).map((clave) => [clave, "✓"])
       ),
     });
     if (terminoLaPartida) marcarPartidaTerminada();
@@ -361,9 +427,10 @@ function GridGame() {
   ]);
 
   return (
-    <>
+    <main className="gridGame">
       {grilla && !error && (
-        <div className="grid">
+        <div className="gridDesbordamiento">
+          <div className="grid">
           {/* Esquina superior izquierda */}
           <div className="cell logo title">
             FULBO11
@@ -372,8 +439,8 @@ function GridGame() {
           </div>
 
           {/* Encabezados de Equipos (Columnas) */}
-          {grilla.columnas.map((eq) => (
-            <div key={eq.id} className="cell logo">
+          {grilla.columnas.map((eq, indice) => (
+            <div key={`${eq.id}-${indice}`} className="cell logo">
               {escudos[eq.id] && (
                 <Image
                   src={escudos[eq.id]}
@@ -390,7 +457,7 @@ function GridGame() {
 
           {/* Filas (País + 3 celdas de jugadores) */}
           {grilla.filas.map((pais, f) => (
-            <div key={pais.nombre} style={{ display: "contents" }}>
+            <div key={`${pais.nombre}-${f}`} style={{ display: "contents" }}>
               <div className="cell logo">{pais.nombre}</div>
 
               {[0, 1, 2].map((c) => {
@@ -434,11 +501,12 @@ function GridGame() {
               })}
             </div>
           ))}
+          </div>
         </div>
       )}
 
       {/* Contenedor de resultados / buscador */}
-      <div id="results" className="results" style={{ textAlign: "center", marginBottom: "40px" }}>
+      <div id="results" className="results gridResults">
         {error && <p>{error}</p>}
 
         {celdaActiva && !error && (
@@ -490,7 +558,7 @@ function GridGame() {
           </div>
         )}
       </div>
-    </>
+    </main>
   );
 }
 

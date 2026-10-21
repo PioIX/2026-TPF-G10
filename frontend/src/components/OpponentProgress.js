@@ -98,7 +98,7 @@ export default function OpponentProgress({ game, player, expanded = false, onClo
         </div>
       )}
 
-      {/* Grid comparte encabezados y celdas acertadas, nunca las respuestas pendientes. */}
+      {/* Grid comparte los encabezados y marca las celdas resueltas sin mostrar el nombre acertado. */}
       {progreso && game === "grid" && Array.isArray(progreso.filas) && Array.isArray(progreso.columnas) && (
         <div className="grillaRival">
           <div className="filaGrillaRival encabezadoGrillaRival">
@@ -110,7 +110,7 @@ export default function OpponentProgress({ game, player, expanded = false, onClo
               <strong>{pais}</strong>
               {[0, 1, 2].map((indiceColumna) => {
                 const clave = `r${indiceFila}_c${indiceColumna}`;
-                return <span key={clave}>{(progreso.celdasReveladas && progreso.celdasReveladas[clave]) || "?"}</span>;
+                return <span key={clave}>{progreso.celdasReveladas?.[clave] ? "✓" : "?"}</span>;
               })}
             </div>
           ))}
