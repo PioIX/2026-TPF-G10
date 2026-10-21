@@ -5,9 +5,11 @@ import Link from "next/link";
 import "../global.css";
 import GameLobby, { useGameSession } from "../../components/GameLobby";
 
+// URL del servidor Express que entrega la lista de jugadores.
 const URL_API = "http://localhost:4000";
 
-// Define las once posiciones y el grupo visual al que pertenece cada una.
+// Define los roles del esquema 1–11 y el sector visual de cada hueco.
+// Estos códigos describen posiciones futbolísticas; no son el dorsal de la camiseta.
 const POSICIONES = [
   { numero: 7, nombre: "ED", grupo: "delanteros" },
   { numero: 9, nombre: "DC", grupo: "delanteros" },
@@ -15,17 +17,17 @@ const POSICIONES = [
 
   { numero: 8, nombre: "MC", grupo: "mediocampistas" },
   { numero: 10, nombre: "MCO", grupo: "mediocampistas" },
-  { numero: 5, nombre: "MCD", grupo: "mediocampistas" },
+  { numero: 6, nombre: "MCD/MC", grupo: "mediocampistas" },
 
   { numero: 3, nombre: "LI", grupo: "defensas" },
-  { numero: 6, nombre: "DFC", grupo: "defensas" },
+  { numero: 5, nombre: "DFC", grupo: "defensas" },
   { numero: 4, nombre: "DFC", grupo: "defensas" },
   { numero: 2, nombre: "LD", grupo: "defensas" },
 
   { numero: 1, nombre: "ARQ", grupo: "arquero" },
 ];
 
-// Normaliza nombres para admitir tildes o diferencias de mayúsculas.
+// Quita tildes y signos y pone el texto en mayúsculas para comparar nombres escritos por la persona.
 function normalizarTexto(texto) {
   return String(texto || "")
     .normalize("NFD")
@@ -34,14 +36,14 @@ function normalizarTexto(texto) {
     .toUpperCase();
 }
 
-// Sortea el país que debe cumplir el próximo jugador de la formación.
+// El Set quita países repetidos; Math.random elige uno para la ronda.
 function obtenerPaisAleatorio(listaJugadores) {
   const paises = [...new Set(listaJugadores.map((j) => j.pais))];
   if (paises.length === 0) return "Sin datos";
   return paises[Math.floor(Math.random() * paises.length)];
 }
 
-// Mantiene el armado de la formación dentro del modo elegido en el lobby.
+// Uso: contenido del lobby para Fútbol 11. Cada persona arma su formación en su propio estado.
 function Fulbo11Game() {
   const { modo, sala, enviarProgreso, marcarPartidaTerminada } = useGameSession();
 
@@ -56,7 +58,8 @@ function Fulbo11Game() {
     "Seleccioná una posición vacía y escribí el nombre del jugador."
   );
 
-  // Inicia o reinicia la partida con la lista de jugadores cargada
+  // Reinicia la formación y sortea un país cuando llega la lista del servidor o se pulsa Reiniciar.
+  // useCallback conserva la misma función entre renders; es un hook de optimización no tratado en el apunte.
   const iniciarJuego = useCallback((listaJugadores) => {
     setEquipo(Array(POSICIONES.length).fill(null));
     setPosicionSeleccionada(null);
@@ -66,7 +69,7 @@ function Fulbo11Game() {
     setMensaje("Seleccioná una posición vacía y escribí el nombre del jugador.");
   }, []);
 
-  // Carga los jugadores desde el backend al montar la página
+  // Pide los jugadores al backend, agrupa duplicados de la trayectoria por id y comienza la partida.
   const cargarJugadores = useCallback(async () => {
     try {
       const respuesta = await fetch(`${URL_API}/jugadores`);
@@ -100,13 +103,12 @@ function Fulbo11Game() {
     }
   }, [iniciarJuego]);
 
+  // Efecto de montaje: inicia la carga en cliente y evita ejecutar la petición durante el render SSR.
   useEffect(() => {
-    // El microtask inicia la carga después de terminar el efecto de montaje.
     Promise.resolve().then(cargarJugadores);
   }, [cargarJugadores]);
 
-  // Avanza a la siguiente ronda sorteando un nuevo país
-  // Pasa a la siguiente posición y sortea un país nuevo.
+  // Prepara la próxima colocación: cambia país y limpia la selección y el campo de texto.
   const siguienteRonda = () => {
     setRonda((prev) => prev + 1);
     setPaisActual(obtenerPaisAleatorio(jugadores));
@@ -114,8 +116,7 @@ function Fulbo11Game() {
     setEntradaJugador("");
   };
 
-  // Maneja el click en cada posición de la cancha
-  // Valida el jugador escrito y lo ubica si cumple país, posición y unicidad.
+  // Valida nombre, país, posición y que el jugador no esté repetido antes de actualizar la formación.
   const seleccionarPosicion = (indice) => {
     const posicion = POSICIONES[indice];
 
@@ -184,12 +185,12 @@ function Fulbo11Game() {
     siguienteRonda();
   };
 
-  // Cálculos derivados para la barra de progreso y contadores
+  // Valores derivados de equipo; no se guardan aparte porque se pueden calcular en cada render.
   const cantidadColocados = equipo.filter(Boolean).length;
   const progreso = Math.round((cantidadColocados / POSICIONES.length) * 100);
   const terminoLaPartida = cantidadColocados === POSICIONES.length;
 
-  // Comparte los espacios ocupados y los nombres que ya aparecen en la formación rival.
+  // En partidas online envía solo el tablero visible. El backend filtra y vuelve a validar estos datos.
   useEffect(() => {
     enviarProgreso({
       jugadoresColocados: cantidadColocados,
@@ -209,7 +210,8 @@ function Fulbo11Game() {
     marcarPartidaTerminada,
   ]);
 
-  // Lista de sugerencias autocompletadas (máximo 12)
+  // Filtra sugerencias por texto y país; useMemo reutiliza el resultado si sus datos no cambiaron.
+  // useMemo es un hook de optimización que no aparece en los apuntes.
   const sugerencias = useMemo(() => {
     const valor = normalizarTexto(entradaJugador);
     if (!valor) return [];
@@ -224,7 +226,7 @@ function Fulbo11Game() {
       .slice(0, 12);
   }, [entradaJugador, jugadores, paisActual]);
 
-  // Renderiza los botones de un grupo específico de la cancha
+  // Genera los botones de un sector de la cancha y conecta cada uno con su índice de posición.
   const renderFilaGrupo = (nombreGrupo) => {
     return POSICIONES.map((posicion, indice) => {
       if (posicion.grupo !== nombreGrupo) return null;
@@ -331,7 +333,7 @@ function Fulbo11Game() {
   );
 }
 
-// Presenta la elección de modo antes de sortear los jugadores y el país de la partida.
+// Ruta /fulbo11: GameLobby pide primero el modo y mantiene montada la conexión durante la partida.
 export default function Fulbo11Page() {
   return (
     <GameLobby game="futbol11">

@@ -6,13 +6,13 @@ import "../global.css";
 
 const API_URL = "http://localhost:4000";
 
-// Comprueba el formato básico de correo antes de enviar el formulario.
+// Validación de interfaz: evita enviar un correo sin el formato básico esperado.
 function validateEmail(email) {
   const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return re.test(email);
 }
 
-// Aplica el mínimo de caracteres que exige el formulario de registro.
+// Validación de interfaz; el servidor también debe validar cualquier dato recibido.
 function validatePassword(password) {
   return password.length >= 6;
 }
@@ -32,19 +32,20 @@ export default function LoginPage() {
   // Estado para mostrar mensajes de error o éxito
   const [modalInfo, setModalInfo] = useState({ titulo: "", mensaje: "" });
 
-  // Conserva en el navegador solo los datos públicos que necesita la interfaz.
+  // Guarda solo el identificador y el nombre para que la interfaz los lea entre rutas.
+  // La sesión autenticada real la conserva la cookie HTTP que entrega el backend.
   const guardarUsuarioLocal = (usuario) => {
     localStorage.setItem("usuarioId", usuario.id);
     localStorage.setItem("usuarioNombre", usuario.name);
   };
 
-  // Alterna entre Login y Registro limpiando los mensajes previos
+  // Cambia el formulario visible y borra el mensaje de la operación anterior.
   const cambiarModo = () => {
     setEsRegistro((prev) => !prev);
     setModalInfo({ titulo: "", mensaje: "" });
   };
 
-  // Envía las credenciales al backend; las contraseñas no se descargan al navegador.
+  // Envía email y contraseña por POST. `credentials: include` permite guardar la cookie de sesión.
   const loginUsuario = async (e) => {
     e.preventDefault();
 
@@ -64,6 +65,7 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
 
+      // Lee el JSON de respuesta tanto si el servidor acepta como si rechaza las credenciales.
       const usuario = await response.json();
       if (response.ok) {
         setModalInfo({
@@ -89,7 +91,7 @@ export default function LoginPage() {
     }
   };
 
-  // Crea la cuenta y después inicia sesión para guardar la sesión del servidor.
+  // Registra en la base y, si sale bien, hace login para obtener la cookie de sesión.
   const registrarUsuario = async (e) => {
     e.preventDefault();
 
@@ -129,6 +131,7 @@ export default function LoginPage() {
         }),
       });
 
+      // Este endpoint responde texto plano; el endpoint /login posterior responde JSON.
       const msj = await response.text();
 
       if (msj === "El usuario ya existe") {
@@ -137,6 +140,7 @@ export default function LoginPage() {
           mensaje: "Este correo electrónico ya está registrado.",
         });
       } else if (msj === "Usuario registrado") {
+        // El registro no crea una sesión automáticamente; por eso se validan las credenciales aquí.
         const respuestaLogin = await fetch(`${API_URL}/login`, {
           method: "POST",
           credentials: "include",

@@ -1,7 +1,8 @@
 "use client";
-// Ventana modal que se abre, se cierra y bloquea el click de fondo.
+// Ventana modal genérica; la ruta /login actual muestra su propio cartel y aún no importa este componente.
 
 export default function Modal({ abierto, titulo, children, onCerrar }) {
+  // Si está cerrada no genera nodos; si está abierta, el clic interno no se propaga al fondo.
   if (!abierto) return null;
   return (
     <div className="modal-fondo" onClick={onCerrar}>

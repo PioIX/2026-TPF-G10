@@ -1,5 +1,4 @@
-//CellSearchPanel es el panel que aparece debajo de la grilla del juego Grid cuando tocás una celda, para que busques y pruebes al jugador que va ahí.
-//es el panel que aparece debajo de la grilla del juego Grid cuando tocás una celda, para que busques y pruebes al jugador que va ahí.
+// Panel preparado para el Grid: la página actual todavía tiene el buscador dentro de grid/page.js.
 "use client";
 // Panel de búsqueda para responder una celda seleccionada del Grid.
 import { useState } from "react";
@@ -7,7 +6,7 @@ import AutocompleteInput from "./AutocompleteInput";
 import Button from "./Button";
 import Message from "./Message";
 
-// Panel que aparece debajo del Grid al tocar una celda (reemplaza a #results).
+// Si se integra, muestra la celda activa, su lista de respuestas válidas y el resultado del intento.
 // opciones: nombres completos de los jugadores válidos para esa celda.
 export default function CellSearchPanel({ fila, columna, opciones, onProbar, feedback }) {
   const [txt, setTxt] = useState("");

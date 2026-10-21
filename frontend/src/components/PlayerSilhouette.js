@@ -1,8 +1,7 @@
-// Muestra la foto del jugador oscurecida hasta revelar su identidad.
-// Silueta del jugador secreto: oscura hasta que se revela.
+// Silueta reutilizable de jugador; la ruta de Adivina el jugador actual renderiza la imagen directamente.
 import Image from "next/image";
 
-// Mantiene la foto tapada hasta que el juego revela la identidad.
+// Solo presenta la foto; el estado revelado llega como prop desde la lógica de la partida.
 export default function PlayerSilhouette({ imagen, revelado = false }) {
   return (
     <div className="silueta">

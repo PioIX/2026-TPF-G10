@@ -8,6 +8,7 @@ import GameLobby, { useGameSession } from "../../components/GameLobby";
 const API_URL = "http://localhost:4000";
 const MAX_INTENTOS = 6;
 
+// Colores acordados con el tablero rival y con la validación del backend.
 const COLOR_CORRECTO = "#4caf50";
 const COLOR_CERCANO = "#f1c40f";
 const COLOR_INCORRECTO = "#7f8c8d";
@@ -18,7 +19,7 @@ const FILAS_TECLADO = [
   ["ENTER", "Z", "X", "C", "V", "B", "N", "M", "BKSP"],
 ];
 
-// Convierte el apellido a letras sin tildes y en mayúsculas.
+// Convierte el apellido en la palabra que se juega: solo letras A-Z, sin tildes.
 function limpiarTexto(texto) {
   return String(texto || "")
     .normalize("NFD")
@@ -27,7 +28,7 @@ function limpiarTexto(texto) {
     .toUpperCase();
 }
 
-// Mantiene la lógica de Wordle separada de la pantalla de elección de modo.
+// Uso: contenido del lobby de Wordle. Cada jugador recibe una palabra secreta sorteada por separado.
 function WordleGame() {
   const { modo, sala, enviarProgreso, marcarPartidaTerminada } = useGameSession();
 
@@ -39,7 +40,7 @@ function WordleGame() {
   const [juegoTerminado, setJuegoTerminado] = useState(false);
   const [mensaje, setMensaje] = useState("Cargando juego...");
 
-  // Inicializa el juego pidiendo los jugadores al backend
+  // Pide jugadores al backend, descarta apellidos que no entren en el tablero y sortea uno.
   const iniciarJuego = useCallback(async () => {
     try {
       const respuesta = await fetch(`${API_URL}/jugadores`);
@@ -79,19 +80,19 @@ function WordleGame() {
     }
   }, []);
 
+  // Carga inicial después del montaje del componente cliente.
   useEffect(() => {
-    // El microtask inicia la carga después de terminar el efecto de montaje.
     Promise.resolve().then(iniciarJuego);
   }, [iniciarJuego]);
 
-  // Determina el color de cada celda al validar la fila
+  // Regla de colores del Wordle: letra en lugar correcto, en otra posición o ausente.
   const colorDeLetra = useCallback((letra, indice) => {
     if (letra === palabraSecreta[indice]) return COLOR_CORRECTO;
     if (palabraSecreta.includes(letra)) return COLOR_CERCANO;
     return COLOR_INCORRECTO;
   }, [palabraSecreta]);
 
-  // Escribir una letra en la posición actual
+  // Actualiza una copia de la matriz para que React detecte el cambio y vuelva a dibujar el tablero.
   const escribirLetra = useCallback(
     (letra) => {
       if (juegoTerminado || !palabraSecreta) return;
@@ -112,7 +113,7 @@ function WordleGame() {
     [juegoTerminado, palabraSecreta, letraActual, intentoActual]
   );
 
-  // Borrar la última letra escrita en la fila actual
+  // Reemplaza la última letra por _ y retrocede el cursor dentro del intento.
   const borrarLetra = useCallback(() => {
     if (juegoTerminado || letraActual === 0) return;
 
@@ -128,7 +129,7 @@ function WordleGame() {
     setLetraActual(indiceABorrar);
   }, [juegoTerminado, letraActual, intentoActual]);
 
-  // Validar el intento cuando se presiona ENTER
+  // Comprueba que la fila esté completa, colorea letras y avanza o finaliza la partida.
   const revisarIntento = useCallback(() => {
     if (juegoTerminado || !palabraSecreta || filas.length === 0) return;
 
@@ -169,7 +170,7 @@ function WordleGame() {
     }
   }, [juegoTerminado, palabraSecreta, filas, intentoActual, colorDeLetra]);
 
-  // Manejador central de teclas (tanto físicas como en pantalla)
+  // Unifica el teclado físico y el teclado dibujado en pantalla en las mismas tres acciones.
   const manejarTecla = useCallback(
     (tecla) => {
       if (tecla === "ENTER") {
@@ -187,7 +188,7 @@ function WordleGame() {
     [revisarIntento, borrarLetra, escribirLetra]
   );
 
-  // Escucha del teclado físico
+  // Efecto de teclado global; la función de limpieza quita el listener al salir de la ruta.
   useEffect(() => {
     const handleKeyDown = (evento) => {
       const tecla = evento.key.toUpperCase();
@@ -214,7 +215,7 @@ function WordleGame() {
   ).length;
   const gano = juegoTerminado && mensaje === "¡Ganaste!";
 
-  // Comparte el tablero ya validado, sin transmitir la palabra secreta.
+  // Publica letras y colores ya revelados; nunca incluye palabraSecreta en el mensaje online.
   useEffect(() => {
     enviarProgreso({
       intentosUsados,
@@ -280,7 +281,7 @@ function WordleGame() {
   );
 }
 
-// Presenta primero la elección individual o por sala; luego monta la partida aleatoria.
+// Ruta /wordle: el lobby elige modo y mantiene viva la misma instancia del minijuego.
 export default function WordlePage() {
   return (
     <GameLobby game="wordle">

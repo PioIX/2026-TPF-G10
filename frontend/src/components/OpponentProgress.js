@@ -8,7 +8,7 @@ const DETALLES_PROGRESO = {
   grid: { campo: "celdasCompletadas", maximo: 9, unidad: "celdas" },
 };
 
-// Muestra un resumen pequeño y permite ampliarlo al terminar la partida propia.
+// Uso: GameLobby lo muestra en online. Dibuja el progreso público correspondiente al minijuego actual.
 export default function OpponentProgress({ game, player, expanded = false, onClose, onExpand }) {
   const definicion = DETALLES_PROGRESO[game];
   const progreso = player && player.progress;

@@ -1,12 +1,11 @@
-//GridBoard dibuja el tablero del Grid: clubes arriba, países a la izquierda y nueve celdas. Cada celda es un botón con un signo de pregunta, y al acertar muestra la foto y el apellido del jugador. Las imágenes se piden a TheSportsDB con un hook propio que guarda los resultados en caché. El componente solo dibuja; cuando se toca una celda avisa a la página con onCelda, y la página decide qué hacer.”
-//dibuja el tablero del juego Grid: una grilla de 4x4 con los clubes arriba, los países a la izquierda y 9 celdas para responder. 
+// Tablero preparado para Grid; grid/page.js hoy dibuja una versión propia y no importa este archivo.
 "use client";
 // Dibuja la grilla, sus encabezados y las celdas de respuesta.
 import { Fragment } from "react";
 import Image from "next/image";
 import useSportsDbImage from "@/hooks/useSportsDbImage";
 
-// Encabezado de columna: muestra el escudo del club y su nombre.
+// Subcomponente: obtiene y muestra el escudo y nombre de un club.
 function EncabezadoEquipo({ nombre }) {
   const escudo = useSportsDbImage("team", nombre);
   return (
@@ -17,7 +16,7 @@ function EncabezadoEquipo({ nombre }) {
   );
 }
 
-// Celda individual: permite responder o muestra al jugador ya acertado.
+// Subcomponente: muestra ? hasta acertar y luego consulta/enseña la foto y el apellido.
 function CeldaJugador({ encontrado, onClick }) {
   const foto = useSportsDbImage("player", encontrado ? `${encontrado.nombre} ${encontrado.apellido}` : "");
   if (!encontrado) {
@@ -31,7 +30,7 @@ function CeldaJugador({ encontrado, onClick }) {
   );
 }
 
-// columnas: nombres de equipos (arriba, con escudo). filas: nombres de países (izquierda).
+// Props: columnas (equipos), filas (países), celdas resueltas y callback al tocar una celda.
 // celdas: matriz 3x3 con { nombre, apellido } del jugador acertado o null.
 export default function GridBoard({ columnas, filas, celdas, onCelda }) {
   return (

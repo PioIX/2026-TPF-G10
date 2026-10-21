@@ -6,8 +6,9 @@ import "../global.css";
 
 const API_URL = "http://localhost:4000";
 
-// Busca el identificador recién asignado al jugador en la respuesta del backend.
+// Uso: apoyo del alta de jugador en /admin. Busca el ID porque el POST actual responde solo un texto.
 function buscarId(jugadores, nombre, apellido, idEquipo) {
+  // Recorre al revés para preferir una fila reciente si la respuesta contiene varias trayectorias.
   for (let i = jugadores.length - 1; i >= 0; i--) {
     const j = jugadores[i];
     if (
@@ -22,19 +23,20 @@ function buscarId(jugadores, nombre, apellido, idEquipo) {
 }
 
 export default function AdminPage() {
-  // Administra formularios, trayectorias y mensajes de respuesta de las altas.
+  // Uso: página /admin. Registra jugadores y clubes; useSocket escucha avisos de cambios del servidor.
   const { socket, isConnected } = useSocket("ws://localhost:4000");
 
-  // Estados para mensajes
+  // Mensajes de resultado que se muestran bajo cada formulario.
   const [msgJugador, setMsgJugador] = useState("");
   const [msgClubes, setMsgClubes] = useState("");
 
-  // Estado del formulario de Jugador Completo
+  // Valores de los inputs de jugador, Datos y Estadisticas, que son tablas relacionadas.
   const [jugadorForm, setJugadorForm] = useState({
     nombre: "",
     apellido: "",
     pais: "",
     posicion: "",
+    liga_actual: "",
     dorsal_equipo: "",
     dorsal_seleccion: "",
     valor_mercado: "",
@@ -50,12 +52,12 @@ export default function AdminPage() {
     titulos_individuales: "",
   });
 
-  // Estado para las filas dinámicas de Trayectoria
+  // Cada elemento representa una fila editable de la tabla Trayectoria.
   const [trayectorias, setTrayectorias] = useState([
     { anio_traspaso: "", anio_ingreso: "" },
   ]);
 
-  // Estado del formulario de Clubes
+  // Valores que se envían a la tabla Equipos.
   const [clubForm, setClubForm] = useState({
     nombre_equipo: "",
     anio_creacion: "",
@@ -69,7 +71,7 @@ export default function AdminPage() {
     estadio: "",
   });
 
-  // Escucha de eventos por WebSocket
+  // Se suscribe a avisos del backend y quita los listeners al cambiar conexión o desmontar.
   useEffect(() => {
     if (!socket || !isConnected) return;
 
@@ -89,7 +91,7 @@ export default function AdminPage() {
     };
   }, [socket, isConnected]);
 
-  // Manejadores de cambios en inputs
+  // Actualizan el input cuyo atributo name coincide con una propiedad del estado.
   const handleJugadorChange = (e) => {
     const { name, value } = e.target;
     setJugadorForm((prev) => ({ ...prev, [name]: value }));
@@ -102,20 +104,23 @@ export default function AdminPage() {
     );
   };
 
+  // Agrega una fila editable copiando el arreglo anterior para respetar el estado inmutable de React.
   const agregarFilaTrayectoria = () => {
     setTrayectorias((prev) => [...prev, { anio_traspaso: "", anio_ingreso: "" }]);
   };
 
+  // Quita la fila seleccionada y conserva las demás.
   const quitarFilaTrayectoria = (index) => {
     setTrayectorias((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // Actualiza un campo del formulario de Equipos.
   const handleClubChange = (e) => {
     const { name, value } = e.target;
     setClubForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Submit de Jugador Completo
+  // Primero crea Jugadores; después usa su ID para enviar Datos, Estadisticas y Trayectoria.
   const handleSubmitJugador = async (e) => {
     e.preventDefault();
     setMsgJugador("Creando...");
@@ -125,7 +130,9 @@ export default function AdminPage() {
       apellido: jugadorForm.apellido,
       pais: jugadorForm.pais,
       posicion: jugadorForm.posicion,
-      poisicion: jugadorForm.posicion, // Enviamos ambos por el typo "poisicion" en el backend
+      liga_actual: jugadorForm.liga_actual,
+      // Alias antiguo que el backend ignora; se conserva mientras el formulario usa `posicion`.
+      poisicion: jugadorForm.posicion,
       dorsal_equipo: Number(jugadorForm.dorsal_equipo) || 0,
       dorsal_seleccion: Number(jugadorForm.dorsal_seleccion) || 0,
       valor_mercado: Number(jugadorForm.valor_mercado) || 0,
@@ -184,6 +191,8 @@ export default function AdminPage() {
 
       setMsgJugador("Guardando datos...");
 
+      // Promise.all espera juntas las altas HTTP de Datos, Estadisticas y Trayectoria.
+      // Es una herramienta de JavaScript para coordinar promesas, no desarrollada en el apunte.
       const promesas = [
         fetch(`${API_URL}/datos`, {
           method: "POST",
@@ -216,6 +225,7 @@ export default function AdminPage() {
           apellido: "",
           pais: "",
           posicion: "",
+          liga_actual: "",
           dorsal_equipo: "",
           dorsal_seleccion: "",
           valor_mercado: "",
@@ -238,7 +248,7 @@ export default function AdminPage() {
     }
   };
 
-  // Submit de Clubes
+  // Envía un alta de Equipo y limpia el formulario si el servidor responde correctamente.
   const handleSubmitClubes = async (e) => {
     e.preventDefault();
     setMsgClubes("Guardando...");
@@ -273,6 +283,7 @@ export default function AdminPage() {
 
   return (
     <main style={{ padding: "20px", maxWidth: "800px", width: "100%" }}>
+      {/* El primer formulario guarda al jugador y después completa sus tablas relacionadas. */}
       <h1>Panel de Administración</h1>
       <p>
         Bienvenido, administrador.{" "}
@@ -287,6 +298,7 @@ export default function AdminPage() {
           <input type="text" name="apellido" placeholder="Apellido" value={jugadorForm.apellido} onChange={handleJugadorChange} required />
           <input type="text" name="pais" placeholder="País" value={jugadorForm.pais} onChange={handleJugadorChange} required />
           <input type="text" name="posicion" placeholder="Posición" value={jugadorForm.posicion} onChange={handleJugadorChange} required />
+          <input type="text" name="liga_actual" placeholder="Liga actual" value={jugadorForm.liga_actual} onChange={handleJugadorChange} required />
           <input type="number" name="dorsal_equipo" placeholder="Dorsal equipo" value={jugadorForm.dorsal_equipo} onChange={handleJugadorChange} required />
           <input type="number" name="dorsal_seleccion" placeholder="Dorsal selección" value={jugadorForm.dorsal_seleccion} onChange={handleJugadorChange} required />
           <input type="number" name="valor_mercado" placeholder="Valor de mercado" value={jugadorForm.valor_mercado} onChange={handleJugadorChange} required />
@@ -305,6 +317,7 @@ export default function AdminPage() {
           <input type="number" name="titulos_seleccion" placeholder="Títulos selección" value={jugadorForm.titulos_seleccion} onChange={handleJugadorChange} required />
           <input type="number" name="titulos_individuales" placeholder="Títulos individuales" value={jugadorForm.titulos_individuales} onChange={handleJugadorChange} required />
 
+          {/* Las filas dinámicas representan los clubes por los que pasó el jugador. */}
           <h3>Trayectoria</h3>
           <p>
             La trayectoria representa la relación muchos a muchos entre jugador y
@@ -349,6 +362,7 @@ export default function AdminPage() {
         </form>
       </section>
 
+      {/* Este formulario crea registros independientes en Equipos. */}
       <section style={{ marginTop: "30px" }}>
         <h2>Clubes</h2>
         <form id="form-clubes" onSubmit={handleSubmitClubes}>

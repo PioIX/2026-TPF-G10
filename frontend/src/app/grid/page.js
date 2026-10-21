@@ -10,11 +10,11 @@ const BACKEND = "http://localhost:4000";
 const MINIMO_JUGADORES = 3;
 const MAXIMOS_INTENTOS = 1000;
 
-// Caché en memoria para no repetir peticiones a TheSportsDB
+// Cachés en memoria de imágenes externas; evitan pedir de nuevo el mismo recurso mientras viva la página.
 const cacheFotosJugadores = {};
 const cacheFotosEquipos = {};
 
-// Normaliza nombres de países y clubes antes de comparar o formar claves.
+// Normaliza países y clubes para que una tilde o diferencia de mayúsculas no rompa una coincidencia.
 function normalizarTexto(texto) {
   return String(texto || "")
     .normalize("NFD")
@@ -33,7 +33,7 @@ function mezclarArray(array) {
   return nuevoArray;
 }
 
-// Agrupa los clubes registrados para cada jugador.
+// Crea un índice jugador -> clubes. Set guarda clubes únicos; es una colección nativa de JS.
 function crearEquiposJugador(trayectorias) {
   const equiposJugador = {};
   trayectorias.forEach(({ id_jugador, id_equipo }) => {
@@ -43,7 +43,7 @@ function crearEquiposJugador(trayectorias) {
   return equiposJugador;
 }
 
-// Indexa los jugadores por combinación país-club para consultar cada celda.
+// Crea un índice país-club -> jugadores; así se consulta una celda sin volver a recorrer toda la lista.
 function crearConexiones(jugadores, equiposJugador) {
   const conexiones = {};
   jugadores.forEach((j) => {
@@ -64,7 +64,7 @@ function crearConexiones(jugadores, equiposJugador) {
   return conexiones;
 }
 
-// Obtiene una lista única de países disponibles en los datos.
+// Obtiene una lista única de países con Set, sin repetir mayúsculas ni tildes equivalentes.
 function obtenerPaises(jugadores) {
   const vistos = new Set();
   const paises = [];
@@ -83,7 +83,7 @@ function obtenerJugadoresCelda(pais, equipo, conexiones) {
   return conexiones[`${normalizarTexto(pais.nombre)}_${equipo.id}`] || [];
 }
 
-// Descarta países que no permitan completar suficientes columnas.
+// Deja países que tengan al menos tres respuestas posibles entre todos los equipos candidatos.
 function filtrarPaises(paises, equipos, conexiones) {
   return paises.filter((pais) => {
     let cantidadConexiones = 0;
@@ -99,7 +99,7 @@ function filtrarPaises(paises, equipos, conexiones) {
   });
 }
 
-// Descarta equipos que no permitan completar suficientes filas.
+// Deja equipos que tengan al menos tres respuestas posibles entre los países candidatos.
 function filtrarEquipos(paises, equipos, conexiones) {
   return equipos.filter((equipo) => {
     let cantidadConexiones = 0;
@@ -115,7 +115,7 @@ function filtrarEquipos(paises, equipos, conexiones) {
   });
 }
 
-// Confirma que las nueve combinaciones tengan respuestas disponibles.
+// Revisa las 9 celdas antes de aceptar una combinación aleatoria de filas y columnas.
 function validarGrilla(paises, equipos, conexiones) {
   for (let f = 0; f < 3; f++) {
     for (let c = 0; c < 3; c++) {
@@ -145,7 +145,7 @@ function crearDatosGrilla(paises, equipos, conexiones) {
   return jugadoresPorCelda;
 }
 
-// Busca una combinación aleatoria de tres países y tres equipos válida.
+// Prueba combinaciones al azar hasta hallar una grilla completa o agotar el límite de intentos.
 function buscarGrilla(paises, equipos, conexiones) {
   const paisesDisponibles = filtrarPaises(paises, equipos, conexiones);
   const equiposDisponibles = filtrarEquipos(
@@ -171,6 +171,7 @@ function buscarGrilla(paises, equipos, conexiones) {
   return null;
 }
 
+// Consulta TheSportsDB, una API externa de imágenes; guarda éxitos para no repetir la misma búsqueda.
 async function consultarAPI(url, claveCache, propiedadDato) {
   const cache =
     propiedadDato === "player" ? cacheFotosJugadores : cacheFotosEquipos;
@@ -192,7 +193,7 @@ async function consultarAPI(url, claveCache, propiedadDato) {
   return "";
 }
 
-// Mantiene la grilla aleatoria dentro de la sala o la partida individual elegida.
+// Uso: contenido del lobby del Grid. Construye una grilla propia para cada jugador.
 function GridGame() {
   const { modo, sala, enviarProgreso, marcarPartidaTerminada } = useGameSession();
 
@@ -205,6 +206,7 @@ function GridGame() {
   const [busqueda, setBusqueda] = useState("");
   const [respuestaFeed, setRespuestaFeed] = useState("");
 
+  // Obtiene los datos relacionales y sortea 3 países x 3 equipos con respuestas disponibles.
   const cargarGrilla = useCallback(async () => {
     try {
       setError("");
@@ -267,11 +269,12 @@ function GridGame() {
     }
   }, []);
 
+  // Carga inicial en el navegador una vez montado el juego.
   useEffect(() => {
-    // El microtask inicia la carga después de terminar el efecto de montaje.
     Promise.resolve().then(cargarGrilla);
   }, [cargarGrilla]);
 
+  // Selecciona una celda sin permitir volver a contestar las ya resueltas.
   const seleccionarCelda = (fila, col) => {
     const clave = `r${fila}_c${col}`;
     if (celdasReveladas[clave]) return; // Si ya fue adivinada, no hacer nada
@@ -280,6 +283,7 @@ function GridGame() {
     setRespuestaFeed("");
   };
 
+  // Busca la respuesta escrita entre los jugadores válidos y obtiene una foto si acertó.
   const comprobarJugador = async () => {
     if (!celdaActiva || !grilla) return;
 
@@ -329,7 +333,7 @@ function GridGame() {
   const celdasCompletadas = Object.keys(celdasReveladas).length;
   const terminoLaPartida = Boolean(grilla && celdasCompletadas === 9);
 
-  // Comparte filas, columnas y respuestas reveladas, pero no las respuestas posibles.
+  // En online publica encabezados y aciertos. No manda la lista de respuestas válidas de cada celda.
   useEffect(() => {
     enviarProgreso({
       celdasCompletadas,
@@ -490,7 +494,7 @@ function GridGame() {
   );
 }
 
-// Ofrece el modo individual o por sala antes de crear la grilla aleatoria.
+// Ruta /grid: el lobby debe quedar montado para conservar la conexión al pasar del menú al juego.
 export default function GridPage() {
   return (
     <GameLobby game="grid">

@@ -1,10 +1,11 @@
 "use client";
-// Teclado en pantalla que comunica cada tecla a la lógica del Wordle.
+// Teclado preparado para Wordle; la ruta activa genera sus teclas directamente en wordle/page.js.
 
 const FILAS = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"];
 
 // usadas: { A: "ok" | "cerca" | "no" } para pintar las teclas
 export default function Keyboard({ onTecla, usadas = {} }) {
+  // Cada tecla delega su acción a onTecla; el padre conserva el estado y los colores ya descubiertos.
   return (
     <div className="teclado">
       {FILAS.map((fila, i) => (

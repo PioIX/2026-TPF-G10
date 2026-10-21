@@ -1,6 +1,5 @@
-//“DifficultyBadge muestra el nivel de dificultad con pelotas de fútbol. Recibe el nivel y el máximo, y genera una pelota por cada nivel posible; las que superan el nivel actual se ven con baja opacidad. Es un componente puramente visual, sin estado.”
-//DifficultyBadge es una insignia de dificultad: dibuja una fila de pelotas ⚽ y atenúa las que no cuentan, por ejemplo ⚽⚽ más una pelota opaca. esta en adivinaeljugador
-// Representa el nivel de dificultad con una cantidad variable de pelotas.
+// Insignia visual preparada para Adivina el jugador; hoy la página muestra tres pelotas fijas.
+// Dibuja una pelota por nivel y atenúa las que quedan fuera de la dificultad elegida.
 export default function DifficultyBadge({ nivel = 1, max = 3 }) {
   return (
     <div className="dificultad" aria-label={`Dificultad ${nivel} de ${max}`}>

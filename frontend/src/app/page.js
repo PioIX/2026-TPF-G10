@@ -1,9 +1,10 @@
 "use client"
+// Ruta inicial de Next.js. No consulta datos: presenta el juego y enlaza con el acceso.
 import Link from "next/link";
 import Image from "next/image";
 import "./global.css";
 
-// Presentación inicial: explica el proyecto y dirige al usuario al login.
+// Uso: se muestra en /. El enlace de Next cambia de ruta sin recargar toda la página.
 export default function HomePage() {
   return (
     <main className="portada">
