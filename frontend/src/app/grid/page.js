@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import "../global.css";
+import GameLobby, { useGameSession } from "../../components/GameLobby";
 
 const BACKEND = "http://localhost:4000";
 const MINIMO_JUGADORES = 3;
@@ -191,7 +192,10 @@ async function consultarAPI(url, claveCache, propiedadDato) {
   return "";
 }
 
-export default function GridPage() {
+// Mantiene la grilla aleatoria dentro de la sala o la partida individual elegida.
+function GridGame() {
+  const { modo, sala, enviarProgreso, marcarPartidaTerminada } = useGameSession();
+
   // Conserva grilla aleatoria, respuestas reveladas, celda activa y estado de carga.
   const [grilla, setGrilla] = useState(null);
   const [error, setError] = useState("");
@@ -322,6 +326,35 @@ export default function GridPage() {
     : null;
   const jugadoresCeldaActiva =
     (claveActiva && grilla?.jugadores[claveActiva]) || [];
+  const celdasCompletadas = Object.keys(celdasReveladas).length;
+  const terminoLaPartida = Boolean(grilla && celdasCompletadas === 9);
+
+  // Comparte filas, columnas y respuestas reveladas, pero no las respuestas posibles.
+  useEffect(() => {
+    enviarProgreso({
+      celdasCompletadas,
+      puntaje: celdasCompletadas,
+      terminado: terminoLaPartida,
+      filas: grilla ? grilla.filas.map((fila) => fila.nombre) : [],
+      columnas: grilla ? grilla.columnas.map((columna) => columna.nombre) : [],
+      celdasReveladas: Object.fromEntries(
+        Object.entries(celdasReveladas).map(([clave, celda]) => [
+          clave,
+          celda.apellido,
+        ])
+      ),
+    });
+    if (terminoLaPartida) marcarPartidaTerminada();
+  }, [
+    celdasCompletadas,
+    celdasReveladas,
+    grilla,
+    terminoLaPartida,
+    modo,
+    sala?.status,
+    enviarProgreso,
+    marcarPartidaTerminada,
+  ]);
 
   return (
     <>
@@ -454,5 +487,14 @@ export default function GridPage() {
         )}
       </div>
     </>
+  );
+}
+
+// Ofrece el modo individual o por sala antes de crear la grilla aleatoria.
+export default function GridPage() {
+  return (
+    <GameLobby game="grid">
+      <GridGame />
+    </GameLobby>
   );
 }

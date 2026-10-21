@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import "../global.css";
+import GameLobby, { useGameSession } from "../../components/GameLobby";
 
 const URL_API = "http://localhost:4000";
 
@@ -40,7 +41,10 @@ function obtenerPaisAleatorio(listaJugadores) {
   return paises[Math.floor(Math.random() * paises.length)];
 }
 
-export default function Fulbo11Page() {
+// Mantiene el armado de la formación dentro del modo elegido en el lobby.
+function Fulbo11Game() {
+  const { modo, sala, enviarProgreso, marcarPartidaTerminada } = useGameSession();
+
   // Guarda el plantel, el país activo, la posición seleccionada y los mensajes.
   const [jugadores, setJugadores] = useState([]);
   const [equipo, setEquipo] = useState(Array(POSICIONES.length).fill(null));
@@ -183,6 +187,27 @@ export default function Fulbo11Page() {
   // Cálculos derivados para la barra de progreso y contadores
   const cantidadColocados = equipo.filter(Boolean).length;
   const progreso = Math.round((cantidadColocados / POSICIONES.length) * 100);
+  const terminoLaPartida = cantidadColocados === POSICIONES.length;
+
+  // Comparte los espacios ocupados y los nombres que ya aparecen en la formación rival.
+  useEffect(() => {
+    enviarProgreso({
+      jugadoresColocados: cantidadColocados,
+      terminado: terminoLaPartida,
+      formacion: equipo.map((jugador) => (jugador ? jugador.nombre : "")),
+      paisActual,
+    });
+    if (terminoLaPartida) marcarPartidaTerminada();
+  }, [
+    cantidadColocados,
+    equipo,
+    paisActual,
+    terminoLaPartida,
+    modo,
+    sala?.status,
+    enviarProgreso,
+    marcarPartidaTerminada,
+  ]);
 
   // Lista de sugerencias autocompletadas (máximo 12)
   const sugerencias = useMemo(() => {
@@ -303,5 +328,14 @@ export default function Fulbo11Page() {
         </div>
       </div>
     </>
+  );
+}
+
+// Presenta la elección de modo antes de sortear los jugadores y el país de la partida.
+export default function Fulbo11Page() {
+  return (
+    <GameLobby game="futbol11">
+      <Fulbo11Game />
+    </GameLobby>
   );
 }

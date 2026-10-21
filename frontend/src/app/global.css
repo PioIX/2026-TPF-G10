@@ -1121,3 +1121,335 @@ a.btn:hover {
         grid-template-columns: 1fr;
     }
 }
+
+/* Entrada a cada juego: el desafío se carga después de elegir un modo. */
+.lobbyJuego {
+    display: grid;
+    place-items: center;
+    width: min(680px, 94%);
+    min-height: 55vh;
+    margin: 24px auto 48px;
+}
+
+.lobbyTarjeta {
+    width: 100%;
+    padding: clamp(22px, 5vw, 42px);
+    color: var(--color-texto);
+    background: linear-gradient(145deg, rgba(8, 36, 20, 0.94), rgba(15, 63, 35, 0.88));
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 24px;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.32);
+}
+
+.lobbyEtiqueta {
+    margin-bottom: 8px;
+    color: var(--color-boton);
+    font-size: 0.76rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.lobbyTarjeta h2 {
+    margin-bottom: 12px;
+    font-size: clamp(1.6rem, 4vw, 2.3rem);
+}
+
+.lobbyTarjeta > p:not(.lobbyEtiqueta),
+.estadoConexion,
+.avisoSocket,
+.errorSocket {
+    line-height: 1.5;
+}
+
+.lobbyAcciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 24px 0;
+}
+
+.lobbyAcciones button,
+.lobbyUnirse button,
+.codigoSalaCompartir button,
+.botonSecundarioLobby,
+.barraSesionOnline button,
+.botonCerrarEspectador,
+.botonAmpliarProgreso {
+    min-height: 44px;
+    padding: 10px 18px;
+    color: var(--color-texto-oscuro);
+    background: var(--color-boton);
+    border: 0;
+    border-radius: 12px;
+    font: inherit;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.lobbyAcciones button:hover,
+.lobbyUnirse button:hover,
+.codigoSalaCompartir button:hover,
+.barraSesionOnline button:hover,
+.botonAmpliarProgreso:hover {
+    background: var(--color-boton-hover);
+}
+
+.lobbyAcciones button:disabled,
+.lobbyUnirse button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.lobbyUnirse {
+    display: grid;
+    gap: 8px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.lobbyUnirse > div {
+    display: flex;
+    gap: 10px;
+}
+
+.lobbyUnirse input {
+    min-width: 0;
+    flex: 1;
+    padding: 11px 13px;
+    color: var(--color-texto-oscuro);
+    border: 1px solid rgba(255, 255, 255, 0.38);
+    border-radius: 10px;
+    font: inherit;
+    text-transform: uppercase;
+}
+
+.estadoConexion {
+    margin-top: 16px;
+    color: rgba(255, 255, 255, 0.76);
+    font-size: 0.9rem;
+}
+
+.codigoSalaCompartir {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin: 20px 0 12px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 14px;
+}
+
+.codigoSalaCompartir strong {
+    color: var(--color-boton);
+    font-size: clamp(1.6rem, 6vw, 2.3rem);
+    letter-spacing: 0.18em;
+}
+
+.botonSecundarioLobby {
+    margin-top: 20px;
+    color: var(--color-texto);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.errorSocket {
+    margin-top: 14px;
+    color: #fecaca;
+}
+
+.avisoSocket {
+    width: min(1100px, 94%);
+    margin: 12px auto;
+    color: #fef3c7;
+}
+
+/* Barra superior para compartir el código y salir de una partida online. */
+.sesionJuego {
+    width: 100%;
+}
+
+.barraSesionOnline {
+    position: sticky;
+    z-index: 10;
+    top: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: min(1100px, 94%);
+    margin: 8px auto 16px;
+    padding: 10px 14px;
+    color: var(--color-texto);
+    background: rgba(7, 35, 18, 0.94);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 14px;
+    backdrop-filter: blur(10px);
+}
+
+/* Panel compacto de seguimiento que permanece a la vista durante la partida. */
+.panelProgresoRival {
+    position: fixed;
+    z-index: 20;
+    right: 18px;
+    bottom: 18px;
+    display: grid;
+    gap: 10px;
+    width: min(340px, calc(100vw - 28px));
+    max-height: 58vh;
+    overflow: auto;
+    padding: 16px;
+    color: var(--color-texto);
+    background: rgba(8, 32, 19, 0.97);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 18px;
+    box-shadow: 0 18px 55px rgba(0, 0, 0, 0.38);
+}
+
+.panelProgresoCabecera {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.panelProgresoCabecera h2 {
+    font-size: 1.15rem;
+}
+
+.panelProgresoRival > p {
+    line-height: 1.45;
+}
+
+.barraProgresoRival {
+    height: 9px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+}
+
+.barraProgresoRival > div {
+    height: 100%;
+    background: var(--color-boton);
+    border-radius: inherit;
+    transition: width 180ms ease;
+}
+
+.botonAmpliarProgreso {
+    min-height: 38px;
+    padding: 8px 12px;
+    font-size: 0.84rem;
+}
+
+.botonCerrarEspectador {
+    color: var(--color-texto);
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.etiquetaEspectador {
+    padding: 7px 10px;
+    color: var(--color-texto-oscuro);
+    background: var(--color-boton);
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 800;
+}
+
+/* Al terminar, amplía el resumen del rival hasta ocupar casi toda la pantalla. */
+.panelProgresoRivalAmpliado {
+    inset: 0;
+    width: 100%;
+    max-height: 100vh;
+    padding: clamp(22px, 5vw, 56px);
+    border: 0;
+    border-radius: 0;
+    background: radial-gradient(circle at top, #165c34, #071c10 72%);
+}
+
+.panelProgresoRivalAmpliado > * {
+    width: min(900px, 100%);
+    margin-right: auto;
+    margin-left: auto;
+}
+
+.tableroRival,
+.historialRival,
+.formacionRival,
+.grillaRival {
+    display: grid;
+    gap: 8px;
+    width: 100%;
+    margin-top: 8px;
+}
+
+.filaTableroRival {
+    display: grid;
+    gap: 5px;
+    width: min(100%, 500px);
+}
+
+.celdaTableroRival {
+    display: grid;
+    place-items: center;
+    min-height: 34px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 5px;
+    font-size: 0.82rem;
+    font-weight: 800;
+}
+
+.historialRival ul {
+    display: grid;
+    gap: 6px;
+    padding-left: 20px;
+}
+
+.formacionRival {
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+}
+
+.formacionRival > div,
+.filaGrillaRival > * {
+    padding: 9px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+}
+
+.filaGrillaRival {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.filaGrillaRival > * {
+    overflow-wrap: anywhere;
+    font-size: 0.8rem;
+}
+
+@media (max-width: 600px) {
+    /* Mantiene botones y paneles utilizables en celulares. */
+    .lobbyAcciones,
+    .lobbyUnirse > div,
+    .codigoSalaCompartir,
+    .barraSesionOnline {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .panelProgresoRival {
+        right: 10px;
+        bottom: 10px;
+        width: calc(100vw - 20px);
+        max-height: 48vh;
+    }
+
+    .panelProgresoRivalAmpliado {
+        inset: 0;
+        width: 100%;
+        max-height: 100vh;
+    }
+}
