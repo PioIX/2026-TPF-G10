@@ -1,3 +1,4 @@
+// Lista las preguntas respondidas y permite marcar la respuesta final.
 // respuestas: array de textos (el más nuevo primero), como en adivinaeljugador.js.
 // Los que empiezan con 🏁 se muestran como marcados. Muestra las últimas 10.
 export default function AnswerList({ respuestas, onMarcar, juegoTerminado }) {

@@ -1,4 +1,5 @@
 "use client";
+// Provee campos etiquetados y entrega los valores del formulario como objeto.
 
 export function Field({ label, name, type = "text", required = true, ...rest }) {
   return (

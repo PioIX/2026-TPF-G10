@@ -17,6 +17,7 @@ const FILAS_TECLADO = [
   ["ENTER", "Z", "X", "C", "V", "B", "N", "M", "BKSP"],
 ];
 
+// Convierte el apellido a letras sin tildes y en mayúsculas.
 function limpiarTexto(texto) {
   return String(texto || "")
     .normalize("NFD")
@@ -26,6 +27,7 @@ function limpiarTexto(texto) {
 }
 
 export default function WordlePage() {
+  // El estado contiene la palabra secreta, el tablero y el avance del intento.
   const [palabraSecreta, setPalabraSecreta] = useState("");
   const [filas, setFilas] = useState([]); // Matriz [fila][col] con { letra, color }
   const [intentoActual, setIntentoActual] = useState(0);
@@ -74,15 +76,16 @@ export default function WordlePage() {
   }, []);
 
   useEffect(() => {
-    iniciarJuego();
+    // El microtask inicia la carga después de terminar el efecto de montaje.
+    Promise.resolve().then(iniciarJuego);
   }, [iniciarJuego]);
 
   // Determina el color de cada celda al validar la fila
-  const colorDeLetra = (letra, indice) => {
+  const colorDeLetra = useCallback((letra, indice) => {
     if (letra === palabraSecreta[indice]) return COLOR_CORRECTO;
     if (palabraSecreta.includes(letra)) return COLOR_CERCANO;
     return COLOR_INCORRECTO;
-  };
+  }, [palabraSecreta]);
 
   // Escribir una letra en la posición actual
   const escribirLetra = useCallback(
@@ -160,7 +163,7 @@ export default function WordlePage() {
       setJuegoTerminado(true);
       setMensaje(`Perdiste. La palabra era ${palabraSecreta}`);
     }
-  }, [juegoTerminado, palabraSecreta, filas, intentoActual]);
+  }, [juegoTerminado, palabraSecreta, filas, intentoActual, colorDeLetra]);
 
   // Manejador central de teclas (tanto físicas como en pantalla)
   const manejarTecla = useCallback(

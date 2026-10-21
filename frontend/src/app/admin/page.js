@@ -6,6 +6,7 @@ import "../global.css";
 
 const API_URL = "http://localhost:4000";
 
+// Busca el identificador recién asignado al jugador en la respuesta del backend.
 function buscarId(jugadores, nombre, apellido, idEquipo) {
   for (let i = jugadores.length - 1; i >= 0; i--) {
     const j = jugadores[i];
@@ -21,6 +22,7 @@ function buscarId(jugadores, nombre, apellido, idEquipo) {
 }
 
 export default function AdminPage() {
+  // Administra formularios, trayectorias y mensajes de respuesta de las altas.
   const { socket, isConnected } = useSocket("ws://localhost:4000");
 
   // Estados para mensajes

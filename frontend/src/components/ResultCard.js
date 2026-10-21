@@ -1,3 +1,4 @@
+// Resumen reutilizable del resultado con acciones para reiniciar o volver.
 import Button from "./Button";
 
 // Pantalla de fin de partida, la usan todos los juegos.

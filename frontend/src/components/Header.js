@@ -1,3 +1,4 @@
+// Encabezado de página con título y acceso al menú.
 import Link from "next/link";
 import Title from "./Title";
 

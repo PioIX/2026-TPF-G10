@@ -348,16 +348,49 @@ app.get('/', function(req, res){
 });
 
 // Pedidos GET
+// Devuelve información pública de usuarios, sin enviar contraseñas al navegador.
 app.get('/usuarios', async function(req,res){
     let respuesta;
     if (req.query.id != undefined) {
-        respuesta = await realizarQuery(`SELECT * FROM Usuarios WHERE id_usuarios=${req.query.id}`)
+        respuesta = await realizarQuery(`SELECT id_usuario, usuario AS name, email FROM Usuarios WHERE id_usuario=${req.query.id}`)
     } else {
-        respuesta = await realizarQuery("SELECT * FROM Usuarios");
+        // Los datos públicos no incluyen la contraseña almacenada en la tabla.
+        respuesta = await realizarQuery("SELECT id_usuario, usuario AS name, email FROM Usuarios");
     }    
     res.send(respuesta);
 })
 
+// Valida las credenciales en el servidor y guarda el usuario en la sesión HTTP.
+app.post('/login', async function(req, res) {
+    try {
+        const usuarios = await realizarQuery("SELECT id_usuario, usuario AS name, email, contraseña AS password FROM Usuarios") || [];
+        const usuario = usuarios.find((fila) => (
+            fila.email === req.body.email && fila.password === req.body.password
+        ));
+
+        if (!usuario) {
+            return res.status(401).json({ error: 'Correo o contraseña incorrectos.' });
+        }
+
+        req.session.user = {
+            id: usuario.id_usuario,
+            name: usuario.name,
+            email: usuario.email
+        };
+
+        return req.session.save((error) => {
+            if (error) {
+                return res.status(500).json({ error: 'No se pudo iniciar la sesión.' });
+            }
+            return res.json(req.session.user);
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: 'Error al validar las credenciales.' });
+    }
+});
+
+// Consulta datos personales, estadísticas y clubes vinculados a un jugador.
 app.get('/datos', async function(req,res){
     // Nota: Tenías dos rutas '/datos'. Dejé esta que parece ser la "completa" con INNER JOIN
     let respuesta;
@@ -369,16 +402,18 @@ app.get('/datos', async function(req,res){
     res.send(respuesta);
 })
 
+// Devuelve estadísticas individuales o las de todos los jugadores.
 app.get('/estadisticas', async function(req,res){
     let respuesta;
     if (req.query.id != undefined) {
-        respuesta = await realizarQuery(`SELECT * FROM Estadisticas WHERE id_estadisticas=${req.query.id}`)
+        respuesta = await realizarQuery(`SELECT * FROM Estadisticas WHERE id_estadistica=${req.query.id}`)
     } else {
         respuesta = await realizarQuery("SELECT * FROM Estadisticas");
     }    
     res.send(respuesta);
 })
 
+// Devuelve jugadores con sus datos básicos y trayectoria de clubes.
 app.get('/jugadores', async function(req,res){
     let respuesta;
     if (req.query.id != undefined) {
@@ -389,6 +424,7 @@ app.get('/jugadores', async function(req,res){
     res.send(respuesta);
 })
 
+// Consulta los registros de trayectoria de los jugadores.
 app.get('/trayectoria', async function(req,res){
     let respuesta;
     if (req.query.id != undefined) {
@@ -399,10 +435,11 @@ app.get('/trayectoria', async function(req,res){
     res.send(respuesta);
 })
 
+// Devuelve los clubes registrados, con filtro opcional por identificador.
 app.get('/equipos', async function(req,res){
     let respuesta;
     if (req.query.id != undefined) {
-        respuesta = await realizarQuery(`SELECT * FROM Equipos WHERE id_equipos=${req.query.id}`)
+        respuesta = await realizarQuery(`SELECT * FROM Equipos WHERE id_equipo=${req.query.id}`)
     } else {
         respuesta = await realizarQuery("SELECT * FROM Equipos");
     }    
@@ -425,6 +462,7 @@ app.get('/grid', async function(req, res) {
 
 // Pedidos POST
 
+// Registra un jugador si todavía no existe otro con el mismo apellido.
 app.post('/jugadores', async function(req,res) {
     console.log(req.body)
     let jugadorExistente = await realizarQuery(`SELECT apellido FROM Jugadores WHERE Jugadores.apellido="${req.body.apellido}"`);
@@ -434,7 +472,7 @@ app.post('/jugadores', async function(req,res) {
     } else {
         await realizarQuery(`
         INSERT INTO Jugadores (pais,posicion,dorsal_equipo,dorsal_seleccion,valor_mercado,nombre,apellido,id_equipo) VALUES
-        ("${req.body.pais}","${req.body.poisicion}",${req.body.dorsal_equipo},${req.body.dorsal_seleccion},${req.body.valor_mercado},"${req.body.nombre}","${req.body.apellido}",${req.body.id_equipo});
+        ("${req.body.pais}","${req.body.posicion}",${req.body.dorsal_equipo},${req.body.dorsal_seleccion},${req.body.valor_mercado},"${req.body.nombre}","${req.body.apellido}",${req.body.id_equipo});
         `)
         
         // Ejemplo de WebSocket: Avisar al frontend que se agregó un jugador
@@ -444,6 +482,7 @@ app.post('/jugadores', async function(req,res) {
     }
 })
 
+// Registra una cuenta y evita duplicar direcciones de correo.
 app.post('/usuarios', async function(req,res) {
     console.log(req.body)
     let usuarioExistente = await realizarQuery(`SELECT email FROM Usuarios WHERE Usuarios.email="${req.body.email}"`);
@@ -452,13 +491,14 @@ app.post('/usuarios', async function(req,res) {
         res.send("El usuario ya existe");
     } else {
         await realizarQuery(`
-        INSERT INTO Usuarios (name,password,email) VALUES
-        ("${req.body.nombre}","${req.body.password}","${req.body.email}");
+        INSERT INTO Usuarios (usuario,contraseña,email) VALUES
+        ("${req.body.name || req.body.nombre}","${req.body.password}","${req.body.email}");
         `)
         res.send("Usuario registrado")
     }
 })
 
+// Guarda los datos personales asociados a un jugador.
 app.post('/datos', async function(req,res) {
     console.log(req.body)
     let datosExistentes = await realizarQuery(`SELECT id_jugador FROM Datos WHERE Datos.id_jugador=${req.body.id_jugador}`);
@@ -474,6 +514,7 @@ app.post('/datos', async function(req,res) {
     }
 })
 
+// Guarda las estadísticas de un jugador.
 app.post('/estadisticas', async function(req,res) {
     console.log(req.body)
     let estadisticasExistentes = await realizarQuery(`SELECT id_jugador FROM Estadisticas WHERE Estadisticas.id_jugador="${req.body.id_jugador}"`);
@@ -489,6 +530,7 @@ app.post('/estadisticas', async function(req,res) {
     }
 })
 
+// Agrega un club y sus años a la trayectoria de un jugador.
 app.post('/trayectoria', async function(req,res) {
     console.log(req.body)
     let trayectoriaExistente = await realizarQuery(`SELECT id_equipo FROM Trayectoria WHERE Trayectoria.id_equipo="${req.body.id_equipo}"`);
@@ -504,6 +546,7 @@ app.post('/trayectoria', async function(req,res) {
     }
 })
 
+// Registra un club si todavía no existe uno con ese nombre.
 app.post('/equipos', async function(req,res) {
     console.log(req.body)
     let equipoExistente = await realizarQuery(`SELECT nombre_equipo FROM Equipos WHERE Equipos.nombre_equipo="${req.body.nombre_equipo}"`);

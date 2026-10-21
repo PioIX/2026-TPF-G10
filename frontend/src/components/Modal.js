@@ -1,4 +1,5 @@
 "use client";
+// Ventana modal que se abre, se cierra y bloquea el click de fondo.
 
 export default function Modal({ abierto, titulo, children, onCerrar }) {
   if (!abierto) return null;

@@ -1,4 +1,5 @@
 "use client";
+// Cancha interactiva con las once posiciones y la formación actual.
 
 export const POSICIONES = [
   { numero: 7, nombre: "ED", grupo: "delanteros" }, { numero: 9, nombre: "DC", grupo: "delanteros" }, { numero: 11, nombre: "EI", grupo: "delanteros" },

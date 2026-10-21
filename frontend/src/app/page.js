@@ -1,13 +1,15 @@
 "use client"
 import Link from "next/link";
+import Image from "next/image";
 import "./global.css";
 
+// Presentación inicial: explica el proyecto y dirige al usuario al login.
 export default function HomePage() {
   return (
     <main className="portada">
       <section className="portadaContenido" aria-labelledby="tituloPortada">
         <div className="portadaLogoMarco">
-          <image src="/logo.png" alt="Escudo de Fulbo 11" />
+          <Image src="/logo.png" alt="Escudo de Fulbo 11" width={140} height={140} priority />
         </div>
 
         <p className="portadaEtiqueta">MINIJUEGOS DE FÚTBOL</p>

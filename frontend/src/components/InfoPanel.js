@@ -1,3 +1,4 @@
+// Presenta pares de etiqueta y valor como información de partida.
 // items: [{ label: "País", valor: "Argentina" }, ...]  (Fulbo 11: país, ronda, colocados)
 export default function InfoPanel({ items }) {
   return (

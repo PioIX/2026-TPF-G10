@@ -1,3 +1,4 @@
+// Tablero de intentos del Wordle construido a partir de una matriz de filas.
 export function estadoLetra(intento, i, secreta) {
   if (intento[i] === secreta[i]) return "ok";
   const sobrantes = [...secreta].filter((l, k) => l !== intento[k]);

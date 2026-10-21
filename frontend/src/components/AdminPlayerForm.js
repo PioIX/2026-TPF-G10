@@ -1,4 +1,5 @@
 "use client";
+// Formulario que agrupa los datos principales, estadísticas y trayectoria de un jugador.
 import Form, { Field } from "./Form";
 import Button from "./Button";
 import TrayectoriaFields from "./TrayectoriaFields";
