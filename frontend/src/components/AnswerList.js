@@ -14,3 +14,5 @@ export default function AnswerList({ respuestas, onMarcar, juegoTerminado }) {
     </div>
   );
 }
+//Muestra el historial de las ultimas 10 preguntas, y en el caso que no hiciste alguna pregunta te avisa, "todavia no hicicste ninguna pregunta"
+//Al tocarlo, el componente avisa a la página (con la función onMarcar) para que marque una respuesta. Las respuestas marcadas empiezan con 🏁 y se muestran resaltadas.

@@ -40,3 +40,4 @@ export default function AdminPlayerForm({ onGuardar }) {
     </Form>
   );
 }
+//El panel de admin, que permite agregar jugadores personalizados o si falta algun jugador en nuestra base de datos, aclarando cada detalle de cada jugador

@@ -67,7 +67,7 @@ function generarCodigoSala() {
             alfabetoCodigos[crypto.randomInt(alfabetoCodigos.length)]
         )).join('');
     } while (salas.has(codigo));
-
+    console.log(codigo)
     return codigo;
 }
 
