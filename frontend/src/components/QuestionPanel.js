@@ -1,5 +1,5 @@
 "use client";
-// Controles para elegir categoría, condición y enviar una pregunta.
+// Panel preparado para Adivina el jugador; la ruta activa contiene estos controles directamente.
 import Button from "./Button";
 
 const CATEGORIAS = ["Club", "País", "Posición", "Edad", "Altura"];
@@ -9,6 +9,7 @@ export default function QuestionPanel({
   categoria, onCategoria, periodo, onPeriodo, comparador, onComparador,
   valor, onValor, texto, onTexto, opciones, onPreguntar, restantes, deshabilitado,
 }) {
+  // Edad/altura usan comparador y slider; las categorías de texto muestran sugerencias.
   const numerica = categoria === "Edad" || categoria === "Altura";
   return (
     <div className="preguntas">

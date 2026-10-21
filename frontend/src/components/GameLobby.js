@@ -1,6 +1,6 @@
-//es el componente más importante del proyecto: es la sala de espera de los juegos y maneja todo el modo multijugador. Es uno de los 3 componentes que sí están conectados
-//Antes de que empiece cualquier juego, te pregunta cómo querés jugar: solo, creando una sala, o entrando con un código. Cuando la partida arranca, muestra el juego y el progreso del rival.
-//“GameLobby es el componente que envuelve cada minijuego y gestiona el modo online. Primero muestra la elección entre jugar solo, crear una sala o unirse con un código. Usa Socket.IO para crear y unir salas, y cuando entran dos jugadores arranca la partida. Con un Context comparte los datos de la sala con el juego, y muestra el progreso del rival en tiempo real. Así los cuatro juegos reutilizan el mismo código multijugador.”
+// Uso: envuelve los cuatro juegos. Presenta los modos, gestiona la sala Socket.IO y muestra el avance rival.
+// React Context comparte estado con el juego hijo sin pasar props por todos los componentes intermedios.
+// Context es una herramienta de React que no aparece en los apuntes de clase.
 "use client";
 
 import {
@@ -15,7 +15,7 @@ import {
 import useSocket from "../hooks/useSocket";
 import OpponentProgress from "./OpponentProgress";
 
-// Comparte el estado de sala con la lógica del minijuego que se monta adentro.
+// Canal local de React para que cada minijuego lea modo, sala y funciones de progreso.
 const GameSessionContext = createContext(null);
 
 // El servidor usa estos identificadores al validar salas y progreso.
@@ -30,7 +30,7 @@ const NOMBRES_JUEGO = {
 const SOCKET_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
 const OPCIONES_SOCKET = { withCredentials: true };
 
-// Pone primero la elección de modo, así cada juego sortea su desafío al empezar.
+// Coordina conexión, espera y partida. Al cambiar de fase sigue montado y conserva su socket.
 export default function GameLobby({ game, children }) {
   const { socket, isConnected } = useSocket(SOCKET_URL, OPCIONES_SOCKET);
   const [fase, setFase] = useState("elegir");
@@ -41,14 +41,16 @@ export default function GameLobby({ game, children }) {
   const [aviso, setAviso] = useState("");
   const [progresoRival, setProgresoRival] = useState(null);
   const [partidaPropiaTerminada, setPartidaPropiaTerminada] = useState(false);
+  // useRef guarda la sala sin provocar renders; los callbacks consultan siempre el valor más reciente.
   const salaActual = useRef(null);
 
-  // Mantiene una referencia inmediata para filtrar eventos de salas viejas.
+  // Sincroniza la referencia con el estado para descartar eventos de una sala anterior.
   useEffect(() => {
     salaActual.current = sala;
   }, [sala]);
 
-  // Escucha únicamente los eventos de la sala del juego abierto.
+  // Registra eventos del backend y actualiza la interfaz; el cleanup quita cada listener al desmontar.
+  // Esta página permanece montada entre espera y partida, así que no se pierde la conexión al entrar.
   useEffect(() => {
     if (!socket) return undefined;
 
@@ -124,20 +126,20 @@ export default function GameLobby({ game, children }) {
     };
   }, [socket, game]);
 
-  // El servidor también libera la sala cuando el hook cierra el socket al navegar.
+  // Cleanup al salir de la ruta: avisa al backend para liberar el lugar del usuario.
   useEffect(() => {
     return () => {
       if (salaActual.current && socket?.connected) socket.emit("leaveRoom");
     };
   }, [socket]);
 
-  // Lee el nombre público guardado al iniciar sesión, sin acceder a localStorage durante SSR.
+  // Lee el nombre público del navegador; el control de sesión real lo conserva la cookie del backend.
   const obtenerNombre = () => {
     if (typeof window === "undefined") return "Jugador";
     return window.localStorage.getItem("usuarioNombre") || "Jugador";
   };
 
-  // Empieza una partida local sin crear una sala.
+  // Activa el modo individual; no crea sala ni envía progreso a otro usuario.
   const jugarSolo = () => {
     if (salaActual.current && socket) socket.emit("leaveRoom");
     salaActual.current = null;
@@ -150,7 +152,7 @@ export default function GameLobby({ game, children }) {
     setFase("jugando");
   };
 
-  // Pide al backend una sala y muestra el código mientras espera al segundo jugador.
+  // Emite createRoom; el callback confirma si se creó la sala y trae el código generado por el servidor.
   const crearSala = () => {
     setError("");
     if (!socket || !isConnected) {
@@ -174,7 +176,7 @@ export default function GameLobby({ game, children }) {
     });
   };
 
-  // Entra a una sala existente con el código y verifica que corresponda a este juego.
+  // Emite joinRoom; el backend valida código, juego y cupo antes de confirmar el ingreso.
   const unirseASala = (evento) => {
     evento.preventDefault();
     setError("");
@@ -203,7 +205,7 @@ export default function GameLobby({ game, children }) {
     );
   };
 
-  // Sale de la sala activa y vuelve a la elección de modo.
+  // Emite leaveRoom y vuelve a la pantalla de elección de modo.
   const salirDePartida = () => {
     if (salaActual.current && socket) socket.emit("leaveRoom");
     salaActual.current = null;
@@ -214,7 +216,7 @@ export default function GameLobby({ game, children }) {
     setFase("elegir");
   };
 
-  // Copia el código para poder compartirlo con otra persona.
+  // Usa la Clipboard API del navegador para copiar el código; el fallback muestra el código seleccionable.
   const copiarCodigo = async () => {
     if (!sala || !navigator.clipboard) return;
     try {
@@ -225,18 +227,18 @@ export default function GameLobby({ game, children }) {
     }
   };
 
-  // Envía solo el progreso permitido por el servidor para este minijuego.
+  // En online transmite el avance; el backend valida los campos antes de reenviarlos al rival.
   const enviarProgreso = useCallback((progress) => {
     if (modo !== "online" || !socket || !sala || sala.status !== "jugando") return;
     socket.emit("sendProgress", { progress });
   }, [modo, sala, socket]);
 
-  // Abre el seguimiento ampliado del rival cuando termina la partida propia.
+  // Activa el seguimiento grande del rival cuando termina esta partida.
   const marcarPartidaTerminada = useCallback(() => {
     setPartidaPropiaTerminada(true);
   }, []);
 
-  // Comparte las funciones de sala con la lógica interna del minijuego.
+  // useMemo evita crear un objeto de contexto nuevo si ninguno de estos valores cambió.
   const valorSesion = useMemo(() => ({
     game,
     modo,
@@ -246,7 +248,7 @@ export default function GameLobby({ game, children }) {
     marcarPartidaTerminada,
   }), [game, modo, sala, progresoRival, enviarProgreso, marcarPartidaTerminada]);
 
-  // Antes de iniciar, ofrece partida individual, crear sala o ingresar un código.
+  // Selector previo: jugar solo, crear un código o ingresar al código de otra persona.
   if (fase !== "jugando") {
     return (
       <main className="lobbyJuego">
@@ -306,7 +308,7 @@ export default function GameLobby({ game, children }) {
     );
   }
 
-  // Mantiene visible el código y el progreso rival durante una partida compartida.
+  // Partida activa: dibuja el juego hijo y, en online, la sala y el seguimiento rival.
   return (
     <GameSessionContext.Provider value={valorSesion}>
       <div className="sesionJuego">
@@ -332,7 +334,7 @@ export default function GameLobby({ game, children }) {
   );
 }
 
-// Devuelve la información de sala disponible dentro de cada partida.
+// Hook de acceso al Context; avisa de inmediato si una página lo usa fuera de GameLobby.
 export function useGameSession() {
   const contexto = useContext(GameSessionContext);
   if (!contexto) throw new Error("useGameSession debe usarse dentro de GameLobby.");

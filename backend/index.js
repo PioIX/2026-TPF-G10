@@ -4,10 +4,11 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const session = require('express-session');
 const http = require('http'); // Necesario para Socket.IO
-const crypto = require('node:crypto');
+const crypto = require('node:crypto'); // Módulo nativo de Node.js, usado para sortear códigos de sala.
 const { Server } = require('socket.io'); // Importamos Socket.IO
 const { realizarQuery } = require('./modulos/mysql');
 
+// Express atiende los pedidos HTTP y comparte el servidor con Socket.IO.
 const app = express();
 const port = process.env.PORT || 4000;
 
@@ -33,7 +34,7 @@ const io = new Server(server, {
   cors: opcionesCors
 });
 
-// Middleware de Express
+// Los middleware convierten formularios/JSON, habilitan CORS y preparan la sesión antes de cada ruta.
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(cors(opcionesCors));
@@ -45,6 +46,9 @@ io.use((socket, next) => {
 });
 
 
+// Las salas y el chat se guardan en memoria: al reiniciar el servidor se vacían.
+// Map y Set son colecciones nativas de JavaScript; el apunte no desarrolla estas estructuras.
+// Map permite buscar salas por código; Set evita valores repetidos al validar juegos.
 // --- CONFIGURACIÓN DE WEBSOCKETS ---
 const juegosDisponibles = new Set([
     'wordle',
@@ -63,6 +67,7 @@ const salaChatGlobal = 'chat:global';
 function generarCodigoSala() {
     let codigo;
     do {
+        // randomInt selecciona cada carácter de forma segura dentro del alfabeto definido.
         codigo = Array.from({ length: 6 }, () => (
             alfabetoCodigos[crypto.randomInt(alfabetoCodigos.length)]
         )).join('');
@@ -103,6 +108,7 @@ function retirarDeSala(socket, motivo, limpiarSesion = true) {
         return;
     }
 
+    // La sala identifica a cada integrante por la conexión Socket.IO abierta en ese navegador.
     const indice = sala.jugadores.findIndex((jugador) => jugador.socketId === socket.id);
     const jugador = indice === -1 ? null : sala.jugadores.splice(indice, 1)[0];
     socket.leave(sala.codigo);
@@ -131,6 +137,7 @@ function retirarDeSala(socket, motivo, limpiarSesion = true) {
 function limpiarProgreso(juego, progreso) {
     if (!progreso || typeof progreso !== 'object' || Array.isArray(progreso)) return null;
 
+    // Rechaza cantidades fuera del rango previsto antes de construir el progreso público.
     const estaEnRango = (valor, minimo, maximo) => (
         Number.isInteger(valor) && valor >= minimo && valor <= maximo
     );
@@ -223,6 +230,7 @@ function limpiarProgreso(juego, progreso) {
     return null;
 }
 
+// Este evento se ejecuta una vez por cada conexión nueva del navegador.
 io.on('connection', (socket) => {
   const req = socket.request;
   console.log(`Nuevo cliente conectado vía WebSocket: ${socket.id}`);
@@ -233,6 +241,7 @@ io.on('connection', (socket) => {
   });
 
   // Crea una sala para el minijuego y guarda su código en la sesión.
+  // El callback de confirmación devuelve el resultado a quien emitió el evento.
   socket.on('createRoom', (data = {}, confirmar = () => {}) => {
       if (!juegosDisponibles.has(data.game)) {
           return confirmar({ ok: false, error: 'Ese juego no está disponible.' });
@@ -315,6 +324,7 @@ io.on('connection', (socket) => {
   });
 
   // Reenvía al rival las métricas públicas del juego, no las respuestas secretas.
+  // socket.to(room) envía el evento a los demás integrantes sin incluir al emisor.
   socket.on('sendProgress', (data = {}, confirmar = () => {}) => {
       const sala = salas.get(req.session.room);
       if (!sala || sala.estado !== 'jugando') {
@@ -356,6 +366,7 @@ io.on('connection', (socket) => {
   });
 
   // Envía mensajes a los miembros autenticados del chat global.
+  // El máximo de caracteres y la pausa mínima frenan mensajes vacíos o repetidos.
   socket.on('sendMessage', (data = {}, confirmar = () => {}) => {
       const texto = typeof data.message === 'string' ? data.message.trim() : '';
       const ahora = Date.now();
@@ -398,7 +409,9 @@ io.on('connection', (socket) => {
 
 
 // --- RUTAS HTTP (FETCH) ---
+// Cada ruta responde a una petición fetch del frontend u otro pedido HTTP.
 
+// Ruta de estado: sirve para confirmar que el proceso HTTP respondió.
 app.get('/', function(req, res){
     res.status(200).send({
         message: 'Backend Funcionando - Listo para Next.js!'
@@ -408,6 +421,7 @@ app.get('/', function(req, res){
 // Pedidos GET
 // Devuelve información pública de usuarios, sin enviar contraseñas al navegador.
 app.get('/usuarios', async function(req,res){
+    // El parámetro `id` filtra por la columna id_usuario definida en creacion_tablas.sql.
     let respuesta;
     if (req.query.id != undefined) {
         respuesta = await realizarQuery(`SELECT id_usuario, usuario AS name, email FROM Usuarios WHERE id_usuario=${req.query.id}`)
@@ -419,6 +433,7 @@ app.get('/usuarios', async function(req,res){
 })
 
 // Valida las credenciales en el servidor y guarda el usuario en la sesión HTTP.
+// En esta versión de la base, la contraseña se compara directamente con el dato guardado.
 app.post('/login', async function(req, res) {
     try {
         const usuarios = await realizarQuery("SELECT id_usuario, usuario AS name, email, contraseña AS password FROM Usuarios") || [];
@@ -450,7 +465,8 @@ app.post('/login', async function(req, res) {
 
 // Consulta datos personales, estadísticas y clubes vinculados a un jugador.
 app.get('/datos', async function(req,res){
-    // Nota: Tenías dos rutas '/datos'. Dejé esta que parece ser la "completa" con INNER JOIN
+    // Los INNER JOIN reúnen atributos, estadísticas, clubes y años en cada fila devuelta.
+    // Un jugador con varios clubes aparece varias veces porque tiene varias filas de Trayectoria.
     let respuesta;
     if (req.query.id != undefined) {
         respuesta = await realizarQuery(`SELECT * FROM Datos INNER JOIN Estadisticas on Estadisticas.id_jugador = Datos.id_jugador INNER JOIN Jugadores on Jugadores.id_jugador = Datos.id_jugador INNER JOIN Trayectoria on Trayectoria.id_jugador = Jugadores.id_jugador INNER JOIN Equipos on Equipos.id_equipo = Trayectoria.id_equipo WHERE Jugadores.id_jugador=${req.query.id}`)
@@ -473,17 +489,19 @@ app.get('/estadisticas', async function(req,res){
 
 // Devuelve jugadores con sus datos básicos y trayectoria de clubes.
 app.get('/jugadores', async function(req,res){
+    // Este JOIN también devuelve una fila por registro de trayectoria; el frontend agrupa por id_jugador.
     let respuesta;
     if (req.query.id != undefined) {
-        respuesta = await realizarQuery(`SELECT Jugadores.id_jugador, Jugadores.nombre, Jugadores.apellido, Jugadores.pais, Jugadores.posicion, Datos.edad, Datos.altura, Equipos.nombre_equipo, Trayectoria.anio_ingreso, Trayectoria.anio_traspaso FROM Jugadores LEFT JOIN Datos ON Datos.id_jugador = Jugadores.id_jugador LEFT JOIN Trayectoria ON Trayectoria.id_jugador = Jugadores.id_jugador LEFT JOIN Equipos ON Equipos.id_equipo = Trayectoria.id_equipo WHERE Jugadores.id_jugador=${req.query.id}`);
+        respuesta = await realizarQuery(`SELECT Jugadores.id_jugador, Jugadores.nombre, Jugadores.apellido, Jugadores.pais, Jugadores.posicion, Jugadores.liga_actual, Datos.edad, Datos.altura, Equipos.nombre_equipo, Trayectoria.anio_ingreso, Trayectoria.anio_traspaso FROM Jugadores LEFT JOIN Datos ON Datos.id_jugador = Jugadores.id_jugador LEFT JOIN Trayectoria ON Trayectoria.id_jugador = Jugadores.id_jugador LEFT JOIN Equipos ON Equipos.id_equipo = Trayectoria.id_equipo WHERE Jugadores.id_jugador=${req.query.id}`);
     } else {
-        respuesta = await realizarQuery("SELECT Jugadores.id_jugador, Jugadores.nombre, Jugadores.apellido, Jugadores.pais, Jugadores.posicion, Datos.edad, Datos.altura, Equipos.nombre_equipo, Trayectoria.anio_ingreso, Trayectoria.anio_traspaso FROM Jugadores LEFT JOIN Datos ON Datos.id_jugador = Jugadores.id_jugador LEFT JOIN Trayectoria ON Trayectoria.id_jugador = Jugadores.id_jugador LEFT JOIN Equipos ON Equipos.id_equipo = Trayectoria.id_equipo");
+        respuesta = await realizarQuery("SELECT Jugadores.id_jugador, Jugadores.nombre, Jugadores.apellido, Jugadores.pais, Jugadores.posicion, Jugadores.liga_actual, Datos.edad, Datos.altura, Equipos.nombre_equipo, Trayectoria.anio_ingreso, Trayectoria.anio_traspaso FROM Jugadores LEFT JOIN Datos ON Datos.id_jugador = Jugadores.id_jugador LEFT JOIN Trayectoria ON Trayectoria.id_jugador = Jugadores.id_jugador LEFT JOIN Equipos ON Equipos.id_equipo = Trayectoria.id_equipo");
     }    
     res.send(respuesta);
 })
 
 // Consulta los registros de trayectoria de los jugadores.
 app.get('/trayectoria', async function(req,res){
+    // `id` aquí filtra por id_trayectoria; sin filtro se devuelven todos los pasos de carrera.
     let respuesta;
     if (req.query.id != undefined) {
         respuesta = await realizarQuery(`SELECT * FROM Trayectoria WHERE id_trayectoria=${req.query.id}`)
@@ -495,6 +513,7 @@ app.get('/trayectoria', async function(req,res){
 
 // Devuelve los clubes registrados, con filtro opcional por identificador.
 app.get('/equipos', async function(req,res){
+    // `id` aquí corresponde a la clave primaria id_equipo.
     let respuesta;
     if (req.query.id != undefined) {
         respuesta = await realizarQuery(`SELECT * FROM Equipos WHERE id_equipo=${req.query.id}`)
@@ -504,7 +523,7 @@ app.get('/equipos', async function(req,res){
     res.send(respuesta);
 })
 
-// Endpoint para generar la grilla 3x3 con filas/columnas aleatorias
+// Entrega los datos que el frontend cruza para sortear filas y columnas de una grilla 3x3.
 app.get('/grid', async function(req, res) {
     try {
         const jugadores = await realizarQuery("SELECT id_jugador, nombre, apellido, pais FROM Jugadores");
@@ -528,9 +547,10 @@ app.post('/jugadores', async function(req,res) {
     if (jugadorExistente.length > 0) {
         res.send("El jugador ya existe");
     } else {
+        // Los valores del body se insertan en SQL con interpolación como en el código original.
         await realizarQuery(`
-        INSERT INTO Jugadores (pais,posicion,dorsal_equipo,dorsal_seleccion,valor_mercado,nombre,apellido,id_equipo) VALUES
-        ("${req.body.pais}","${req.body.posicion}",${req.body.dorsal_equipo},${req.body.dorsal_seleccion},${req.body.valor_mercado},"${req.body.nombre}","${req.body.apellido}",${req.body.id_equipo});
+        INSERT INTO Jugadores (pais,posicion,liga_actual,dorsal_equipo,dorsal_seleccion,valor_mercado,nombre,apellido,id_equipo) VALUES
+        ("${req.body.pais}","${req.body.posicion}","${req.body.liga_actual}",${req.body.dorsal_equipo},${req.body.dorsal_seleccion},${req.body.valor_mercado},"${req.body.nombre}","${req.body.apellido}",${req.body.id_equipo});
         `)
         
         // Ejemplo de WebSocket: Avisar al frontend que se agregó un jugador
@@ -548,6 +568,7 @@ app.post('/usuarios', async function(req,res) {
     if (usuarioExistente.length > 0) {
         res.send("El usuario ya existe");
     } else {
+        // El esquema usa exactamente estas columnas: usuario, contraseña y email.
         await realizarQuery(`
         INSERT INTO Usuarios (usuario,contraseña,email) VALUES
         ("${req.body.name || req.body.nombre}","${req.body.password}","${req.body.email}");
@@ -624,7 +645,7 @@ app.post('/equipos', async function(req,res) {
     }
 })
 
-// IMPORTANTE: Ahora usamos server.listen en lugar de app.listen para que funcionen los WebSockets
+// El servidor HTTP recibe solicitudes Express y conexiones Socket.IO en el mismo puerto.
 server.listen(port, function(){
     console.log(`Server HTTP y WebSocket running in http://localhost:${port}`);
 });

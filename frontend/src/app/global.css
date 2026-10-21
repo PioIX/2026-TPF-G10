@@ -1,4 +1,5 @@
 /* src/app/globals.css */
+/* Variables compartidas por los estilos de cada ruta: fondos, texto y color de acción. */
 :root {
     --color-fondo-claro: #2e7d32;
     --color-fondo-oscuro: #0a2e13;
@@ -9,12 +10,14 @@
     --color-tarjeta: rgba(255, 255, 255, 0.12);
 }
 
+/* Elimina los márgenes que agrega el navegador para que las páginas partan del mismo layout. */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
+/* Fondo y tipografía globales; cada juego define dentro de su sección su propio ancho y distribución. */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: linear-gradient(135deg, var(--color-fondo-claro) 0%, var(--color-fondo-oscuro) 100%);

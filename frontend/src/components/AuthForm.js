@@ -1,7 +1,7 @@
-//es el el formulario que aparece al abrir el juego, que sirve para iniciar sesion y registrarse, este componente combona otros como componentes como(field, button)
+// Formulario reutilizable de autenticación. La ruta /login actual usa controles propios y no importa este componente.
 
 "use client";
-// Formulario reutilizable para iniciar sesión o crear una cuenta.
+// Recibe el modo y la función de envío desde la página que quiera reutilizarlo.
 import Form, { Field } from "./Form";
 import Button from "./Button";
 

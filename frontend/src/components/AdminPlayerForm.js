@@ -1,5 +1,6 @@
 "use client";
-// Formulario que agrupa los datos principales, estadísticas y trayectoria de un jugador.
+// Componente preparado para /admin; actualmente esa página arma un formulario propio y no importa este componente.
+// Cuando se use, entrega todos los campos a onGuardar para que la página los separe por tablas.
 import Form, { Field } from "./Form";
 import Button from "./Button";
 import TrayectoriaFields from "./TrayectoriaFields";
@@ -7,7 +8,7 @@ import TrayectoriaFields from "./TrayectoriaFields";
 // onGuardar recibe todos los campos planos; en la página se separan en
 // jugador / datos / estadisticas / trayectoria antes de llamar a la API.
 
-//El panel de admin, que permite agregar jugadores personalizados o si falta algun jugador en nuestra base de datos, aclarando cada detalle de cada jugador
+// Agrupa en secciones los datos del jugador, sus atributos, estadísticas y trayectoria.
 export default function AdminPlayerForm({ onGuardar }) {
   return (
     <Form onSubmit={onGuardar}>

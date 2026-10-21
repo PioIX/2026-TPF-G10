@@ -1,4 +1,4 @@
-// Encabezado de página con título y acceso al menú.
+// Encabezado reutilizable de páginas internas; las rutas activas actualmente usan el header del layout raíz.
 import Link from "next/link";
 import Title from "./Title";
 

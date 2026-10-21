@@ -4,12 +4,14 @@ import Link from "next/link";
 import Image from "next/image";
 import GlobalChat from "../../components/GlobalChat";
 
-// Menú principal: permite elegir uno de los juegos y muestra el chat global.
+// Uso: ruta /menu después del acceso. Los enlaces abren cada juego y el chat queda a un costado.
 export default function MenuPage() {
   return (
     <>
+      {/* Agrupa la navegación a los cuatro juegos con el chat global reutilizable. */}
       <div className="menuConChat">
         <div className="juegos">
+          {/* Cada tarjeta lleva a su ruta de juego correspondiente. */}
           <div className="card">
             <Image src="/fulbo11.png" alt="Fulbo 11" width={240} height={140} />
             <h3>Fulbo 11</h3>
@@ -46,6 +48,7 @@ export default function MenuPage() {
         <GlobalChat />
       </div>
 
+      {/* Accesos secundarios: portada, login/registro y herramientas de administración. */}
       <div className="admin menuAcciones">
         <Link href="/">
           <button type="button">Volver al inicio</button>

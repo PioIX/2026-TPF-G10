@@ -1,12 +1,13 @@
 "use client";
-// Campos dinámicos para cargar varios pasos de la trayectoria de un jugador.
+// Campos dinámicos preparados para AdminPlayerForm; /admin hoy gestiona estas filas en su propia página.
 import { useState } from "react";
 import { Field } from "./Form";
 import Button from "./Button";
 
-// La trayectoria es la relación jugador-equipo (muchos a muchos): una fila por cada paso.
+// La trayectoria es la relación jugador-equipo (muchos a muchos): una fila por cada paso del jugador.
 // Los names llevan el índice (anio_ingreso_0, anio_traspaso_0, ...).
 export default function TrayectoriaFields() {
+  // `filas` identifica los renglones visibles y `sig` entrega una clave nueva al agregar otro.
   const [filas, setFilas] = useState([0]);
   const [sig, setSig] = useState(1);
   return (

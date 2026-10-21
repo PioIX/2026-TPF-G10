@@ -1,4 +1,4 @@
-// Barra accesible que visualiza el avance numérico de una partida.
+// Barra accesible reutilizable; los juegos activos calculan sus barras dentro de cada página.
 export default function ProgressBar({ valor, total, texto }) {
   return (
     <>

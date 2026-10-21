@@ -1,5 +1,5 @@
-//“GlobalChat es el chat compartido del menú. Se conecta por Socket.IO con la sesión del usuario, recibe el historial al entrar y escucha los mensajes nuevos en tiempo real. Al enviar, solo limpia el campo si el servidor confirma. Las validaciones importantes, como la sesión, el largo del mensaje y el límite de velocidad, están en el backend, así nadie puede saltearlas desde el navegador.”
-//es el chat en tiempo real que aparece al costado del menú, donde todos los usuarios logueados pueden escribirse
+// Uso: panel lateral de /menu para conversar entre usuarios conectados con sesión iniciada.
+// Socket.IO entrega mensajes en tiempo real; historial, autenticación y límites se controlan en el backend.
 "use client";
 
 import { useEffect, useState } from "react";
@@ -7,7 +7,7 @@ import useSocket from "../hooks/useSocket";
 
 const OPCIONES_SOCKET = { withCredentials: true };
 
-// Chat compartido del menú: solo la sesión autenticada puede leer o enviar mensajes.
+// Uso: panel lateral de /menu. Socket.IO comparte historial y mensajes; el backend valida la sesión.
 export default function GlobalChat() {
   const { socket, isConnected } = useSocket("ws://localhost:4000", OPCIONES_SOCKET);
   const [mensajes, setMensajes] = useState([]);
@@ -18,7 +18,9 @@ export default function GlobalChat() {
   useEffect(() => {
     if (!socket || !isConnected) return;
 
+    // Reemplaza el listado local por los últimos mensajes que envía el backend al unirse.
     const recibirHistorial = (datos) => setMensajes(datos.messages || []);
+    // Agrega el mensaje nuevo y limita la vista a los últimos 50 elementos.
     const recibirMensaje = (datos) => {
       setMensajes((anteriores) => [...anteriores, datos.message].slice(-50));
     };
@@ -36,6 +38,7 @@ export default function GlobalChat() {
   }, [socket, isConnected]);
 
   // Envía el texto al backend y limpia el campo solo si el servidor lo acepta.
+  // La respuesta del callback también permite mostrar las validaciones del servidor.
   const enviarMensaje = (evento) => {
     evento.preventDefault();
     if (!texto.trim() || !socket) return;

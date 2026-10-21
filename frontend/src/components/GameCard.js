@@ -1,8 +1,9 @@
-// Tarjeta de un minijuego con imagen, título y enlace para jugar.
+// Tarjeta visual preparada para el menú; la página /menu actual construye sus cuatro tarjetas a mano.
 import Link from "next/link";
 import Image from "next/image";
 
 export default function GameCard({ titulo, imagen, href }) {
+  // next/image optimiza la imagen local y Link navega a la ruta del juego sin recarga completa.
   return (
     <div className="card">
       <Image src={imagen} alt="" width={240} height={140} className="card-img" />

@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
 
+// Hook usado por GridBoard para consultar fotos y escudos sin incluir la búsqueda en cada celda.
+// TheSportsDB es una API externa; esta integración no aparece en los apuntes de clase.
 // Caché compartida para evitar repetir búsquedas de la misma imagen en la sesión.
 const cache = {};
-// Define las URLs, listas de resultados y campos posibles para cada tipo de imagen.
+// Configura la URL, la propiedad que contiene resultados y las imágenes de respaldo por tipo.
 const CONFIG = {
     player: { url: (n) => `https://www.thesportsdb.com/api/v1/json/3/searchplayers.php?p=${encodeURIComponent(n)}`, lista: "player", campos: ["strCutout", "strThumb"] },
     team: { url: (n) => `https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t=${encodeURIComponent(n)}`, lista: "teams", campos: ["strBadge", "strThumb"] },
 };
 
+// Busca una imagen en el navegador y devuelve una cadena vacía mientras no haya resultado.
 export default function useSportsDbImage(tipo, nombre) {
     // La URL se consulta una sola vez y se devuelve desde la caché al reutilizarla.
     const clave = `${tipo}:${nombre}`;

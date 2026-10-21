@@ -1,6 +1,7 @@
 "use client";
-// Provee campos etiquetados y entrega los valores del formulario como objeto.
+// Primitivas de formulario usadas por AdminPlayerForm y ClubForm; esos formularios aún no están conectados a /admin.
 
+// Field relaciona una etiqueta con el input y pasa al input las propiedades HTML adicionales.
 export function Field({ label, name, type = "text", required = true, ...rest }) {
   return (
     <label className="field">
@@ -10,7 +11,8 @@ export function Field({ label, name, type = "text", required = true, ...rest }) 
   );
 }
 
-// onSubmit recibe un objeto { campo: valor } con todo lo que haya en el formulario.
+// Al enviar, FormData lee los inputs por name y Object.fromEntries crea un objeto simple para onSubmit.
+// Son APIs nativas del navegador/JavaScript que no están desarrolladas en los apuntes.
 export default function Form({ onSubmit, children, className = "form" }) {
   return (
     <form

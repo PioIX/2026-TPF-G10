@@ -19,9 +19,13 @@ CREATE TABLE Jugadores (
     nombre VARCHAR(100) NOT NULL,
     apellido VARCHAR(100) NOT NULL,
     id_equipo INT NOT NULL,
+    -- Competición actual; usar "Retirado/Sin club" para figuras retiradas o sin club.
+    -- NULL se reserva para datos todavía no cargados.
+    liga_actual VARCHAR(100) DEFAULT NULL,
     valor_mercado BIGINT DEFAULT 0,
     dorsal_seleccion INT,
     dorsal_equipo INT,
+    -- Roles numerados del 1 al 11; varios se separan con guiones. No es el dorsal.
     posicion VARCHAR(50),
     pais VARCHAR(50),
     CONSTRAINT fk_jugadores_equipos

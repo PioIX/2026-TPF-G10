@@ -1,8 +1,8 @@
-// Muestra la galería de compañeros usada como pista del jugador secreto.
+// Galería visual preparada como otra modalidad de Adivina el jugador; la partida activa no la usa.
 // companeros: [{ nombre, imagen }] (5 jugadores con los que compartió equipo)
 import Image from "next/image";
 
-// Galería de compañeros que funciona como pista visual del jugador oculto.
+// Recibe la lista de compañeros y, al revelarse, muestra sus nombres y el jugador misterioso.
 export default function LinkGallery({ companeros, revelado = false, jugadorMisterioso }) {
   return (
     <div className="link">

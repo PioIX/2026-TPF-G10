@@ -1,4 +1,4 @@
-// Tabla de posiciones que puede ocultar filas todavía no reveladas.
+// Tabla de ranking preparada para un modo de preguntas; no está conectada a las rutas activas.
 // filas: [{ nombre, bandera, puntos, revelado }]
 // Si "revelado" es false, la fila se muestra vacía (modo Top 10).
 export default function ScoreTable({ filas, mostrarPuntos = false }) {

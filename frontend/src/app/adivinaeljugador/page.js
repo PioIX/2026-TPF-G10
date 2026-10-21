@@ -8,7 +8,7 @@ import GameLobby, { useGameSession } from "../../components/GameLobby";
 
 const API_URL = "http://localhost:4000";
 
-// Quita tildes y signos para comparar respuestas aunque cambie la escritura.
+// Normaliza la escritura para comparar nombres y respuestas ignorando tildes, signos y mayúsculas.
 function limpiarTexto(texto) {
   return String(texto || "")
     .normalize("NFD")
@@ -18,7 +18,8 @@ function limpiarTexto(texto) {
     .trim();
 }
 
-// Agrupa las filas de jugadores y arma las opciones para los filtros.
+// El endpoint devuelve una fila por club; Map agrupa por id y Set elimina repetidos.
+// Son colecciones nativas de JavaScript que no se explican en los apuntes.
 function construirJugadores(datos) {
   const jugadoresMap = new Map();
   const sugerenciasTemp = { club: [], pais: [], posicion: [], nombres: [] };
@@ -33,6 +34,8 @@ function construirJugadores(datos) {
         nombre: `${fila.nombre || ""} ${fila.apellido || ""}`.trim(),
         pais: fila.pais || fila.country || "",
         posicion: fila.posicion || "",
+        // La API ya devuelve esta columna para habilitarla como pista en una etapa futura.
+        ligaActual: fila.liga_actual || "",
         edad: Number(fila.edad) || 0,
         altura: Number(fila.altura) || 0,
         trayectoria: [],
@@ -81,11 +84,11 @@ function construirJugadores(datos) {
   return { listaJugadores, sugerenciasLimpias };
 }
 
-// Mantiene el juego dentro del lobby para sortear al jugador luego de elegir el modo.
+// Uso: contenido del lobby de Adivina el jugador. Cada usuario sortea su propio jugador secreto.
 function AdivinaElJugadorGame() {
   const { modo, sala, enviarProgreso, marcarPartidaTerminada } = useGameSession();
 
-  // Cada estado representa datos cargados, selección del jugador o avance de la partida.
+  // Estado agrupado por tarea: datos/sugerencias, pregunta, respuesta, pista, campos y resultado.
   const [jugadores, setJugadores] = useState([]);
   const [sugerencias, setSugerencias] = useState({
     club: [],
@@ -111,7 +114,7 @@ function AdivinaElJugadorGame() {
   const [inputAdivinar, setInputAdivinar] = useState("");
   const [fotoJugador, setFotoJugador] = useState("");
 
-  // Consulta el backend, prepara las sugerencias y elige el jugador secreto.
+  // Consulta el backend, reconstruye jugadores con su trayectoria y sortea el desafío local.
   const cargarJugadores = useCallback(async () => {
     try {
       const respuesta = await fetch(`${API_URL}/jugadores`);
@@ -137,12 +140,12 @@ function AdivinaElJugadorGame() {
     }
   }, []);
 
+  // Efecto de montaje: la lectura HTTP ocurre en el navegador, no durante el render del servidor.
   useEffect(() => {
-    // El microtask inicia la carga después de terminar el efecto de montaje.
     Promise.resolve().then(cargarJugadores);
   }, [cargarJugadores]);
 
-  // Comprueba que una respuesta escrita corresponda a una opción conocida.
+  // Valida opciones con la lista cargada y la comparación normalizada.
   const opcionValida = (cat, texto) => {
     if (!texto) return false;
     const opciones = sugerencias[cat] || [];
@@ -151,6 +154,7 @@ function AdivinaElJugadorGame() {
     );
   };
 
+  // Al cambiar la categoría se reinicia el comparador y se corrige el valor del slider si no aplica.
   const seleccionarCategoria = (cat) => {
     setCategoria(cat);
     setComparador(null);
@@ -164,6 +168,7 @@ function AdivinaElJugadorGame() {
     }
   };
 
+  // El comparador solo tiene sentido para edad y altura.
   const seleccionarComparador = (comp) => {
     if (!categoria) {
       setMensaje("Primero elige una categoría.");
@@ -172,6 +177,7 @@ function AdivinaElJugadorGame() {
     }
   };
 
+  // Habilita una pregunta solo cuando hay categoría y una respuesta/opción completa.
   const entradaPreguntaValida = () => {
     if (!categoria) return false;
     if (["edad", "altura"].includes(categoria)) return !!comparador;
@@ -181,6 +187,7 @@ function AdivinaElJugadorGame() {
   const puedeHacerPregunta =
     !juegoTerminado && preguntasRestantes > 0 && entradaPreguntaValida();
 
+  // Aplica la pregunta contra los datos privados del jugador secreto y devuelve el texto visible.
   const obtenerRespuestaPregunta = () => {
     const secreto = jugadorSecreto;
     const cat = categoria;
@@ -244,6 +251,7 @@ function AdivinaElJugadorGame() {
     };
   };
 
+  // Registra una pregunta válida, descuenta el turno y deja la respuesta arriba del historial.
   const hacerPregunta = () => {
     if (!jugadorSecreto) return;
     const pregunta = obtenerRespuestaPregunta();
@@ -260,6 +268,7 @@ function AdivinaElJugadorGame() {
     }
   };
 
+  // Comprueba el nombre; si acierta termina y consulta una foto en TheSportsDB.
   const intentarAdivinar = async () => {
     if (!jugadorSecreto) return;
     const texto = inputAdivinar.trim();
@@ -299,11 +308,13 @@ function AdivinaElJugadorGame() {
     }
   };
 
+  // Activa la pista completa una vez que se presiona el botón de cámara.
   const mostrarPista = () => {
     if (!jugadorSecreto) return;
     setPistaActiva(true);
   };
 
+  // Marca visualmente la respuesta más reciente sin modificar el resultado de la pregunta.
   const marcarRespuesta = () => {
     if (respuestas.length > 0 && !respuestas[0].startsWith("🏁")) {
       setRespuestas((prev) => [`🏁 ${prev[0]}`, ...prev.slice(1)]);
@@ -318,7 +329,7 @@ function AdivinaElJugadorGame() {
   const adivino = respuestas.some((respuesta) => respuesta.startsWith("✅ ACIERTO:"));
   const terminoLaPartida = juegoTerminado || preguntasRestantes <= 0;
 
-  // Comparte preguntas, fallos y uso de pista; el backend excluye el acierto con el nombre secreto.
+  // Publica progreso rival. El backend elimina la línea que contiene el nombre secreto acertado.
   useEffect(() => {
     enviarProgreso({
       preguntasUsadas,
@@ -567,7 +578,7 @@ function AdivinaElJugadorGame() {
   );
 }
 
-// Ofrece jugar solo o mediante código antes de cargar el jugador secreto.
+// Ruta /adivinaeljugador: primero el modo; después el lobby mantiene el juego y el socket montados.
 export default function AdivinaElJugadorPage() {
   return (
     <GameLobby game="adivinaeljugador">
