@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:a": "next dev -p 3000",
-    "dev:b": "next dev -p 3001",
+    "dev:a": "FULBO_NEXT_DIST_DIR=.next-a next dev -p 3000",
+    "dev:b": "FULBO_NEXT_DIST_DIR=.next-b next dev -p 3001",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

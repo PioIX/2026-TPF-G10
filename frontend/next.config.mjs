@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  /* config options here */
+  // Cada servidor de desarrollo usa su propia salida para permitir dev:a y dev:b al mismo tiempo.
+  distDir: process.env.FULBO_NEXT_DIST_DIR || ".next",
 };
 
 export default nextConfig;

@@ -44,7 +44,25 @@ export default function GameLobby({ game, children }) {
   // useRef guarda la sala sin provocar renders; los callbacks consultan siempre el valor más reciente.
   const salaActual = useRef(null);
 
-  // Sincroniza la referencia con el estado para descartar eventos de una sala anterior.
+  // Informa cuando el primer intento de conexión tarda, incluso si el hook todavía no expone el socket.
+  useEffect(() => {
+    if (isConnected) {
+      setAviso((actual) => (
+        actual.startsWith("No se pudo conectar con el servidor")
+          ? ""
+          : actual
+      ));
+      return undefined;
+    }
+
+    const temporizador = setTimeout(() => {
+      setAviso((actual) => actual || "El servidor todavía no responde. Revisá que backend esté iniciado en el puerto 4000.");
+    }, 7000);
+
+    return () => clearTimeout(temporizador);
+  }, [isConnected]);
+
+  // Mantiene una referencia inmediata para filtrar eventos de salas viejas.
   useEffect(() => {
     salaActual.current = sala;
   }, [sala]);
@@ -99,6 +117,12 @@ export default function GameLobby({ game, children }) {
       setAviso("Se perdió la conexión. Creá una sala nueva o volvé a ingresar un código.");
     };
 
+    // Explica en pantalla los errores del handshake en vez de dejar el lobby cargando sin respuesta.
+    const manejarErrorConexion = (errorConexion) => {
+      const mensaje = errorConexion?.message || "error de conexión";
+      setAviso(`No se pudo conectar con el servidor (${mensaje}). Revisá que el backend esté activo.`);
+    };
+
     const cerrarSala = (datos) => {
       if (!salaActual.current || !datos || datos.room !== salaActual.current.room) return;
       salaActual.current = null;
@@ -114,6 +138,7 @@ export default function GameLobby({ game, children }) {
     socket.on("roomPlayerLeft", avisarSalidaRival);
     socket.on("roomClosed", cerrarSala);
     socket.on("disconnect", manejarDesconexion);
+    socket.on("connect_error", manejarErrorConexion);
 
     // Quita estos listeners al salir del juego para evitar respuestas duplicadas.
     return () => {
@@ -123,6 +148,7 @@ export default function GameLobby({ game, children }) {
       socket.off("roomPlayerLeft", avisarSalidaRival);
       socket.off("roomClosed", cerrarSala);
       socket.off("disconnect", manejarDesconexion);
+      socket.off("connect_error", manejarErrorConexion);
     };
   }, [socket, game]);
 
@@ -155,12 +181,17 @@ export default function GameLobby({ game, children }) {
   // Emite createRoom; el callback confirma si se creó la sala y trae el código generado por el servidor.
   const crearSala = () => {
     setError("");
-    if (!socket || !isConnected) {
+    if (!socket || !socket.connected || !isConnected) {
       setError("Esperá a que se conecte el servidor para crear una sala.");
       return;
     }
 
-    socket.emit("createRoom", { game, name: obtenerNombre() }, (respuesta) => {
+    // El timeout permite distinguir una sala rechazada de un backend que no contestó.
+    socket.timeout(8000).emit("createRoom", { game, name: obtenerNombre() }, (tiempoAgotado, respuesta) => {
+      if (tiempoAgotado) {
+        setError("El servidor no respondió al crear la sala. Revisá la conexión e intentá otra vez.");
+        return;
+      }
       if (!respuesta || !respuesta.ok) {
         setError((respuesta && respuesta.error) || "No se pudo crear la sala.");
         return;
@@ -180,15 +211,20 @@ export default function GameLobby({ game, children }) {
   const unirseASala = (evento) => {
     evento.preventDefault();
     setError("");
-    if (!socket || !isConnected) {
+    if (!socket || !socket.connected || !isConnected) {
       setError("Esperá a que se conecte el servidor para ingresar a una sala.");
       return;
     }
 
-    socket.emit(
+    // El timeout hace visible el caso en que el evento de unión no recibe confirmación.
+    socket.timeout(8000).emit(
       "joinRoom",
       { room: codigoIngresado.trim().toUpperCase(), game, name: obtenerNombre() },
-      (respuesta) => {
+      (tiempoAgotado, respuesta) => {
+        if (tiempoAgotado) {
+          setError("El servidor no respondió al ingresar a la sala. Revisá la conexión e intentá otra vez.");
+          return;
+        }
         if (!respuesta || !respuesta.ok) {
           setError((respuesta && respuesta.error) || "No se pudo ingresar a la sala.");
           return;
