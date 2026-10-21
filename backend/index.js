@@ -136,34 +136,88 @@ function limpiarProgreso(juego, progreso) {
     );
 
     if (juego === 'wordle' && estaEnRango(progreso.intentosUsados, 0, 6) && typeof progreso.terminado === 'boolean') {
-        return {
+        const limpio = {
             intentosUsados: progreso.intentosUsados,
             terminado: progreso.terminado,
             gano: progreso.terminado ? Boolean(progreso.gano) : false
         };
+
+        // Comparte el tablero visual validado, sin enviar la palabra que se debe adivinar.
+        if (Array.isArray(progreso.tablero) && progreso.tablero.length <= 6) {
+            const coloresPermitidos = new Set(['transparent', '#4caf50', '#f1c40f', '#7f8c8d']);
+            const tableroLimpio = progreso.tablero.map((fila) => {
+                if (!Array.isArray(fila) || fila.length > 8) return null;
+                const celdas = fila.map((celda) => {
+                    if (!celda || typeof celda.letra !== 'string' || !/^[A-Z_]$/.test(celda.letra)) return null;
+                    if (!coloresPermitidos.has(celda.color)) return null;
+                    return { letra: celda.letra, color: celda.color };
+                });
+                return celdas.some((celda) => celda === null) ? null : celdas;
+            });
+            if (!tableroLimpio.some((fila) => fila === null)) limpio.tablero = tableroLimpio;
+        }
+
+        return limpio;
     }
 
     if (juego === 'adivinaeljugador' && estaEnRango(progreso.preguntasUsadas, 0, 10) && typeof progreso.terminado === 'boolean') {
-        return {
+        const limpio = {
             preguntasUsadas: progreso.preguntasUsadas,
             terminado: progreso.terminado,
             adivino: progreso.terminado ? Boolean(progreso.adivino) : false
         };
+
+        // Muestra preguntas y fallos del rival, pero filtra el mensaje con el nombre acertado.
+        if (Array.isArray(progreso.respuestas)) {
+            limpio.respuestas = progreso.respuestas
+                .filter((respuesta) => typeof respuesta === 'string' && !respuesta.startsWith('✅ ACIERTO:'))
+                .slice(0, 10)
+                .map((respuesta) => respuesta.slice(0, 180));
+        }
+        if (typeof progreso.pistaActiva === 'boolean') limpio.pistaActiva = progreso.pistaActiva;
+        return limpio;
     }
 
     if (juego === 'futbol11' && estaEnRango(progreso.jugadoresColocados, 0, 11) && typeof progreso.terminado === 'boolean') {
-        return {
+        const limpio = {
             jugadoresColocados: progreso.jugadoresColocados,
             terminado: progreso.terminado
         };
+
+        // Los nombres ya colocados y el país actual forman parte de la pantalla pública.
+        if (Array.isArray(progreso.formacion) && progreso.formacion.length === 11) {
+            limpio.formacion = progreso.formacion.map((nombre) => (
+                typeof nombre === 'string' ? nombre.slice(0, 64) : ''
+            ));
+        }
+        if (typeof progreso.paisActual === 'string') limpio.paisActual = progreso.paisActual.slice(0, 64);
+        return limpio;
     }
 
-    if (juego === 'grid' && estaEnRango(progreso.celdasCompletadas, 0, 9) && estaEnRango(progreso.puntaje, 0, 100)) {
-        return {
+    if (juego === 'grid' && estaEnRango(progreso.celdasCompletadas, 0, 9)) {
+        const puntajeValido = progreso.puntaje === undefined || estaEnRango(progreso.puntaje, 0, 100);
+        if (!puntajeValido || typeof progreso.terminado !== 'boolean') return null;
+
+        const limpio = {
             celdasCompletadas: progreso.celdasCompletadas,
             puntaje: progreso.puntaje,
-            terminado: Boolean(progreso.terminado)
+            terminado: progreso.terminado
         };
+
+        // Envía encabezados y respuestas ya reveladas, nunca las combinaciones pendientes.
+        if (Array.isArray(progreso.filas) && progreso.filas.length === 3 && Array.isArray(progreso.columnas) && progreso.columnas.length === 3) {
+            limpio.filas = progreso.filas.map((valor) => String(valor).slice(0, 64));
+            limpio.columnas = progreso.columnas.map((valor) => String(valor).slice(0, 64));
+        }
+        if (progreso.celdasReveladas && typeof progreso.celdasReveladas === 'object' && !Array.isArray(progreso.celdasReveladas)) {
+            limpio.celdasReveladas = {};
+            Object.entries(progreso.celdasReveladas).slice(0, 9).forEach(([clave, valor]) => {
+                if (/^r[0-2]_c[0-2]$/.test(clave) && typeof valor === 'string') {
+                    limpio.celdasReveladas[clave] = valor.slice(0, 64);
+                }
+            });
+        }
+        return limpio;
     }
 
     return null;
@@ -273,6 +327,10 @@ io.on('connection', (socket) => {
       }
 
       const jugador = sala.jugadores.find((integrante) => integrante.socketId === socket.id);
+      if (!jugador) {
+          return confirmar({ ok: false, error: 'No formas parte de esta sala.' });
+      }
+
       socket.to(req.session.room).emit('opponentProgress', {
           position: jugador.posicion,
           name: jugador.nombre,

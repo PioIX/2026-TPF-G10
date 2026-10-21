@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import "../global.css";
+import GameLobby, { useGameSession } from "../../components/GameLobby";
 
 const API_URL = "http://localhost:4000";
 
@@ -80,7 +81,10 @@ function construirJugadores(datos) {
   return { listaJugadores, sugerenciasLimpias };
 }
 
-export default function AdivinaElJugadorPage() {
+// Mantiene el juego dentro del lobby para sortear al jugador luego de elegir el modo.
+function AdivinaElJugadorGame() {
+  const { modo, sala, enviarProgreso, marcarPartidaTerminada } = useGameSession();
+
   // Cada estado representa datos cargados, selección del jugador o avance de la partida.
   const [jugadores, setJugadores] = useState([]);
   const [sugerencias, setSugerencias] = useState({
@@ -310,6 +314,31 @@ export default function AdivinaElJugadorPage() {
   const esEdad = categoria === "edad";
   const catTexto = ["club", "pais", "posicion"].includes(categoria);
   const opcionesSugerencias = catTexto ? sugerencias[categoria] || [] : [];
+  const preguntasUsadas = 10 - preguntasRestantes;
+  const adivino = respuestas.some((respuesta) => respuesta.startsWith("✅ ACIERTO:"));
+  const terminoLaPartida = juegoTerminado || preguntasRestantes <= 0;
+
+  // Comparte preguntas, fallos y uso de pista; el backend excluye el acierto con el nombre secreto.
+  useEffect(() => {
+    enviarProgreso({
+      preguntasUsadas,
+      terminado: terminoLaPartida,
+      adivino: terminoLaPartida && adivino,
+      respuestas,
+      pistaActiva,
+    });
+    if (terminoLaPartida) marcarPartidaTerminada();
+  }, [
+    preguntasUsadas,
+    respuestas,
+    pistaActiva,
+    terminoLaPartida,
+    adivino,
+    modo,
+    sala?.status,
+    enviarProgreso,
+    marcarPartidaTerminada,
+  ]);
 
   return (
     <>
@@ -535,5 +564,14 @@ export default function AdivinaElJugadorPage() {
         </div>
       </main>
     </>
+  );
+}
+
+// Ofrece jugar solo o mediante código antes de cargar el jugador secreto.
+export default function AdivinaElJugadorPage() {
+  return (
+    <GameLobby game="adivinaeljugador">
+      <AdivinaElJugadorGame />
+    </GameLobby>
   );
 }
