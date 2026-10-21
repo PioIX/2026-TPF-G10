@@ -74,9 +74,9 @@ CREATE TABLE Trayectoria (
 
 -- Tabla: Usuarios
 CREATE TABLE Usuarios (
-    id_usuarios INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    password VARCHAR(255) NOT NULL,
+    id_usuario INT AUTO_INCREMENT PRIMARY KEY,
+    usuario VARCHAR(100) NOT NULL,
+    contraseña VARCHAR(255) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE
 ) ENGINE=InnoDB;
 
@@ -92,8 +92,8 @@ CREATE TABLE UsuariosXPartida (
     id_usuario INT NOT NULL,
     id_partida INT NOT NULL,
     puntaje INT DEFAULT 0,
-    CONSTRAINT fk_uxp_usuarios
-        FOREIGN KEY (id_usuario) REFERENCES Usuarios(id_usuarios)
+    CONSTRAINT fk_uxp_usuario
+        FOREIGN KEY (id_usuario) REFERENCES Usuarios(id_usuario)
         ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT fk_uxp_partida
         FOREIGN KEY (id_partida) REFERENCES Partida(id_partida)

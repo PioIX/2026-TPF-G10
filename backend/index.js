@@ -352,10 +352,10 @@ app.get('/', function(req, res){
 app.get('/usuarios', async function(req,res){
     let respuesta;
     if (req.query.id != undefined) {
-        respuesta = await realizarQuery(`SELECT id_usuarios, name, email FROM Usuarios WHERE id_usuarios=${req.query.id}`)
+        respuesta = await realizarQuery(`SELECT id_usuario, usuario AS name, email FROM Usuarios WHERE id_usuario=${req.query.id}`)
     } else {
         // Los datos públicos no incluyen la contraseña almacenada en la tabla.
-        respuesta = await realizarQuery("SELECT id_usuarios, name, email FROM Usuarios");
+        respuesta = await realizarQuery("SELECT id_usuario, usuario AS name, email FROM Usuarios");
     }    
     res.send(respuesta);
 })
@@ -363,7 +363,7 @@ app.get('/usuarios', async function(req,res){
 // Valida las credenciales en el servidor y guarda el usuario en la sesión HTTP.
 app.post('/login', async function(req, res) {
     try {
-        const usuarios = await realizarQuery("SELECT id_usuarios, name, email, password FROM Usuarios") || [];
+        const usuarios = await realizarQuery("SELECT id_usuario, usuario AS name, email, contraseña AS password FROM Usuarios") || [];
         const usuario = usuarios.find((fila) => (
             fila.email === req.body.email && fila.password === req.body.password
         ));
@@ -373,7 +373,7 @@ app.post('/login', async function(req, res) {
         }
 
         req.session.user = {
-            id: usuario.id_usuarios,
+            id: usuario.id_usuario,
             name: usuario.name,
             email: usuario.email
         };
@@ -406,7 +406,7 @@ app.get('/datos', async function(req,res){
 app.get('/estadisticas', async function(req,res){
     let respuesta;
     if (req.query.id != undefined) {
-        respuesta = await realizarQuery(`SELECT * FROM Estadisticas WHERE id_estadisticas=${req.query.id}`)
+        respuesta = await realizarQuery(`SELECT * FROM Estadisticas WHERE id_estadistica=${req.query.id}`)
     } else {
         respuesta = await realizarQuery("SELECT * FROM Estadisticas");
     }    
@@ -439,7 +439,7 @@ app.get('/trayectoria', async function(req,res){
 app.get('/equipos', async function(req,res){
     let respuesta;
     if (req.query.id != undefined) {
-        respuesta = await realizarQuery(`SELECT * FROM Equipos WHERE id_equipos=${req.query.id}`)
+        respuesta = await realizarQuery(`SELECT * FROM Equipos WHERE id_equipo=${req.query.id}`)
     } else {
         respuesta = await realizarQuery("SELECT * FROM Equipos");
     }    
@@ -472,7 +472,7 @@ app.post('/jugadores', async function(req,res) {
     } else {
         await realizarQuery(`
         INSERT INTO Jugadores (pais,posicion,dorsal_equipo,dorsal_seleccion,valor_mercado,nombre,apellido,id_equipo) VALUES
-        ("${req.body.pais}","${req.body.poisicion}",${req.body.dorsal_equipo},${req.body.dorsal_seleccion},${req.body.valor_mercado},"${req.body.nombre}","${req.body.apellido}",${req.body.id_equipo});
+        ("${req.body.pais}","${req.body.posicion}",${req.body.dorsal_equipo},${req.body.dorsal_seleccion},${req.body.valor_mercado},"${req.body.nombre}","${req.body.apellido}",${req.body.id_equipo});
         `)
         
         // Ejemplo de WebSocket: Avisar al frontend que se agregó un jugador
@@ -491,8 +491,8 @@ app.post('/usuarios', async function(req,res) {
         res.send("El usuario ya existe");
     } else {
         await realizarQuery(`
-        INSERT INTO Usuarios (name,password,email) VALUES
-        ("${req.body.nombre}","${req.body.password}","${req.body.email}");
+        INSERT INTO Usuarios (usuario,contraseña,email) VALUES
+        ("${req.body.name || req.body.nombre}","${req.body.password}","${req.body.email}");
         `)
         res.send("Usuario registrado")
     }
