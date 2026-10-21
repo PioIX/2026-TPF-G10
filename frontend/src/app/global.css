@@ -72,6 +72,7 @@ hr {
     flex-grow: 1;
     padding: 30px 10px;
     justify-content: space-between;
+    margin: 0 auto; /* Centra el contenedor de 500px en la pantalla */
 }
 
 #mensaje {
