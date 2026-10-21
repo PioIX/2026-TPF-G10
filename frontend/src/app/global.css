@@ -72,6 +72,7 @@ hr {
     align-items: center;
     width: 100%;
     max-width: 500px;
+    margin: 0 auto;
     flex-grow: 1;
     padding: 30px 10px;
     justify-content: space-between;
@@ -614,6 +615,19 @@ a.btn:hover {
     transform: scale(0.97);
 }
 
+/* Indica los puestos que el país de la ronda no puede cubrir con jugadores libres. */
+.cancha .fila button.casilleroBloqueado,
+.cancha .fila button:disabled {
+    opacity: 0.48;
+    cursor: not-allowed;
+}
+
+.cancha .fila button:disabled:hover {
+    transform: none;
+    border-color: #6b7cff;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.15), 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
 .ocupado,
 .casilleroOcupado {
     border-color: #00d4ff !important;
@@ -628,9 +642,31 @@ a.btn:hover {
     grid-template-rows: 100px repeat(3, 100px);
     gap: 8px;
     margin: 30px auto;
+    width: max-content;
     background: var(--color-tarjeta);
     padding: 15px;
     border-radius: 10px;
+}
+
+/* Mantiene centrados el tablero del Grid y su buscador; el tablero puede desplazarse en pantallas angostas. */
+.gridGame {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: min(100%, 900px);
+    margin: 0 auto;
+    padding: 0 12px 40px;
+}
+
+.gridDesbordamiento {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.gridResults {
+    width: min(100%, 650px);
+    margin: 0 auto 40px;
+    text-align: center;
 }
 
 .cell {
@@ -669,10 +705,25 @@ a.btn:hover {
 #main {
     width: 100%;
     max-width: 800px;
+    margin: 0 auto;
     display: flex;
     flex-direction: column;
     align-items: center;
     padding: 0 20px 40px 20px;
+}
+
+/* En celulares achica las celdas para conservar el centrado y evitar cortes del tablero. */
+@media (max-width: 600px) {
+    .grid {
+        grid-template-columns: 88px repeat(3, 76px);
+        grid-template-rows: repeat(4, 86px);
+        gap: 6px;
+        padding: 10px;
+    }
+
+    .grid .cell {
+        font-size: 0.72rem;
+    }
 }
 
 #contenedor-jugador-top {

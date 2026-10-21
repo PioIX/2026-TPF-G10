@@ -1,7 +1,6 @@
 // src/app/fulbo11/page.js
 "use client";
 import { useState, useEffect, useCallback, useMemo } from "react";
-import Link from "next/link";
 import "../global.css";
 import GameLobby, { useGameSession } from "../../components/GameLobby";
 
@@ -36,11 +35,51 @@ function normalizarTexto(texto) {
     .toUpperCase();
 }
 
-// El Set quita países repetidos; Math.random elige uno para la ronda.
-function obtenerPaisAleatorio(listaJugadores) {
-  const paises = [...new Set(listaJugadores.map((j) => j.pais))];
-  if (paises.length === 0) return "Sin datos";
-  return paises[Math.floor(Math.random() * paises.length)];
+// Lee los códigos de rol de una posición, por ejemplo "10-7" se transforma en ["10", "7"].
+function obtenerCodigosPosicion(posicion) {
+  return String(posicion || "").match(/\d+/g) || [];
+}
+
+// Comprueba si un jugador puede ocupar un puesto según los roles numéricos de la base.
+function puedeJugarEnPosicion(jugador, posicion) {
+  return obtenerCodigosPosicion(jugador.posicion).includes(String(posicion.numero));
+}
+
+// Elige países con al menos un jugador aún libre para alguno de los puestos que siguen vacíos.
+function obtenerPaisesDisponibles(listaJugadores, equipoActual) {
+  const idsUsados = new Set(
+    equipoActual.filter(Boolean).map((jugador) => jugador.id)
+  );
+  const posicionesVacantes = POSICIONES.filter(
+    (_, indice) => !equipoActual[indice]
+  );
+  if (posicionesVacantes.length === 0) return [];
+
+  const jugadoresPorPais = new Map();
+  listaJugadores.forEach((jugador) => {
+    const clavePais = normalizarTexto(jugador.pais);
+    if (!clavePais) return;
+    if (!jugadoresPorPais.has(clavePais)) jugadoresPorPais.set(clavePais, []);
+    jugadoresPorPais.get(clavePais).push(jugador);
+  });
+
+  return Array.from(jugadoresPorPais.values())
+    .filter((plantel) =>
+      plantel.some(
+        (jugador) =>
+          !idsUsados.has(jugador.id) &&
+          posicionesVacantes.some((posicion) =>
+            puedeJugarEnPosicion(jugador, posicion)
+          )
+      )
+    )
+    .map((plantel) => plantel[0].pais);
+}
+
+// Sortea una nación entre las que pueden aportar a alguna posición pendiente.
+function obtenerPaisAleatorio(paisesDisponibles) {
+  if (paisesDisponibles.length === 0) return "";
+  return paisesDisponibles[Math.floor(Math.random() * paisesDisponibles.length)];
 }
 
 // Uso: contenido del lobby para Fútbol 11. Cada persona arma su formación en su propio estado.
@@ -61,12 +100,21 @@ function Fulbo11Game() {
   // Reinicia la formación y sortea un país cuando llega la lista del servidor o se pulsa Reiniciar.
   // useCallback conserva la misma función entre renders; es un hook de optimización no tratado en el apunte.
   const iniciarJuego = useCallback((listaJugadores) => {
-    setEquipo(Array(POSICIONES.length).fill(null));
+    const formacionVacia = Array(POSICIONES.length).fill(null);
+    const paisesDisponibles = obtenerPaisesDisponibles(
+      listaJugadores,
+      formacionVacia
+    );
+    setEquipo(formacionVacia);
     setPosicionSeleccionada(null);
     setRonda(1);
-    setPaisActual(obtenerPaisAleatorio(listaJugadores));
+    setPaisActual(obtenerPaisAleatorio(paisesDisponibles));
     setEntradaJugador("");
-    setMensaje("Seleccioná una posición vacía y escribí el nombre del jugador.");
+    setMensaje(
+      paisesDisponibles.length > 0
+        ? "Seleccioná una posición vacía y escribí el nombre del jugador."
+        : "No hay países con jugadores para las posiciones disponibles."
+    );
   }, []);
 
   // Pide los jugadores al backend, agrupa duplicados de la trayectoria por id y comienza la partida.
@@ -109,11 +157,18 @@ function Fulbo11Game() {
   }, [cargarJugadores]);
 
   // Prepara la próxima colocación: cambia país y limpia la selección y el campo de texto.
-  const siguienteRonda = () => {
+  const siguienteRonda = (formacionActual) => {
+    const paisesDisponibles = obtenerPaisesDisponibles(
+      jugadores,
+      formacionActual
+    );
     setRonda((prev) => prev + 1);
-    setPaisActual(obtenerPaisAleatorio(jugadores));
+    setPaisActual(obtenerPaisAleatorio(paisesDisponibles));
     setPosicionSeleccionada(null);
     setEntradaJugador("");
+    if (paisesDisponibles.length === 0) {
+      setMensaje("No quedan jugadores para las posiciones que siguen vacías.");
+    }
   };
 
   // Valida nombre, país, posición y que el jugador no esté repetido antes de actualizar la formación.
@@ -146,17 +201,20 @@ function Fulbo11Game() {
     }
 
     // Si hay homónimos, priorizamos el que coincida con el país actual
+    const clavePaisActual = normalizarTexto(paisActual);
     const jugador =
-      coincidencias.find((j) => j.pais === paisActual) || coincidencias[0];
+      coincidencias.find(
+        (j) => normalizarTexto(j.pais) === clavePaisActual
+      ) || coincidencias[0];
 
     // 4. Verifica que pertenezca al país de la ronda actual
-    if (jugador.pais !== paisActual) {
+    if (normalizarTexto(jugador.pais) !== clavePaisActual) {
       setMensaje("Ese jugador no pertenece al país mostrado.");
       return;
     }
 
     // 5. Verifica si el jugador puede jugar en esa posición (ej: "10-7" -> ['10', '7'])
-    const posicionesPermitidas = String(jugador.posicion).split("-");
+    const posicionesPermitidas = obtenerCodigosPosicion(jugador.posicion);
     if (!posicionesPermitidas.includes(String(posicion.numero))) {
       setMensaje(`${jugador.nombre} no puede jugar de ${posicion.nombre}.`);
       return;
@@ -182,7 +240,7 @@ function Fulbo11Game() {
     }
 
     setMensaje(`${jugador.nombre} fue colocado con éxito en ${posicion.nombre}.`);
-    siguienteRonda();
+    siguienteRonda(nuevoEquipo);
   };
 
   // Valores derivados de equipo; no se guardan aparte porque se pueden calcular en cada render.
@@ -210,21 +268,33 @@ function Fulbo11Game() {
     marcarPartidaTerminada,
   ]);
 
-  // Filtra sugerencias por texto y país; useMemo reutiliza el resultado si sus datos no cambiaron.
+  // Filtra sugerencias por texto, país, posición seleccionada y jugadores todavía libres.
   // useMemo es un hook de optimización que no aparece en los apuntes.
   const sugerencias = useMemo(() => {
     const valor = normalizarTexto(entradaJugador);
     if (!valor) return [];
 
+    const idsUsados = new Set(
+      equipo.filter(Boolean).map((jugador) => jugador.id)
+    );
+    const clavePaisActual = normalizarTexto(paisActual);
+
     return jugadores
       .filter((jugador) => {
         const coincideTexto = normalizarTexto(jugador.nombre).includes(valor);
         const coincidePais =
-          normalizarTexto(jugador.pais) === normalizarTexto(paisActual);
-        return coincideTexto && coincidePais;
+          normalizarTexto(jugador.pais) === clavePaisActual;
+        const noFueUsado = !idsUsados.has(jugador.id);
+        const coincidePosicion =
+          posicionSeleccionada === null ||
+          puedeJugarEnPosicion(
+            jugador,
+            POSICIONES[posicionSeleccionada]
+          );
+        return coincideTexto && coincidePais && noFueUsado && coincidePosicion;
       })
       .slice(0, 12);
-  }, [entradaJugador, jugadores, paisActual]);
+  }, [entradaJugador, jugadores, paisActual, equipo, posicionSeleccionada]);
 
   // Genera los botones de un sector de la cancha y conecta cada uno con su índice de posición.
   const renderFilaGrupo = (nombreGrupo) => {
@@ -233,6 +303,16 @@ function Fulbo11Game() {
 
       const asignado = equipo[indice];
       const estaSeleccionado = posicionSeleccionada === indice;
+      const yaUsados = new Set(
+        equipo.filter(Boolean).map((jugador) => jugador.id)
+      );
+      const hayJugadorParaEsePuesto = jugadores.some(
+        (jugador) =>
+          normalizarTexto(jugador.pais) === normalizarTexto(paisActual) &&
+          !yaUsados.has(jugador.id) &&
+          puedeJugarEnPosicion(jugador, posicion)
+      );
+      const estaBloqueado = Boolean(asignado) || !hayJugadorParaEsePuesto;
 
       return (
         <button
@@ -240,7 +320,13 @@ function Fulbo11Game() {
           type="button"
           className={`casillero ${estaSeleccionado ? "casilleroSeleccionado" : ""} ${
             asignado ? "casilleroOcupado ocupado" : ""
-          }`}
+          } ${!asignado && !hayJugadorParaEsePuesto ? "casilleroBloqueado" : ""}`}
+          disabled={estaBloqueado}
+          title={
+            !asignado && !hayJugadorParaEsePuesto
+              ? `No hay jugadores disponibles de ${paisActual} para ${posicion.nombre}.`
+              : undefined
+          }
           onClick={() => seleccionarPosicion(indice)}
         >
           <strong>

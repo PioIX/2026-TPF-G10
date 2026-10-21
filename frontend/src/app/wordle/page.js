@@ -1,7 +1,6 @@
 // src/app/wordle/page.js
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
 import "../global.css";
 import GameLobby, { useGameSession } from "../../components/GameLobby";
 
