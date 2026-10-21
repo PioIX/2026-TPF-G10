@@ -20,6 +20,8 @@ export default function HomePage() {
         </p>
 
         <Link className="portadaBoton" href="/login">
+          {/* La pelota gira como indicador visual del botón principal. */}
+          <span className="portadaBotonPelota" aria-hidden="true">⚽</span>
           JUGAR
         </Link>
         <p className="portadaAyuda">

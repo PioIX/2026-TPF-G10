@@ -95,6 +95,8 @@ function retirarDeSala(socket, motivo, limpiarSesion = true) {
     const req = socket.request;
     const codigo = req.session?.room;
     const sala = codigo ? salas.get(codigo) : null;
+    // Registra el ciclo de vida de la sala para identificar cierres que invalidan un código compartido.
+    console.log(`[salas] Socket ${socket.id} sale de ${codigo || 'ninguna sala'}: ${motivo}.`);
     if (!sala) {
         if (limpiarSesion && req.session) {
             delete req.session.room;
@@ -255,6 +257,8 @@ io.on('connection', (socket) => {
       };
 
       salas.set(codigo, sala);
+      // Las salas viven en memoria mientras este proceso de backend siga activo.
+      console.log(`[salas] Creada ${codigo} para ${data.game}. Salas activas: ${salas.size}.`);
       req.session.room = codigo;
       socket.join(req.session.room);
       req.session.save((error) => {
@@ -274,6 +278,8 @@ io.on('connection', (socket) => {
       const sala = salas.get(codigo);
 
       if (!sala) {
+          // Si el anfitrión perdió su conexión o el backend reinició, el mapa ya no tendrá este código.
+          console.warn(`[salas] No existe ${codigo}. Salas activas: ${salas.size}.`);
           return confirmar({ ok: false, error: 'No encontramos una sala con ese código.' });
       }
       if (data.game && data.game !== sala.juego) {
@@ -388,10 +394,11 @@ io.on('connection', (socket) => {
   });
 
   // Libera la sala de juego cuando la conexión se cierra.
-  socket.on('disconnect', () => {
+  socket.on('disconnect', (motivo) => {
       ultimoMensajeChat.delete(socket.id);
       retirarDeSala(socket, 'desconexión');
-      console.log('Disconnect');
+      // El motivo y el código ayudan a ver si la sala se perdió por cierre del cliente o del transporte.
+      console.log(`[socket] Disconnect ${socket.id}: ${motivo}.`);
   });
 });
 // ------------------------------------

@@ -337,6 +337,7 @@ a.btn:hover {
     min-height: 58px;
     align-items: center;
     justify-content: center;
+    gap: 10px;
     padding: 14px 34px;
     border: 0;
     border-radius: 999px;
@@ -348,6 +349,26 @@ a.btn:hover {
     letter-spacing: 0.12em;
     text-decoration: none;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Hace girar la pelota de la portada para devolverle movimiento al botón JUGAR. */
+.portadaBotonPelota {
+    display: inline-block;
+    font-size: 1.35rem;
+    animation: girarPelotaPortada 2.4s linear infinite;
+}
+
+@keyframes girarPelotaPortada {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Respeta la preferencia del sistema si la persona reduce las animaciones. */
+@media (prefers-reduced-motion: reduce) {
+    .portadaBotonPelota {
+        animation: none;
+    }
 }
 
 .portadaBoton:hover {
