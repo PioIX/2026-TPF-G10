@@ -267,6 +267,7 @@ function GridGame() {
 
   // Conserva la grilla compartida, las respuestas locales, la celda activa y el estado de carga.
   const [grilla, setGrilla] = useState(null);
+  const [todosLosJugadores, setTodosLosJugadores] = useState([]);
   const [error, setError] = useState("");
   const [escudos, setEscudos] = useState({});
   const [celdaActiva, setCeldaActiva] = useState(null); // { fila, col }
@@ -294,6 +295,19 @@ function GridGame() {
         setError("No hay suficientes datos.");
         return;
       }
+
+      // El autocompletado incluye toda la tabla de jugadores, sin usar los cruces de la celda activa.
+      const nombresJugadores = new Map();
+      jugadores.forEach((jugador) => {
+        const nombreCompleto = `${jugador.nombre || ""} ${jugador.apellido || ""}`.trim();
+        const clave = normalizarTexto(nombreCompleto);
+        if (clave && !nombresJugadores.has(clave)) {
+          nombresJugadores.set(clave, nombreCompleto);
+        }
+      });
+      setTodosLosJugadores(
+        Array.from(nombresJugadores.values()).sort((a, b) => a.localeCompare(b, "es"))
+      );
 
       const conexiones = crearConexiones(
         jugadores,
@@ -547,8 +561,8 @@ function GridGame() {
             </button>
 
             <datalist id="listaJugadores">
-              {jugadoresCeldaActiva.map((j) => (
-                <option key={j.id} value={`${j.nombre} ${j.apellido}`} />
+              {todosLosJugadores.map((nombre) => (
+                <option key={normalizarTexto(nombre)} value={nombre} />
               ))}
             </datalist>
 
