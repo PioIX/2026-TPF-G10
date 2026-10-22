@@ -274,6 +274,7 @@ function GridGame() {
   const [celdasReveladas, setCeldasReveladas] = useState({}); // { r0_c0: { apellido, foto } }
   const [busqueda, setBusqueda] = useState("");
   const [respuestaFeed, setRespuestaFeed] = useState("");
+  const codigoSala = sala?.room;
 
   // Busca la mejor grilla posible; el código de sala hace que los dos clientes obtengan el mismo tablero.
   const cargarGrilla = useCallback(async () => {
@@ -321,7 +322,7 @@ function GridGame() {
         obtenerPaises(jugadores),
         listaEquipos,
         conexiones,
-        sala?.room || `${Date.now()}-${Math.random()}`
+        codigoSala || `${Date.now()}-${Math.random()}`
       );
 
       if (!nuevaGrilla) {
@@ -350,7 +351,7 @@ function GridGame() {
       console.error(e);
       setError("Error al cargar la grilla.");
     }
-  }, [sala?.room]);
+  }, [codigoSala]);
 
   // Carga inicial en el navegador una vez montado el juego.
   useEffect(() => {
