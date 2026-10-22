@@ -68,6 +68,19 @@ function obtenerCombinaciones(elementos, cantidad) {
   return combinaciones;
 }
 
+// Mezcla una copia de la lista usando el generador de la sala para conservar el mismo resultado en ambos clientes.
+function mezclarArray(array, aleatorio) {
+  const resultado = [...array];
+  for (let indice = resultado.length - 1; indice > 0; indice--) {
+    const otroIndice = Math.floor(aleatorio() * (indice + 1));
+    [resultado[indice], resultado[otroIndice]] = [
+      resultado[otroIndice],
+      resultado[indice],
+    ];
+  }
+  return resultado;
+}
+
 // Crea un índice jugador -> clubes. Set guarda clubes únicos; es una colección nativa de JS.
 function crearEquiposJugador(trayectorias) {
   const equiposJugador = {};
@@ -135,9 +148,10 @@ function crearDatosGrilla(paises, equipos, conexiones) {
   return jugadoresPorCelda;
 }
 
-// Busca la mejor grilla completa y relaja el número de respuestas o encabezados solo si hace falta.
+// Busca grillas válidas y sortea entre opciones de buena calidad para dar variedad entre partidas.
 function buscarGrilla(paises, equipos, conexiones, semilla) {
   const aleatorio = crearGeneradorAleatorio(semilla);
+  const MAX_EQUIPOS_CANDIDATOS = 12;
   const equiposOrdenados = [...equipos].sort(
     (a, b) => a.id - b.id || compararTexto(a.nombre, b.nombre)
   );
@@ -156,8 +170,8 @@ function buscarGrilla(paises, equipos, conexiones, semilla) {
 
   for (const [cantidadFilas, cantidadColumnas] of dimensiones) {
     for (const minimoRespuestas of [MINIMO_JUGADORES, 1]) {
-      let mejorGrilla = null;
-      let cantidadEmpates = 0;
+      let grillaElegida = null;
+      let pesoAcumulado = 0;
       const combinacionesFilas = obtenerCombinaciones(
         paisesDisponibles,
         cantidadFilas
@@ -175,22 +189,25 @@ function buscarGrilla(paises, equipos, conexiones, semilla) {
             jugadoresPorFila.every((lista) => lista.length >= minimoRespuestas)
           )
           .map((conexion) => ({
-            ...conexion,
+            equipo: conexion.equipo,
             minimo: Math.min(...conexion.jugadoresPorFila.map((lista) => lista.length)),
             total: conexion.jugadoresPorFila.reduce((suma, lista) => suma + lista.length, 0),
-            desempate: aleatorio(),
           }))
-          .sort((a, b) => b.minimo - a.minimo || b.total - a.total || a.desempate - b.desempate);
+          .sort((a, b) => b.minimo - a.minimo || b.total - a.total);
 
         if (equiposComunes.length < cantidadColumnas) return;
 
-        // Se prefieren las columnas con más respuestas posibles y mejor equilibrio entre países.
-        const columnasElegidas = equiposComunes
+        // Baraja entre los doce clubes más compatibles, en vez de elegir siempre los mismos tres.
+        const equiposCandidatos = equiposComunes.slice(
+          0,
+          Math.max(cantidadColumnas, MAX_EQUIPOS_CANDIDATOS)
+        );
+        const columnasElegidas = mezclarArray(equiposCandidatos, aleatorio)
           .slice(0, cantidadColumnas)
           .map(({ equipo }) => equipo);
-        const filasFinales = [...filasElegidas];
+        const filasFinales = mezclarArray(filasElegidas, aleatorio);
         const columnasFinales = [...columnasElegidas];
-        while (filasFinales.length < 3) filasFinales.push(filasElegidas[0]);
+        while (filasFinales.length < 3) filasFinales.push(filasFinales[0]);
         while (columnasFinales.length < 3) columnasFinales.push(columnasElegidas[0]);
 
         const cantidades = filasFinales.flatMap((pais) =>
@@ -205,29 +222,19 @@ function buscarGrilla(paises, equipos, conexiones, semilla) {
           total: cantidades.reduce((suma, cantidad) => suma + cantidad, 0),
         };
 
-        if (
-          !mejorGrilla ||
-          candidato.minimo > mejorGrilla.minimo ||
-          (candidato.minimo === mejorGrilla.minimo && candidato.total > mejorGrilla.total)
-        ) {
-          mejorGrilla = candidato;
-          cantidadEmpates = 1;
-        } else if (
-          candidato.minimo === mejorGrilla.minimo &&
-          candidato.total === mejorGrilla.total
-        ) {
-          cantidadEmpates++;
-          if (aleatorio() < 1 / cantidadEmpates) mejorGrilla = candidato;
-        }
+        // El muestreo ponderado favorece grillas con más respuestas, pero también permite elegir otras válidas.
+        const peso = 1 + candidato.minimo * 20 + candidato.total;
+        pesoAcumulado += peso;
+        if (aleatorio() * pesoAcumulado < peso) grillaElegida = candidato;
       });
 
-      if (mejorGrilla) {
+      if (grillaElegida) {
         return {
-          filas: mejorGrilla.filas,
-          columnas: mejorGrilla.columnas,
+          filas: grillaElegida.filas,
+          columnas: grillaElegida.columnas,
           jugadores: crearDatosGrilla(
-            mejorGrilla.filas,
-            mejorGrilla.columnas,
+            grillaElegida.filas,
+            grillaElegida.columnas,
             conexiones
           ),
         };
@@ -276,7 +283,7 @@ function GridGame() {
   const [respuestaFeed, setRespuestaFeed] = useState("");
   const codigoSala = sala?.room;
 
-  // Busca la mejor grilla posible; el código de sala hace que los dos clientes obtengan el mismo tablero.
+  // Elige una grilla válida con sorteo ponderado; el código de sala sincroniza el resultado entre clientes.
   const cargarGrilla = useCallback(async () => {
     try {
       setError("");
