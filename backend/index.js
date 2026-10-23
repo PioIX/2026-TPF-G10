@@ -16,11 +16,20 @@ const port = process.env.PORT || 4000;
 const server = http.createServer(app);
 
 // Permite que los dos puertos de Next.js se conecten y envíen la cookie de sesión.
+
 const opcionesCors = {
-  origin: ['http://localhost:3000', 'http://localhost:3001'],
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://10.1.5.91:3000',
+    'http://10.1.5.91:3001',
+    // Agregá acá la IP de tu PC con el puerto del frontend,
+    // si es distinta de la anterior.
+  ],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 };
+
 
 // Comparte la configuración de sesión entre Express y Socket.IO.
 const sessionMiddleware = session({
