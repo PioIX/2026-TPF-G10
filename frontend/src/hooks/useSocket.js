@@ -6,7 +6,7 @@ const DEFAULT_OPTIONS = { withCredentials: false };
 // Hook reutilizable: concentra la conexión para que una página solo tenga que
 // hacer: const { socket, isConnected } = useSocket();
 export default function useSocket(
-  serverUrl = "ws://localhost:4000",
+  serverUrl = "10.1.5.91:4000",
   options = DEFAULT_OPTIONS
 ) {
   const [isConnected, setIsConnected] = useState(false);
