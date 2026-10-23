@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:a": "FULBO_NEXT_DIST_DIR=.next-a next dev -p 3000",
-    "dev:b": "FULBO_NEXT_DIST_DIR=.next-b next dev -p 3001",
+    "dev:a": "cross-env FULBO_NEXT_DIST_DIR=.next-a next dev -p 3000",
+    "dev:b": "cross-env FULBO_NEXT_DIST_DIR=.next-b next dev -p 3001",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
@@ -18,6 +18,7 @@
     "socket.io-client": "^4.8.4"
   },
   "devDependencies": {
+    "cross-env": "^10.1.0",
     "eslint": "^9",
     "eslint-config-next": "16.3.6"
   }
