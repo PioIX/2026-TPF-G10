@@ -28,7 +28,7 @@ const NOMBRES_JUEGO = {
 
 // Envía la cookie de sesión para que Socket.IO comparta la sesión HTTP del login.
 const SOCKET_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
-const OPCIONES_SOCKET = { withCredentials: true };
+const OPCIONES_SOCKET = { withCredentials: false };
 
 // Coordina conexión, espera y partida. Al cambiar de fase sigue montado y conserva su socket.
 export default function GameLobby({ game, children }) {

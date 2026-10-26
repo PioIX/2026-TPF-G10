@@ -5,7 +5,7 @@
 import { useEffect, useState } from "react";
 import useSocket from "../hooks/useSocket";
 
-const OPCIONES_SOCKET = { withCredentials: true };
+const OPCIONES_SOCKET = { withCredentials: false };
 
 // Uso: panel lateral de /menu. Socket.IO comparte historial y mensajes; el backend valida la sesión.
 export default function GlobalChat() {

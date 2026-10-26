@@ -60,7 +60,6 @@ export default function LoginPage() {
     try {
       const response = await fetch(`${API_URL}/login`, {
         method: "POST",
-        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
@@ -143,7 +142,6 @@ export default function LoginPage() {
         // El registro no crea una sesión automáticamente; por eso se validan las credenciales aquí.
         const respuestaLogin = await fetch(`${API_URL}/login`, {
           method: "POST",
-          credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password }),
         });

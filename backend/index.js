@@ -38,7 +38,7 @@ const io = new Server(server, {
 // Los middleware convierten formularios/JSON, habilitan CORS y preparan la sesión antes de cada ruta.
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
-app.use(cors());
+app.use(cors(opcionesCors));
 app.use(sessionMiddleware);
 
 // Carga en cada socket la sesión que ya abrió Express para ese navegador.
