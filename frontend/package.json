@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:a": "cross-env FULBO_NEXT_DIST_DIR=.next-a next dev -p 3000",
-    "dev:b": "cross-env FULBO_NEXT_DIST_DIR=.next-b next dev -p 3001",
+    "dev:a": "cross-env DIST_DIR=.next-a next dev -p 3000",
+    "dev:b": "cross-env DIST_DIR=.next-b next dev -p 3001",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

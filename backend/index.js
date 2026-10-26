@@ -18,16 +18,8 @@ const server = http.createServer(app);
 // Permite que los dos puertos de Next.js se conecten y envíen la cookie de sesión.
 
 const opcionesCors = {
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://10.1.5.91:3000',
-    'http://10.1.5.91:3001',
-    // Agregá acá la IP de tu PC con el puerto del frontend,
-    // si es distinta de la anterior.
-  ],
+  origin: "*",
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true
 };
 
 
@@ -46,7 +38,7 @@ const io = new Server(server, {
 // Los middleware convierten formularios/JSON, habilitan CORS y preparan la sesión antes de cada ruta.
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
-app.use(cors(opcionesCors));
+app.use(cors());
 app.use(sessionMiddleware);
 
 // Carga en cada socket la sesión que ya abrió Express para ese navegador.
@@ -453,9 +445,12 @@ app.get('/usuarios', async function(req,res){
 app.post('/login', async function(req, res) {
     try {
         const usuarios = await realizarQuery("SELECT id_usuario, usuario AS name, email, contraseña AS password FROM Usuarios") || [];
+        console.log(usuarios)
         const usuario = usuarios.find((fila) => (
             fila.email === req.body.email && fila.password === req.body.password
+            
         ));
+        console.log(usuario)
 
         if (!usuario) {
             return res.status(401).json({ error: 'Correo o contraseña incorrectos.' });

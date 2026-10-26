@@ -64,9 +64,9 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-
       // Lee el JSON de respuesta tanto si el servidor acepta como si rechaza las credenciales.
       const usuario = await response.json();
+      console.log(usuario)
       if (response.ok) {
         setModalInfo({
           titulo: "Éxito",
