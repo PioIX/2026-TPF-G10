@@ -14,6 +14,7 @@ import {
 } from "react";
 import useSocket from "../hooks/useSocket";
 import OpponentProgress from "./OpponentProgress";
+import { BACKEND_URL } from "../config/backend";
 
 // Canal local de React para que cada minijuego lea modo, sala y funciones de progreso.
 const GameSessionContext = createContext(null);
@@ -26,13 +27,9 @@ const NOMBRES_JUEGO = {
   grid: "Grid",
 };
 
-// Envía la cookie de sesión para que Socket.IO comparta la sesión HTTP del login.
-const SOCKET_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
-const OPCIONES_SOCKET = { withCredentials: false };
-
 // Coordina conexión, espera y partida. Al cambiar de fase sigue montado y conserva su socket.
 export default function GameLobby({ game, children }) {
-  const { socket, isConnected } = useSocket(SOCKET_URL, OPCIONES_SOCKET);
+  const { socket, isConnected } = useSocket(BACKEND_URL);
   const [fase, setFase] = useState("elegir");
   const [modo, setModo] = useState(null);
   const [sala, setSala] = useState(null);

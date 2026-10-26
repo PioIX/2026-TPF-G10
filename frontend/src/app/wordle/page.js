@@ -3,8 +3,9 @@
 import { useState, useEffect, useCallback } from "react";
 import "../global.css";
 import GameLobby, { useGameSession } from "../../components/GameLobby";
+import { BACKEND_URL } from "../../config/backend";
 
-const API_URL = "http://localhost:4000";
+const API_URL = BACKEND_URL;
 const MAX_INTENTOS = 6;
 
 // Colores acordados con el tablero rival y con la validación del backend.

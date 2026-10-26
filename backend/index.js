@@ -2,7 +2,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const session = require('express-session');
 const http = require('http'); // Necesario para Socket.IO
 const crypto = require('node:crypto'); // Módulo nativo de Node.js, usado para sortear códigos de sala.
 const { Server } = require('socket.io'); // Importamos Socket.IO
@@ -15,35 +14,40 @@ const port = process.env.PORT || 4000;
 // Creamos el servidor HTTP envolviendo la app de Express
 const server = http.createServer(app);
 
-// Permite que los dos puertos de Next.js se conecten y envíen la cookie de sesión.
-
 const opcionesCors = {
   origin: "*",
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
 };
-
-
-// Comparte la configuración de sesión entre Express y Socket.IO.
-const sessionMiddleware = session({
-  secret: process.env.SESSION_SECRET || 'supersarasa',
-  resave: false,
-  saveUninitialized: false
-});
 
 // Inicializa Socket.IO con las mismas reglas de origen que el backend HTTP.
 const io = new Server(server, {
   cors: opcionesCors
 });
 
-// Los middleware convierten formularios/JSON, habilitan CORS y preparan la sesión antes de cada ruta.
+// Los middleware convierten formularios/JSON y habilitan CORS antes de cada ruta.
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(cors(opcionesCors));
-app.use(sessionMiddleware);
 
-// Carga en cada socket la sesión que ya abrió Express para ese navegador.
-io.use((socket, next) => {
-    sessionMiddleware(socket.request, {}, next);
+// El navegador manda el ID devuelto por /login en el handshake del socket.
+// El backend lo busca en MySQL y conserva únicamente el perfil público.
+io.use(async (socket, next) => {
+    const userId = Number(socket.handshake.query?.userId);
+    if (!Number.isSafeInteger(userId) || userId < 1) {
+        socket.data.user = null;
+        return next();
+    }
+
+    try {
+        const usuarios = await realizarQuery(
+            'SELECT id_usuario, usuario AS name, email FROM Usuarios WHERE id_usuario = ?',
+            [userId]
+        );
+        socket.data.user = usuarios?.[0] || null;
+        return next();
+    } catch (error) {
+        return next(error);
+    }
 });
 
 
@@ -96,18 +100,14 @@ function emitirEstadoSala(sala) {
     io.to(sala.codigo).emit('roomUpdated', obtenerEstadoSala(sala));
 }
 
-// Retira la conexión de su sala actual y actualiza la sesión de Express.
-function retirarDeSala(socket, motivo, limpiarSesion = true) {
-    const req = socket.request;
-    const codigo = req.session?.room;
+// Retira la conexión de su sala actual y limpia el código guardado en el socket.
+function retirarDeSala(socket, motivo) {
+    const codigo = socket.data.room;
     const sala = codigo ? salas.get(codigo) : null;
     // Registra el ciclo de vida de la sala para identificar cierres que invalidan un código compartido.
     console.log(`[salas] Socket ${socket.id} sale de ${codigo || 'ninguna sala'}: ${motivo}.`);
     if (!sala) {
-        if (limpiarSesion && req.session) {
-            delete req.session.room;
-            req.session.save(() => {});
-        }
+        socket.data.room = null;
         return;
     }
 
@@ -130,10 +130,7 @@ function retirarDeSala(socket, motivo, limpiarSesion = true) {
         emitirEstadoSala(sala);
     }
 
-    if (limpiarSesion && req.session) {
-        delete req.session.room;
-        req.session.save(() => {});
-    }
+    socket.data.room = null;
 }
 
 // Acepta métricas públicas y descarta respuestas que revelarían la solución.
@@ -235,7 +232,6 @@ function limpiarProgreso(juego, progreso) {
 
 // Este evento se ejecuta una vez por cada conexión nueva del navegador.
 io.on('connection', (socket) => {
-  const req = socket.request;
   console.log(`Nuevo cliente conectado vía WebSocket: ${socket.id}`);
 
   // Conserva el evento de prueba que explica el envío de mensajes a todos los sockets.
@@ -243,17 +239,17 @@ io.on('connection', (socket) => {
       io.emit('pingAll', { event: 'Ping to all', message: data });
   });
 
-  // Crea una sala para el minijuego y guarda su código en la sesión.
+  // Crea una sala para el minijuego y guarda su código en la conexión.
   // El callback de confirmación devuelve el resultado a quien emitió el evento.
   socket.on('createRoom', (data = {}, confirmar = () => {}) => {
       if (!juegosDisponibles.has(data.game)) {
           return confirmar({ ok: false, error: 'Ese juego no está disponible.' });
       }
 
-      if (req.session.room) retirarDeSala(socket, 'cambio de sala', false);
+      if (socket.data.room) retirarDeSala(socket, 'cambio de sala');
 
       const codigo = generarCodigoSala();
-      const usuario = req.session.user || {};
+      const usuario = socket.data.user || {};
       const sala = {
           codigo,
           juego: data.game,
@@ -269,17 +265,10 @@ io.on('connection', (socket) => {
       salas.set(codigo, sala);
       // Las salas viven en memoria mientras este proceso de backend siga activo.
       console.log(`[salas] Creada ${codigo} para ${data.game}. Salas activas: ${salas.size}.`);
-      req.session.room = codigo;
-      socket.join(req.session.room);
-      req.session.save((error) => {
-          if (error) {
-              retirarDeSala(socket, 'error de sesión');
-              return confirmar({ ok: false, error: 'No se pudo guardar la sala en la sesión.' });
-          }
-
-          emitirEstadoSala(sala);
-          return confirmar({ ok: true, room: obtenerEstadoSala(sala) });
-      });
+      socket.data.room = codigo;
+      socket.join(codigo);
+      emitirEstadoSala(sala);
+      return confirmar({ ok: true, room: obtenerEstadoSala(sala) });
   });
 
   // Sigue el patrón joinRoom del apunte: sale de la sala anterior y entra a la indicada.
@@ -299,9 +288,9 @@ io.on('connection', (socket) => {
           return confirmar({ ok: false, error: 'La sala ya está completa.' });
       }
 
-      if (req.session.room) retirarDeSala(socket, 'cambio de sala', false);
+      if (socket.data.room) retirarDeSala(socket, 'cambio de sala');
 
-      const usuario = req.session.user || {};
+      const usuario = socket.data.user || {};
       sala.jugadores.push({
           posicion: 2,
           socketId: socket.id,
@@ -309,23 +298,16 @@ io.on('connection', (socket) => {
           anfitrion: false
       });
       sala.estado = 'jugando';
-      req.session.room = codigo;
-      socket.join(req.session.room);
-      req.session.save((error) => {
-          if (error) {
-              retirarDeSala(socket, 'error de sesión');
-              return confirmar({ ok: false, error: 'No se pudo guardar la sala en la sesión.' });
-          }
-
-          emitirEstadoSala(sala);
-          io.to(req.session.room).emit('roomMatched', obtenerEstadoSala(sala));
-          return confirmar({ ok: true, room: obtenerEstadoSala(sala) });
-      });
+      socket.data.room = codigo;
+      socket.join(codigo);
+      emitirEstadoSala(sala);
+      io.to(codigo).emit('roomMatched', obtenerEstadoSala(sala));
+      return confirmar({ ok: true, room: obtenerEstadoSala(sala) });
   });
 
   // Sale de la sala actual y deja su lugar disponible.
   socket.on('leaveRoom', (confirmar = () => {}) => {
-      const room = req.session.room || null;
+      const room = socket.data.room || null;
       retirarDeSala(socket, 'salida');
       return confirmar({ ok: true, room });
   });
@@ -333,7 +315,8 @@ io.on('connection', (socket) => {
   // Reenvía al rival las métricas públicas del juego, no las respuestas secretas.
   // socket.to(room) envía el evento a los demás integrantes sin incluir al emisor.
   socket.on('sendProgress', (data = {}, confirmar = () => {}) => {
-      const sala = salas.get(req.session.room);
+      const room = socket.data.room;
+      const sala = salas.get(room);
       if (!sala || sala.estado !== 'jugando') {
           return confirmar({ ok: false, error: 'No hay una partida en curso.' });
       }
@@ -348,7 +331,7 @@ io.on('connection', (socket) => {
           return confirmar({ ok: false, error: 'No formas parte de esta sala.' });
       }
 
-      socket.to(req.session.room).emit('opponentProgress', {
+      socket.to(room).emit('opponentProgress', {
           position: jugador.posicion,
           name: jugador.nombre,
           progress: progreso,
@@ -357,15 +340,15 @@ io.on('connection', (socket) => {
       return confirmar({ ok: true });
   });
 
-  // Une al chat global solo a sesiones con usuario y entrega los mensajes recientes.
+  // Une al chat global solo a usuarios encontrados en la base y entrega mensajes recientes.
   socket.on('joinGlobalChat', (confirmar = () => {}) => {
-      if (!req.session.user) {
+      if (!socket.data.user) {
           return confirmar({ ok: false, error: 'Iniciá sesión para usar el chat.' });
       }
 
       socket.join(salaChatGlobal);
       socket.emit('chat-messages', {
-          user: req.session.user,
+          user: socket.data.user,
           room: salaChatGlobal,
           messages: historialChat
       });
@@ -378,8 +361,8 @@ io.on('connection', (socket) => {
       const texto = typeof data.message === 'string' ? data.message.trim() : '';
       const ahora = Date.now();
 
-      if (!req.session.user || !socket.rooms.has(salaChatGlobal)) {
-          return confirmar({ ok: false, error: 'Unite al chat con una sesión iniciada.' });
+      if (!socket.data.user || !socket.rooms.has(salaChatGlobal)) {
+          return confirmar({ ok: false, error: 'Unite al chat con tu usuario.' });
       }
       if (!texto || texto.length > 500) {
           return confirmar({ ok: false, error: 'El mensaje debe tener entre 1 y 500 caracteres.' });
@@ -391,7 +374,7 @@ io.on('connection', (socket) => {
       ultimoMensajeChat.set(socket.id, ahora);
       const mensaje = {
           id: crypto.randomUUID(),
-          user: req.session.user,
+          user: socket.data.user,
           message: texto,
           createdAt: new Date(ahora).toISOString()
       };
@@ -432,7 +415,14 @@ app.get('/usuarios', async function(req,res){
     // El parámetro `id` filtra por la columna id_usuario definida en creacion_tablas.sql.
     let respuesta;
     if (req.query.id != undefined) {
-        respuesta = await realizarQuery(`SELECT id_usuario, usuario AS name, email FROM Usuarios WHERE id_usuario=${req.query.id}`)
+        const id = Number(req.query.id);
+        if (!Number.isSafeInteger(id) || id < 1) {
+            return res.status(400).json({ error: 'El ID de usuario no es válido.' });
+        }
+        respuesta = await realizarQuery(
+            'SELECT id_usuario, usuario AS name, email FROM Usuarios WHERE id_usuario = ?',
+            [id]
+        );
     } else {
         // Los datos públicos no incluyen la contraseña almacenada en la tabla.
         respuesta = await realizarQuery("SELECT id_usuario, usuario AS name, email FROM Usuarios");
@@ -440,33 +430,23 @@ app.get('/usuarios', async function(req,res){
     res.send(respuesta);
 })
 
-// Valida las credenciales en el servidor y guarda el usuario en la sesión HTTP.
-// En esta versión de la base, la contraseña se compara directamente con el dato guardado.
+// Valida el correo y la contraseña en la base, y devuelve el perfil público del usuario.
 app.post('/login', async function(req, res) {
     try {
-        const usuarios = await realizarQuery("SELECT id_usuario, usuario AS name, email, contraseña AS password FROM Usuarios") || [];
-        console.log(usuarios)
-        const usuario = usuarios.find((fila) => (
-            fila.email === req.body.email && fila.password === req.body.password
-            
-        ));
-        console.log(usuario)
+        const usuarios = await realizarQuery(
+            'SELECT id_usuario, usuario AS name, email, contraseña AS password FROM Usuarios WHERE email = ?',
+            [req.body.email]
+        ) || [];
+        const usuario = usuarios.find((fila) => fila.password === req.body.password);
 
         if (!usuario) {
             return res.status(401).json({ error: 'Correo o contraseña incorrectos.' });
         }
 
-        req.session.user = {
+        return res.json({
             id: usuario.id_usuario,
             name: usuario.name,
             email: usuario.email
-        };
-
-        return req.session.save((error) => {
-            if (error) {
-                return res.status(500).json({ error: 'No se pudo iniciar la sesión.' });
-            }
-            return res.json(req.session.user);
         });
     } catch (error) {
         console.error(error);

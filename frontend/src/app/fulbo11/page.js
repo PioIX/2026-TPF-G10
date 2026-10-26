@@ -3,9 +3,10 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import "../global.css";
 import GameLobby, { useGameSession } from "../../components/GameLobby";
+import { BACKEND_URL } from "../../config/backend";
 
 // URL del servidor Express que entrega la lista de jugadores.
-const URL_API = "http://localhost:4000";
+const URL_API = BACKEND_URL;
 
 // Define los roles del esquema 1–11 y el sector visual de cada hueco.
 // Estos códigos describen posiciones futbolísticas; no son el dorsal de la camiseta.

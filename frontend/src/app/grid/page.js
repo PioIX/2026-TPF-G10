@@ -4,8 +4,9 @@ import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import "../global.css";
 import GameLobby, { useGameSession } from "../../components/GameLobby";
+import { BACKEND_URL } from "../../config/backend";
 
-const BACKEND = "http://localhost:4000";
+const BACKEND = BACKEND_URL;
 const MINIMO_JUGADORES = 3;
 
 // Cachés en memoria de imágenes externas; evitan pedir de nuevo el mismo recurso mientras viva la página.

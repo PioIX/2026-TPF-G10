@@ -4,8 +4,9 @@ import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import "../global.css";
 import GameLobby, { useGameSession } from "../../components/GameLobby";
+import { BACKEND_URL } from "../../config/backend";
 
-const API_URL = "http://localhost:4000";
+const API_URL = BACKEND_URL;
 
 // Normaliza la escritura para comparar nombres y respuestas ignorando tildes, signos y mayúsculas.
 function limpiarTexto(texto) {

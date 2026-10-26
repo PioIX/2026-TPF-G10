@@ -1,15 +1,13 @@
-// Uso: panel lateral de /menu para conversar entre usuarios conectados con sesión iniciada.
-// Socket.IO entrega mensajes en tiempo real; historial, autenticación y límites se controlan en el backend.
+// Uso: panel lateral de /menu para conversar entre usuarios que iniciaron sesión.
+// Socket.IO entrega mensajes en tiempo real; el backend revisa el usuario y limita los mensajes.
 "use client";
 
 import { useEffect, useState } from "react";
 import useSocket from "../hooks/useSocket";
 
-const OPCIONES_SOCKET = { withCredentials: false };
-
-// Uso: panel lateral de /menu. Socket.IO comparte historial y mensajes; el backend valida la sesión.
+// Uso: panel lateral de /menu. Socket.IO comparte historial y mensajes; el backend valida el usuario.
 export default function GlobalChat() {
-  const { socket, isConnected } = useSocket("ws://localhost:4000", OPCIONES_SOCKET);
+  const { socket, isConnected } = useSocket();
   const [mensajes, setMensajes] = useState([]);
   const [texto, setTexto] = useState("");
   const [error, setError] = useState("");
