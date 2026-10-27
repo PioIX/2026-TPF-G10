@@ -3,8 +3,10 @@
 import { useState, useEffect, useCallback } from "react";
 import "../global.css";
 import GameLobby, { useGameSession } from "../../components/GameLobby";
+import GoalCelebration from "../../components/GoalCelebration";
 import { BACKEND_URL } from "../../config/backend";
 import obtenerImagenDeportiva from "../../utils/imagenes";
+import { comentarioFutbolero } from "../../utils/comentariosFutboleros";
 
 const BACKEND = BACKEND_URL;
 const MINIMO_JUGADORES = 3;
@@ -367,7 +369,7 @@ function GridGame() {
     );
 
     if (encontrado) {
-      setRespuestaFeed("Correcto");
+      setRespuestaFeed(`${comentarioFutbolero("acierto")} Correcto.`);
 
       // Guardamos primero el apellido para mostrarlo inmediatamente
       setCeldasReveladas((prev) => ({
@@ -425,6 +427,7 @@ function GridGame() {
 
   return (
     <main className="gridGame">
+      {terminoLaPartida && <GoalCelebration />}
       {grilla && !error && (
         <div className="gridDesbordamiento">
           <div className="grid">

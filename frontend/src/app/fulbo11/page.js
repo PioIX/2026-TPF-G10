@@ -3,7 +3,9 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import "../global.css";
 import GameLobby, { useGameSession } from "../../components/GameLobby";
+import GoalCelebration from "../../components/GoalCelebration";
 import { BACKEND_URL } from "../../config/backend";
+import { comentarioFutbolero } from "../../utils/comentariosFutboleros";
 
 // URL del servidor Express que entrega la lista de jugadores.
 const URL_API = BACKEND_URL;
@@ -249,11 +251,13 @@ function Fulbo11Game() {
 
     if (ocupadas === POSICIONES.length) {
       setEntradaJugador("");
-      setMensaje("¡Formación completa!");
+      setMensaje(`${comentarioFutbolero("victoria")} ¡Formación completa!`);
       return;
     }
 
-    setMensaje(`${jugador.nombre} fue colocado con éxito en ${posicion.nombre}.`);
+    setMensaje(
+      `${comentarioFutbolero("colocacion")} ${jugador.nombre} fue colocado en ${posicion.nombre}.`
+    );
     siguienteRonda(nuevoEquipo);
   };
 
@@ -338,6 +342,7 @@ function Fulbo11Game() {
 
   return (
     <>
+      {terminoLaPartida && <GoalCelebration />}
       <div className="panelJuego">
         <p id="instruccionJuego">
           Elegí un jugador del país mostrado y colocalo en un espacio libre de la
