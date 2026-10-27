@@ -1,17 +1,13 @@
 // src/app/grid/page.js
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import Image from "next/image";
 import "../global.css";
 import GameLobby, { useGameSession } from "../../components/GameLobby";
 import { BACKEND_URL } from "../../config/backend";
+import obtenerImagenDeportiva from "../../utils/imagenes";
 
 const BACKEND = BACKEND_URL;
 const MINIMO_JUGADORES = 3;
-
-// Cachés en memoria de imágenes externas; evitan pedir de nuevo el mismo recurso mientras viva la página.
-const cacheFotosJugadores = {};
-const cacheFotosEquipos = {};
 
 // Normaliza países y clubes para que una tilde o diferencia de mayúsculas no rompa una coincidencia.
 function normalizarTexto(texto) {
@@ -247,28 +243,6 @@ function buscarGrilla(paises, equipos, conexiones, semilla) {
   return null;
 }
 
-// Consulta TheSportsDB, una API externa de imágenes; guarda éxitos para no repetir la misma búsqueda.
-async function consultarAPI(url, claveCache, propiedadDato) {
-  const cache =
-    propiedadDato === "player" ? cacheFotosJugadores : cacheFotosEquipos;
-  if (cache[claveCache]) return cache[claveCache];
-
-  try {
-    const res = await fetch(url);
-    const datos = await res.json();
-    const lista = datos[propiedadDato];
-    if (lista && lista.length > 0) {
-      const recurso =
-        lista[0].strCutout || lista[0].strThumb || lista[0].strBadge || "";
-      cache[claveCache] = recurso;
-      return recurso;
-    }
-  } catch (e) {
-    console.error("Error en API externa:", e);
-  }
-  return "";
-}
-
 // Uso: contenido del lobby del Grid. En una sala, ambos clientes comparten los encabezados.
 function GridGame() {
   const { modo, sala, enviarProgreso, marcarPartidaTerminada } = useGameSession();
@@ -305,7 +279,7 @@ function GridGame() {
         return;
       }
 
-      // El autocompletado incluye toda la tabla de jugadores, sin usar los cruces de la celda activa.
+      // El autocompletado muestra todos los jugadores, aunque no correspondan a la celda activa.
       const nombresJugadores = new Map();
       jugadores.forEach((jugador) => {
         const nombreCompleto = `${jugador.nombre || ""} ${jugador.apellido || ""}`.trim();
@@ -342,14 +316,7 @@ function GridGame() {
 
       // Buscar los escudos de los 3 equipos seleccionados
       nuevaGrilla.columnas.forEach((eq) => {
-        const clave = normalizarTexto(eq.nombre);
-        consultarAPI(
-          `https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t=${encodeURIComponent(
-            eq.nombre
-          )}`,
-          clave,
-          "teams"
-        ).then((escudoUrl) => {
+        obtenerImagenDeportiva("equipo", eq.nombre).then((escudoUrl) => {
           if (escudoUrl) {
             setEscudos((prev) => ({ ...prev, [eq.id]: escudoUrl }));
           }
@@ -398,13 +365,7 @@ function GridGame() {
 
       // Buscamos la foto del jugador en TheSportsDB
       const nombreCompleto = `${encontrado.nombre} ${encontrado.apellido}`;
-      const fotoUrl = await consultarAPI(
-        `https://www.thesportsdb.com/api/v1/json/3/searchplayers.php?p=${encodeURIComponent(
-          nombreCompleto
-        )}`,
-        normalizarTexto(nombreCompleto),
-        "player"
-      );
+      const fotoUrl = await obtenerImagenDeportiva("jugador", nombreCompleto);
 
       if (fotoUrl) {
         setCeldasReveladas((prev) => ({
@@ -465,12 +426,15 @@ function GridGame() {
           {grilla.columnas.map((eq, indice) => (
             <div key={`${eq.id}-${indice}`} className="cell logo">
               {escudos[eq.id] && (
-                <Image
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
                   src={escudos[eq.id]}
                   alt={eq.nombre}
                   width={40}
                   height={40}
-                  unoptimized
+                  onError={(event) => {
+                    event.currentTarget.style.display = "none";
+                  }}
                   style={{ objectFit: "contain" }}
                 />
               )}
@@ -503,12 +467,15 @@ function GridGame() {
                     {revelada ? (
                       <>
                         {revelada.foto && (
-                          <Image
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
                             src={revelada.foto}
                             alt={revelada.apellido}
                             width={60}
                             height={60}
-                            unoptimized
+                            onError={(event) => {
+                              event.currentTarget.style.display = "none";
+                            }}
                             style={{ objectFit: "contain" }}
                           />
                         )}
@@ -550,6 +517,11 @@ function GridGame() {
               }}
               style={{ padding: "8px 12px", borderRadius: "8px", border: "none" }}
             />
+            <datalist id="listaJugadores">
+              {todosLosJugadores.map((nombre) => (
+                <option key={normalizarTexto(nombre)} value={nombre} />
+              ))}
+            </datalist>
             {/* Tu compañero puede reemplazar este botón por su componente <Button> */}
             <button
               id="btnProbar"
@@ -568,12 +540,6 @@ function GridGame() {
             >
               Probar
             </button>
-
-            <datalist id="listaJugadores">
-              {todosLosJugadores.map((nombre) => (
-                <option key={normalizarTexto(nombre)} value={nombre} />
-              ))}
-            </datalist>
 
             <p id="respuestaFeed" style={{ marginTop: "10px", fontWeight: "bold" }}>
               {respuestaFeed}

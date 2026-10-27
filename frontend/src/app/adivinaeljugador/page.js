@@ -1,12 +1,16 @@
 // src/app/adivinaeljugador/page.js
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import Image from "next/image";
 import "../global.css";
 import GameLobby, { useGameSession } from "../../components/GameLobby";
+import PlayerSilhouette from "../../components/PlayerSilhouette";
 import { BACKEND_URL } from "../../config/backend";
+import obtenerImagenDeportiva from "../../utils/imagenes";
 
 const API_URL = BACKEND_URL;
+const OPCIONES_POSICION = Array.from({ length: 11 }, (_, indice) =>
+  String(indice + 1)
+);
 
 // Normaliza la escritura para comparar nombres y respuestas ignorando tildes, signos y mayúsculas.
 function limpiarTexto(texto) {
@@ -22,7 +26,7 @@ function limpiarTexto(texto) {
 // Son colecciones nativas de JavaScript que no se explican en los apuntes.
 function construirJugadores(datos) {
   const jugadoresMap = new Map();
-  const sugerenciasTemp = { club: [], pais: [], posicion: [], liga: [], nombres: [] };
+  const sugerenciasTemp = { club: [], pais: [], liga: [], nombres: [] };
 
   datos.forEach((fila) => {
     const id = fila.id_jugador;
@@ -34,8 +38,9 @@ function construirJugadores(datos) {
         nombre: `${fila.nombre || ""} ${fila.apellido || ""}`.trim(),
         pais: fila.pais || fila.country || "",
         posicion: fila.posicion || "",
-        // La API ya devuelve esta columna para habilitarla como pista en una etapa futura.
+        // La liga del club actual se usa para responder las preguntas de competición.
         ligaActual: fila.liga_actual || "",
+        clubActual: fila.club_actual || "",
         edad: Number(fila.edad) || 0,
         altura: Number(fila.altura) || 0,
         trayectoria: [],
@@ -46,8 +51,8 @@ function construirJugadores(datos) {
     const club = fila.nombre_equipo || "";
 
     if (jugador.pais) sugerenciasTemp.pais.push(jugador.pais);
-    if (jugador.posicion) sugerenciasTemp.posicion.push(jugador.posicion);
     if (jugador.ligaActual) sugerenciasTemp.liga.push(jugador.ligaActual);
+    if (jugador.clubActual) sugerenciasTemp.club.push(jugador.clubActual);
     if (club) sugerenciasTemp.club.push(club);
     if (jugador.nombre) sugerenciasTemp.nombres.push(jugador.nombre);
 
@@ -63,7 +68,7 @@ function construirJugadores(datos) {
   const sugerenciasLimpias = {
     club: Array.from(new Set(sugerenciasTemp.club)).sort(),
     pais: Array.from(new Set(sugerenciasTemp.pais)).sort(),
-    posicion: Array.from(new Set(sugerenciasTemp.posicion)).sort(),
+    posicion: OPCIONES_POSICION,
     liga: Array.from(new Set(sugerenciasTemp.liga)).sort(),
     nombres: Array.from(new Set(sugerenciasTemp.nombres)).sort(),
   };
@@ -72,14 +77,16 @@ function construirJugadores(datos) {
     jugador.trayectoria.sort(
       (a, b) => a.ingreso - b.ingreso || a.traspaso - b.traspaso
     );
-    jugador.clubes = [...new Set(jugador.trayectoria.map((t) => t.club))];
-    jugador.clubActual = jugador.trayectoria.length
-      ? jugador.trayectoria[jugador.trayectoria.length - 1].club
-      : "";
-    jugador.clubesPasados =
-      jugador.trayectoria.length > 1
-        ? jugador.trayectoria.slice(0, -1).map((t) => t.club)
-        : [];
+    if (!jugador.clubActual && jugador.trayectoria.length) {
+      jugador.clubActual = jugador.trayectoria[jugador.trayectoria.length - 1].club;
+    }
+    jugador.clubes = [...new Set([
+      ...jugador.trayectoria.map((t) => t.club),
+      jugador.clubActual,
+    ].filter(Boolean))];
+    jugador.clubesPasados = jugador.trayectoria
+      .map((t) => t.club)
+      .filter((club) => limpiarTexto(club) !== limpiarTexto(jugador.clubActual));
     return jugador;
   });
 
@@ -95,7 +102,7 @@ function AdivinaElJugadorGame() {
   const [sugerencias, setSugerencias] = useState({
     club: [],
     pais: [],
-    posicion: [],
+    posicion: OPCIONES_POSICION,
     liga: [],
     nombres: [],
   });
@@ -147,6 +154,32 @@ function AdivinaElJugadorGame() {
   useEffect(() => {
     Promise.resolve().then(cargarJugadores);
   }, [cargarJugadores]);
+
+  // Carga la foto del jugador secreto para mostrar su silueta durante la partida.
+  useEffect(() => {
+    const nombre = jugadorSecreto?.nombre;
+    if (!nombre) {
+      setFotoJugador("");
+      return;
+    }
+
+    let activo = true;
+    setFotoJugador("");
+    obtenerImagenDeportiva("jugador", nombre).then((imagen) => {
+      if (activo) setFotoJugador(imagen);
+    });
+
+    return () => {
+      activo = false;
+    };
+  }, [jugadorSecreto]);
+
+  // Permite revisar el sorteo en desarrollo sin revelar el secreto en la versión publicada.
+  useEffect(() => {
+    if (process.env.NODE_ENV === "development" && jugadorSecreto) {
+      console.info("[Adivina el jugador] Secreto de desarrollo:", jugadorSecreto);
+    }
+  }, [jugadorSecreto]);
 
   // Valida opciones con la lista cargada y la comparación normalizada.
   const opcionValida = (cat, texto) => {
@@ -242,6 +275,20 @@ function AdivinaElJugadorGame() {
         };
       }
 
+      if (cat === "posicion") {
+        const posicionesDelJugador =
+          String(secreto.posicion || "").match(/\d+/g) || [];
+        const juegaEnLaPosicion = posicionesDelJugador.includes(
+          limpiarTexto(textoInput)
+        );
+        return {
+          valido: true,
+          respuesta: juegaEnLaPosicion
+            ? `Sí, juega como ${textoInput}.`
+            : `No, no juega como ${textoInput}.`,
+        };
+      }
+
       const valorSecreto = limpiarTexto(secreto[cat]);
       return {
         valido: true,
@@ -289,8 +336,8 @@ function AdivinaElJugadorGame() {
     }
   };
 
-  // Comprueba el nombre; si acierta termina y consulta una foto en TheSportsDB.
-  const intentarAdivinar = async () => {
+  // Comprueba el nombre; la foto cargada se revela si acierta.
+  const intentarAdivinar = () => {
     if (!jugadorSecreto) return;
     const texto = inputAdivinar.trim();
 
@@ -307,21 +354,6 @@ function AdivinaElJugadorGame() {
         ...prev,
       ]);
 
-      // Buscar foto en TheSportsDB
-      try {
-        const res = await fetch(
-          `https://www.thesportsdb.com/api/v1/json/3/searchplayers.php?p=${encodeURIComponent(
-            jugadorSecreto.nombre
-          )}`
-        );
-        const data = await res.json();
-        if (data?.player?.[0]) {
-          const img = data.player[0].strCutout || data.player[0].strThumb || "";
-          setFotoJugador(img);
-        }
-      } catch (err) {
-        console.error("Error buscando foto del jugador:", err);
-      }
     } else {
       setPreguntasRestantes((prev) => Math.max(0, prev - 1));
       setMensaje(`No es ${texto}. Sigue intentando.`);
@@ -377,21 +409,12 @@ function AdivinaElJugadorGame() {
       <main id="main">
         <div id="contenedor-jugador-top">
           <div id="contenedor-jugador">
-            <div id="silueta">
-              {fotoJugador ? (
-                <Image
-                  id="fotoJugador"
-                  src={fotoJugador}
-                  alt={jugadorSecreto?.nombre}
-                  width={240}
-                  height={240}
-                  unoptimized
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                />
-              ) : (
-                "?"
-              )}
-            </div>
+            <PlayerSilhouette
+              id="silueta"
+              imagen={fotoJugador}
+              revelado={adivino}
+              size={100}
+            />
           </div>
           <div id="dificultad">⚽⚽⚽</div>
         </div>
@@ -505,8 +528,8 @@ function AdivinaElJugadorGame() {
               onChange={(e) => setInputTexto(e.target.value)}
             />
             <datalist id="sugerencias">
-              {opcionesSugerencias.map((v) => (
-                <option key={v} value={v} />
+              {opcionesSugerencias.map((opcion) => (
+                <option key={opcion} value={opcion} />
               ))}
             </datalist>
 
@@ -549,8 +572,8 @@ function AdivinaElJugadorGame() {
             onChange={(e) => setInputAdivinar(e.target.value)}
           />
           <datalist id="sugerencias-adivinar">
-            {sugerencias.nombres.map((v) => (
-              <option key={v} value={v} />
+            {sugerencias.nombres.map((nombre) => (
+              <option key={limpiarTexto(nombre)} value={nombre} />
             ))}
           </datalist>
           <button

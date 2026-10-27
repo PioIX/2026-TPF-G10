@@ -11,9 +11,9 @@ const URL_API = BACKEND_URL;
 // Define los roles del esquema 1–11 y el sector visual de cada hueco.
 // Estos códigos describen posiciones futbolísticas; no son el dorsal de la camiseta.
 const POSICIONES = [
-  { numero: 7, nombre: "ED", grupo: "delanteros" },
+  { numero: 7, nombre: "EI", grupo: "delanteros" },
   { numero: 9, nombre: "DC", grupo: "delanteros" },
-  { numero: 11, nombre: "EI", grupo: "delanteros" },
+  { numero: 11, nombre: "ED", grupo: "delanteros" },
 
   { numero: 8, nombre: "MC", grupo: "mediocampistas" },
   { numero: 10, nombre: "MCO", grupo: "mediocampistas" },
@@ -128,7 +128,11 @@ function Fulbo11Game() {
         // Usamos un Map por id_jugador para no duplicar jugadores con varios clubes en su trayectoria
         const mapaUnicos = new Map();
         datos.forEach((jugador) => {
-          if (jugador && (jugador.pais || jugador.country) && !mapaUnicos.has(jugador.id_jugador)) {
+          if (
+            jugador &&
+            jugador.id_jugador != null &&
+            !mapaUnicos.has(jugador.id_jugador)
+          ) {
             mapaUnicos.set(jugador.id_jugador, {
               id: jugador.id_jugador,
               nombre: `${jugador.nombre || ""} ${jugador.apellido || ""}`.trim() || "Jugador",
@@ -269,33 +273,16 @@ function Fulbo11Game() {
     marcarPartidaTerminada,
   ]);
 
-  // Filtra sugerencias por texto, país, posición seleccionada y jugadores todavía libres.
-  // useMemo es un hook de optimización que no aparece en los apuntes.
-  const sugerencias = useMemo(() => {
-    const valor = normalizarTexto(entradaJugador);
-    if (!valor) return [];
-
-    const idsUsados = new Set(
-      equipo.filter(Boolean).map((jugador) => jugador.id)
-    );
-    const clavePaisActual = normalizarTexto(paisActual);
-
-    return jugadores
-      .filter((jugador) => {
-        const coincideTexto = normalizarTexto(jugador.nombre).includes(valor);
-        const coincidePais =
-          normalizarTexto(jugador.pais) === clavePaisActual;
-        const noFueUsado = !idsUsados.has(jugador.id);
-        const coincidePosicion =
-          posicionSeleccionada === null ||
-          puedeJugarEnPosicion(
-            jugador,
-            POSICIONES[posicionSeleccionada]
-          );
-        return coincideTexto && coincidePais && noFueUsado && coincidePosicion;
-      })
-      .slice(0, 12);
-  }, [entradaJugador, jugadores, paisActual, equipo, posicionSeleccionada]);
+  // Sugiere todos los nombres cargados desde la base; país, puesto y repetidos se validan al probar.
+  const sugerenciasJugadores = useMemo(() => {
+    const nombres = new Map();
+    jugadores.forEach((jugador) => {
+      const nombre = String(jugador.nombre || "").trim();
+      const clave = normalizarTexto(nombre);
+      if (clave && !nombres.has(clave)) nombres.set(clave, nombre);
+    });
+    return Array.from(nombres.values()).sort((a, b) => a.localeCompare(b, "es"));
+  }, [jugadores]);
 
   // Genera los botones de un sector de la cancha y conecta cada uno con su índice de posición.
   const renderFilaGrupo = (nombreGrupo) => {
@@ -386,8 +373,8 @@ function Fulbo11Game() {
             onChange={(e) => setEntradaJugador(e.target.value)}
           />
           <datalist id="sugerenciasJugadores">
-            {sugerencias.map((j) => (
-              <option key={j.id} value={j.nombre} />
+            {sugerenciasJugadores.map((nombre) => (
+              <option key={normalizarTexto(nombre)} value={nombre} />
             ))}
           </datalist>
 

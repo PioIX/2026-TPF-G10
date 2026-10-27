@@ -10,6 +10,15 @@ const { realizarQuery } = require('./modulos/mysql');
 // Express atiende los pedidos HTTP y comparte el servidor con Socket.IO.
 const app = express();
 const port = process.env.PORT || 4000;
+const cacheImagenesExternas = new Map();
+
+function normalizarClaveImagen(texto) {
+    return String(texto || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9]/g, '')
+        .toLowerCase();
+}
 
 // Creamos el servidor HTTP envolviendo la app de Express
 const server = http.createServer(app);
@@ -483,12 +492,62 @@ app.get('/jugadores', async function(req,res){
     // Este JOIN también devuelve una fila por registro de trayectoria; el frontend agrupa por id_jugador.
     let respuesta;
     if (req.query.id != undefined) {
-        respuesta = await realizarQuery(`SELECT Jugadores.id_jugador, Jugadores.nombre, Jugadores.apellido, Jugadores.pais, Jugadores.posicion, Jugadores.liga_actual, Datos.edad, Datos.altura, Equipos.nombre_equipo, Trayectoria.anio_ingreso, Trayectoria.anio_traspaso FROM Jugadores LEFT JOIN Datos ON Datos.id_jugador = Jugadores.id_jugador LEFT JOIN Trayectoria ON Trayectoria.id_jugador = Jugadores.id_jugador LEFT JOIN Equipos ON Equipos.id_equipo = Trayectoria.id_equipo WHERE Jugadores.id_jugador=${req.query.id}`);
+        respuesta = await realizarQuery(`SELECT Jugadores.id_jugador, Jugadores.nombre, Jugadores.apellido, Jugadores.pais, Jugadores.posicion, Jugadores.liga_actual, Jugadores.id_equipo AS id_equipo_actual, EquipoActual.nombre_equipo AS club_actual, Datos.edad, Datos.altura, Equipos.nombre_equipo, Trayectoria.anio_ingreso, Trayectoria.anio_traspaso FROM Jugadores LEFT JOIN Equipos AS EquipoActual ON EquipoActual.id_equipo = Jugadores.id_equipo LEFT JOIN Datos ON Datos.id_jugador = Jugadores.id_jugador LEFT JOIN Trayectoria ON Trayectoria.id_jugador = Jugadores.id_jugador LEFT JOIN Equipos ON Equipos.id_equipo = Trayectoria.id_equipo WHERE Jugadores.id_jugador=${req.query.id}`);
     } else {
-        respuesta = await realizarQuery("SELECT Jugadores.id_jugador, Jugadores.nombre, Jugadores.apellido, Jugadores.pais, Jugadores.posicion, Jugadores.liga_actual, Datos.edad, Datos.altura, Equipos.nombre_equipo, Trayectoria.anio_ingreso, Trayectoria.anio_traspaso FROM Jugadores LEFT JOIN Datos ON Datos.id_jugador = Jugadores.id_jugador LEFT JOIN Trayectoria ON Trayectoria.id_jugador = Jugadores.id_jugador LEFT JOIN Equipos ON Equipos.id_equipo = Trayectoria.id_equipo");
+        respuesta = await realizarQuery("SELECT Jugadores.id_jugador, Jugadores.nombre, Jugadores.apellido, Jugadores.pais, Jugadores.posicion, Jugadores.liga_actual, Jugadores.id_equipo AS id_equipo_actual, EquipoActual.nombre_equipo AS club_actual, Datos.edad, Datos.altura, Equipos.nombre_equipo, Trayectoria.anio_ingreso, Trayectoria.anio_traspaso FROM Jugadores LEFT JOIN Equipos AS EquipoActual ON EquipoActual.id_equipo = Jugadores.id_equipo LEFT JOIN Datos ON Datos.id_jugador = Jugadores.id_jugador LEFT JOIN Trayectoria ON Trayectoria.id_jugador = Jugadores.id_jugador LEFT JOIN Equipos ON Equipos.id_equipo = Trayectoria.id_equipo");
     }    
     res.send(respuesta);
 })
+
+// Busca fotos y escudos desde el backend para evitar depender del acceso del navegador a TheSportsDB.
+app.get('/imagen', async function(req, res) {
+    const tipo = req.query.tipo;
+    const nombre = String(req.query.nombre || '').trim();
+    if (!['jugador', 'equipo'].includes(tipo) || !nombre || nombre.length > 120) {
+        return res.status(400).json({ imagen: '' });
+    }
+
+    const clave = `${tipo}:${normalizarClaveImagen(nombre)}`;
+    if (cacheImagenesExternas.has(clave)) {
+        return res.json({ imagen: cacheImagenesExternas.get(clave) });
+    }
+
+    const parametro = tipo === 'jugador' ? 'p' : 't';
+    const listaResultados = tipo === 'jugador' ? 'player' : 'teams';
+    const campoNombre = tipo === 'jugador' ? 'strPlayer' : 'strTeam';
+    const camposImagen = tipo === 'jugador'
+        ? ['strCutout', 'strThumb']
+        : ['strBadge', 'strThumb'];
+    const url = `https://www.thesportsdb.com/api/v1/json/3/search${tipo === 'jugador' ? 'players' : 'teams'}.php?${parametro}=${encodeURIComponent(nombre)}`;
+
+    const controlador = new AbortController();
+    const timeout = setTimeout(() => controlador.abort(), 8000);
+    try {
+        const respuestaExterna = await fetch(url, { signal: controlador.signal });
+        if (!respuestaExterna.ok) {
+            cacheImagenesExternas.set(clave, '');
+            return res.json({ imagen: '' });
+        }
+
+        const datos = await respuestaExterna.json();
+        const resultados = Array.isArray(datos?.[listaResultados]) ? datos[listaResultados] : [];
+        const nombreNormalizado = normalizarClaveImagen(nombre);
+        const coincidencia = resultados.find((item) =>
+            normalizarClaveImagen(item?.[campoNombre]) === nombreNormalizado
+        ) || (resultados.length === 1 ? resultados[0] : null);
+        const imagen = coincidencia
+            ? camposImagen.map((campo) => coincidencia[campo]).find(Boolean) || ''
+            : '';
+
+        cacheImagenesExternas.set(clave, imagen);
+        return res.json({ imagen });
+    } catch (error) {
+        cacheImagenesExternas.set(clave, '');
+        return res.json({ imagen: '' });
+    } finally {
+        clearTimeout(timeout);
+    }
+});
 
 // Consulta los registros de trayectoria de los jugadores.
 app.get('/trayectoria', async function(req,res){
