@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import useSocket from "../../hooks/useSocket";
 import "../global.css";
+import { BACKEND_URL } from "../../config/backend";
 
-const API_URL = "http://localhost:4000";
+const API_URL = BACKEND_URL;
 
 // Uso: apoyo del alta de jugador en /admin. Busca el ID porque el POST actual responde solo un texto.
 function buscarId(jugadores, nombre, apellido, idEquipo) {
@@ -24,7 +25,7 @@ function buscarId(jugadores, nombre, apellido, idEquipo) {
 
 export default function AdminPage() {
   // Uso: página /admin. Registra jugadores y clubes; useSocket escucha avisos de cambios del servidor.
-  const { socket, isConnected } = useSocket("ws://localhost:4000");
+  const { socket, isConnected } = useSocket(BACKEND_URL);
 
   // Mensajes de resultado que se muestran bajo cada formulario.
   const [msgJugador, setMsgJugador] = useState("");

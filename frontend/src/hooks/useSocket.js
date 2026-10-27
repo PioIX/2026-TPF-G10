@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
+import { BACKEND_URL } from "../config/backend";
 
-const DEFAULT_OPTIONS = { withCredentials: false };
+const DEFAULT_OPTIONS = {};
 
 // Hook reutilizable: concentra la conexión para que una página solo tenga que
 // hacer: const { socket, isConnected } = useSocket();
 export default function useSocket(
-  serverUrl = "10.1.5.91:4000",
+  serverUrl = BACKEND_URL,
   options = DEFAULT_OPTIONS
 ) {
   const [isConnected, setIsConnected] = useState(false);
@@ -15,7 +16,11 @@ export default function useSocket(
   useEffect(() => {
     // io() abre el canal con el backend. useRef permite guardar el socket sin
     // provocar otro render de React.
-    const socket = io(serverUrl, options);
+    const userId = window.localStorage.getItem("usuarioId");
+    const socket = io(serverUrl, {
+      ...options,
+      query: { ...options.query, userId },
+    });
     socketRef.current = socket;
 
     // on() escucha eventos que manda el servidor.

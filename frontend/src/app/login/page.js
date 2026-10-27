@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import "../global.css";
-
-const API_URL = "http://localhost:4000";
+import { BACKEND_URL } from "../../config/backend";
 
 // Validación de interfaz: evita enviar un correo sin el formato básico esperado.
 function validateEmail(email) {
@@ -32,8 +31,7 @@ export default function LoginPage() {
   // Estado para mostrar mensajes de error o éxito
   const [modalInfo, setModalInfo] = useState({ titulo: "", mensaje: "" });
 
-  // Guarda solo el identificador y el nombre para que la interfaz los lea entre rutas.
-  // La sesión autenticada real la conserva la cookie HTTP que entrega el backend.
+  // Guarda el ID devuelto por el login; Socket.IO lo manda al backend para buscar al usuario.
   const guardarUsuarioLocal = (usuario) => {
     localStorage.setItem("usuarioId", usuario.id);
     localStorage.setItem("usuarioNombre", usuario.name);
@@ -45,7 +43,7 @@ export default function LoginPage() {
     setModalInfo({ titulo: "", mensaje: "" });
   };
 
-  // Envía email y contraseña por POST. `credentials: include` permite guardar la cookie de sesión.
+  // Envía email y contraseña por POST; el backend devuelve el usuario validado en la base.
   const loginUsuario = async (e) => {
     e.preventDefault();
 
@@ -58,14 +56,13 @@ export default function LoginPage() {
     }
 
     try {
-      const response = await fetch(`${API_URL}/login`, {
+      const response = await fetch(`${BACKEND_URL}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-      // Lee el JSON de respuesta tanto si el servidor acepta como si rechaza las credenciales.
+      // Lee el JSON de respuesta tanto si el servidor acepta como si rechaza el acceso.
       const usuario = await response.json();
-      console.log(usuario)
       if (response.ok) {
         setModalInfo({
           titulo: "Éxito",
@@ -90,7 +87,7 @@ export default function LoginPage() {
     }
   };
 
-  // Registra en la base y, si sale bien, hace login para obtener la cookie de sesión.
+  // Registra en la base y, si sale bien, hace login para obtener el ID validado del usuario.
   const registrarUsuario = async (e) => {
     e.preventDefault();
 
@@ -119,7 +116,7 @@ export default function LoginPage() {
     }
 
     try {
-      const response = await fetch(`${API_URL}/usuarios`, {
+      const response = await fetch(`${BACKEND_URL}/usuarios`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -139,8 +136,8 @@ export default function LoginPage() {
           mensaje: "Este correo electrónico ya está registrado.",
         });
       } else if (msj === "Usuario registrado") {
-        // El registro no crea una sesión automáticamente; por eso se validan las credenciales aquí.
-        const respuestaLogin = await fetch(`${API_URL}/login`, {
+        // El registro no inicia sesión automáticamente; se valida la cuenta con el mismo pedido de login.
+        const respuestaLogin = await fetch(`${BACKEND_URL}/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password }),
