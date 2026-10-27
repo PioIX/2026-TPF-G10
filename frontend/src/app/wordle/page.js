@@ -8,6 +8,15 @@ import { BACKEND_URL } from "../../config/backend";
 const API_URL = BACKEND_URL;
 const MAX_INTENTOS = 6;
 
+/*
+ * Reglas de Wordle:
+ * - Se sortea un apellido de tres a ocho letras y se normaliza quitando tildes y signos.
+ * - Hay seis intentos; cada letra queda verde si coincide en posición, amarilla si está en otra
+ *   posición y gris si no aparece en la palabra.
+ * - El teclado de pantalla y el físico llaman a las mismas acciones.
+ * - En online cada persona recibe una palabra propia; se comparte el tablero coloreado, nunca la solución.
+ */
+
 // Colores acordados con el tablero rival y con la validación del backend.
 const COLOR_CORRECTO = "#4caf50";
 const COLOR_CERCANO = "#f1c40f";
@@ -32,7 +41,7 @@ function limpiarTexto(texto) {
 function WordleGame() {
   const { modo, sala, enviarProgreso, marcarPartidaTerminada } = useGameSession();
 
-  // El estado contiene la palabra secreta, el tablero y el avance del intento.
+  // La matriz del tablero guarda cada letra y su color; los dos índices señalan la fila y columna activas.
   const [palabraSecreta, setPalabraSecreta] = useState("");
   const [filas, setFilas] = useState([]); // Matriz [fila][col] con { letra, color }
   const [intentoActual, setIntentoActual] = useState(0);
@@ -85,7 +94,7 @@ function WordleGame() {
     Promise.resolve().then(iniciarJuego);
   }, [iniciarJuego]);
 
-  // Regla de colores del Wordle: letra en lugar correcto, en otra posición o ausente.
+  // Decide el color de una celda comparando su letra con la solución.
   const colorDeLetra = useCallback((letra, indice) => {
     if (letra === palabraSecreta[indice]) return COLOR_CORRECTO;
     if (palabraSecreta.includes(letra)) return COLOR_CERCANO;
@@ -170,7 +179,7 @@ function WordleGame() {
     }
   }, [juegoTerminado, palabraSecreta, filas, intentoActual, colorDeLetra]);
 
-  // Unifica el teclado físico y el teclado dibujado en pantalla en las mismas tres acciones.
+  // Unifica teclas del navegador y botones del teclado visual: letra, borrar o confirmar intento.
   const manejarTecla = useCallback(
     (tecla) => {
       if (tecla === "ENTER") {
@@ -188,7 +197,8 @@ function WordleGame() {
     [revisarIntento, borrarLetra, escribirLetra]
   );
 
-  // Efecto de teclado global; la función de limpieza quita el listener al salir de la ruta.
+  // Escucha el teclado físico mientras esta pantalla está montada. La limpieza evita que el mismo
+  // evento siga escribiendo cuando la persona sale del juego.
   useEffect(() => {
     const handleKeyDown = (evento) => {
       const tecla = evento.key.toUpperCase();
@@ -215,7 +225,7 @@ function WordleGame() {
   ).length;
   const gano = juegoTerminado && mensaje === "¡Ganaste!";
 
-  // Publica letras y colores ya revelados; nunca incluye palabraSecreta en el mensaje online.
+  // En modo online publica filas coloreadas e intentos usados, pero excluye palabraSecreta.
   useEffect(() => {
     enviarProgreso({
       intentosUsados,

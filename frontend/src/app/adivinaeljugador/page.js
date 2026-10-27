@@ -12,6 +12,15 @@ const OPCIONES_POSICION = Array.from({ length: 11 }, (_, indice) =>
   String(indice + 1)
 );
 
+/*
+ * Reglas de Adivina el jugador:
+ * - El desafío se sortea desde la lista de jugadores de la base y cada participante tiene el suyo.
+ * - Se pueden hacer hasta diez preguntas o intentos de adivinar.
+ * - Las opciones del autocompletado vienen de toda la base; la respuesta se evalúa contra el secreto.
+ * - Una posición es válida si aparece entre los códigos del jugador (por ejemplo, "11-10" acepta 10).
+ * - En online se comparte el progreso y las preguntas, pero el servidor oculta el nombre acertado.
+ */
+
 // Normaliza la escritura para comparar nombres y respuestas ignorando tildes, signos y mayúsculas.
 function limpiarTexto(texto) {
   return String(texto || "")
@@ -22,8 +31,8 @@ function limpiarTexto(texto) {
     .trim();
 }
 
-// El endpoint devuelve una fila por club; Map agrupa por id y Set elimina repetidos.
-// Son colecciones nativas de JavaScript que no se explican en los apuntes.
+// /jugadores trae una fila por cada paso de trayectoria. Este armado vuelve a dejar un jugador
+// por ID, guarda sus clubes en orden y separa el equipo actual de los clubes anteriores.
 function construirJugadores(datos) {
   const jugadoresMap = new Map();
   const sugerenciasTemp = { club: [], pais: [], liga: [], nombres: [] };
@@ -124,7 +133,7 @@ function AdivinaElJugadorGame() {
   const [inputAdivinar, setInputAdivinar] = useState("");
   const [fotoJugador, setFotoJugador] = useState("");
 
-  // Consulta el backend, reconstruye jugadores con su trayectoria y sortea el desafío local.
+  // Consulta el backend, agrupa las filas repetidas del JOIN y sortea el desafío local.
   const cargarJugadores = useCallback(async () => {
     try {
       const respuesta = await fetch(`${API_URL}/jugadores`);
@@ -224,7 +233,8 @@ function AdivinaElJugadorGame() {
   const puedeHacerPregunta =
     !juegoTerminado && preguntasRestantes > 0 && entradaPreguntaValida();
 
-  // Aplica la pregunta contra los datos privados del jugador secreto y devuelve el texto visible.
+  // Aplica la categoría elegida al secreto. No modifica turnos: devuelve si la pregunta es válida
+  // y la frase que luego se agrega al historial.
   const obtenerRespuestaPregunta = () => {
     const secreto = jugadorSecreto;
     const cat = categoria;
@@ -319,7 +329,7 @@ function AdivinaElJugadorGame() {
     };
   };
 
-  // Registra una pregunta válida, descuenta el turno y deja la respuesta arriba del historial.
+  // El clic en "preguntar" llega acá: solo consume turno si la categoría y la opción son válidas.
   const hacerPregunta = () => {
     if (!jugadorSecreto) return;
     const pregunta = obtenerRespuestaPregunta();
@@ -336,7 +346,8 @@ function AdivinaElJugadorGame() {
     }
   };
 
-  // Comprueba el nombre; la foto cargada se revela si acierta.
+  // El botón de bandera compara el nombre normalizado. Un acierto termina el juego y revela la foto;
+  // un error consume un intento y se agrega al historial.
   const intentarAdivinar = () => {
     if (!jugadorSecreto) return;
     const texto = inputAdivinar.trim();
@@ -382,7 +393,8 @@ function AdivinaElJugadorGame() {
   const adivino = respuestas.some((respuesta) => respuesta.startsWith("✅ ACIERTO:"));
   const terminoLaPartida = juegoTerminado || preguntasRestantes <= 0;
 
-  // Publica progreso rival. El backend elimina la línea que contiene el nombre secreto acertado.
+  // Publica progreso rival cuando cambian preguntas, respuestas o la pista. El nombre secreto
+  // nunca viaja en este objeto; el backend vuelve a filtrar las respuestas antes de reenviarlas.
   useEffect(() => {
     enviarProgreso({
       preguntasUsadas,

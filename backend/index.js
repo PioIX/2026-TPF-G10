@@ -142,7 +142,11 @@ function retirarDeSala(socket, motivo) {
     socket.data.room = null;
 }
 
-// Acepta métricas públicas y descarta respuestas que revelarían la solución.
+/*
+ * Contrato de sendProgress. Cada juego envía una forma distinta, así que el servidor construye
+ * un objeto nuevo con los campos permitidos en vez de reenviar el objeto del navegador tal cual.
+ * Así se comparten los tableros visibles, pero no las soluciones ni las respuestas pendientes.
+ */
 function limpiarProgreso(juego, progreso) {
     if (!progreso || typeof progreso !== 'object' || Array.isArray(progreso)) return null;
 
@@ -151,6 +155,7 @@ function limpiarProgreso(juego, progreso) {
         Number.isInteger(valor) && valor >= minimo && valor <= maximo
     );
 
+    // Wordle: valida hasta seis filas, letras A-Z y los tres colores conocidos.
     if (juego === 'wordle' && estaEnRango(progreso.intentosUsados, 0, 6) && typeof progreso.terminado === 'boolean') {
         const limpio = {
             intentosUsados: progreso.intentosUsados,
@@ -176,6 +181,7 @@ function limpiarProgreso(juego, progreso) {
         return limpio;
     }
 
+    // Adivina: comparte cantidad, pista y preguntas; filtra el nombre si alguien acertó.
     if (juego === 'adivinaeljugador' && estaEnRango(progreso.preguntasUsadas, 0, 10) && typeof progreso.terminado === 'boolean') {
         const limpio = {
             preguntasUsadas: progreso.preguntasUsadas,
@@ -194,6 +200,7 @@ function limpiarProgreso(juego, progreso) {
         return limpio;
     }
 
+    // Fútbol 11: transmite los once casilleros visibles y el país de la ronda.
     if (juego === 'futbol11' && estaEnRango(progreso.jugadoresColocados, 0, 11) && typeof progreso.terminado === 'boolean') {
         const limpio = {
             jugadoresColocados: progreso.jugadoresColocados,
@@ -210,6 +217,7 @@ function limpiarProgreso(juego, progreso) {
         return limpio;
     }
 
+    // Grid: comparte los encabezados y marcas de celdas, no los jugadores que quedan por responder.
     if (juego === 'grid' && estaEnRango(progreso.celdasCompletadas, 0, 9)) {
         const puntajeValido = progreso.puntaje === undefined || estaEnRango(progreso.puntaje, 0, 100);
         if (!puntajeValido || typeof progreso.terminado !== 'boolean') return null;
@@ -239,7 +247,15 @@ function limpiarProgreso(juego, progreso) {
     return null;
 }
 
-// Este evento se ejecuta una vez por cada conexión nueva del navegador.
+/*
+ * Eventos de Socket.IO que atiende cada navegador:
+ * createRoom / joinRoom crean la partida; roomUpdated / roomMatched informan cambios de estado.
+ * sendProgress valida y reenvía avance; leaveRoom / disconnect liberan el lugar.
+ * joinGlobalChat / sendMessage controlan el chat. Los callbacks `confirmar` contestan
+ * inmediatamente al emisor, mientras que los eventos `emit` pueden avisar al resto de la sala.
+ * pingAll queda como evento de ejemplo y no participa en los juegos.
+ */
+// Este bloque se registra una vez por cada conexión nueva del navegador.
 io.on('connection', (socket) => {
   console.log(`Nuevo cliente conectado vía WebSocket: ${socket.id}`);
 
@@ -573,7 +589,7 @@ app.get('/equipos', async function(req,res){
     res.send(respuesta);
 })
 
-// Entrega los datos que el frontend cruza para sortear filas y columnas de una grilla 3x3.
+// Entrega los tres conjuntos que Grid cruza: jugadores, clubes y vínculos jugador-club.
 app.get('/grid', async function(req, res) {
     try {
         const jugadores = await realizarQuery("SELECT id_jugador, nombre, apellido, pais FROM Jugadores");

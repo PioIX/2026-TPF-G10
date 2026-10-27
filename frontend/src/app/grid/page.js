@@ -9,6 +9,15 @@ import obtenerImagenDeportiva from "../../utils/imagenes";
 const BACKEND = BACKEND_URL;
 const MINIMO_JUGADORES = 3;
 
+/*
+ * Reglas del Grid:
+ * - Cada fila representa un país y cada columna un club; una celda es la intersección de ambos.
+ * - La respuesta válida se prepara a partir de la nacionalidad y la trayectoria de cada jugador.
+ * - El selector sugiere todos los jugadores de la base, pero al enviar se valida contra la celda activa.
+ * - En una sala se usa el código como semilla para que ambos vean los mismos encabezados; sus respuestas
+ *   se mantienen separadas y solo se comparte cuáles celdas ya resolvió cada persona.
+ */
+
 // Normaliza países y clubes para que una tilde o diferencia de mayúsculas no rompa una coincidencia.
 function normalizarTexto(texto) {
   return String(texto || "")
@@ -243,7 +252,8 @@ function buscarGrilla(paises, equipos, conexiones, semilla) {
   return null;
 }
 
-// Uso: contenido del lobby del Grid. En una sala, ambos clientes comparten los encabezados.
+// Uso: contenido del lobby del Grid. En una sala, la misma semilla genera los mismos encabezados
+// en ambos navegadores; cada navegador conserva sus propias celdas completadas.
 function GridGame() {
   const { modo, sala, enviarProgreso, marcarPartidaTerminada } = useGameSession();
 
@@ -258,7 +268,8 @@ function GridGame() {
   const [respuestaFeed, setRespuestaFeed] = useState("");
   const codigoSala = sala?.room;
 
-  // Elige una grilla válida con sorteo ponderado; el código de sala sincroniza el resultado entre clientes.
+  // Carga tablas base, arma el índice país-club, genera el tablero y pide los escudos seleccionados.
+  // El código de sala se usa como semilla para sincronizar el tablero sin transmitirlo por Socket.IO.
   const cargarGrilla = useCallback(async () => {
     try {
       setError("");
@@ -342,7 +353,8 @@ function GridGame() {
     setRespuestaFeed("");
   };
 
-  // Busca la respuesta escrita entre los jugadores válidos y obtiene una foto si acertó.
+  // El botón "Probar" o Enter llegan acá. El nombre sugerido no basta: debe estar en las respuestas
+  // válidas de la celda seleccionada; si acierta, se revela el apellido y se intenta cargar su foto.
   const comprobarJugador = async () => {
     if (!celdaActiva || !grilla) return;
 
@@ -386,7 +398,8 @@ function GridGame() {
   const celdasCompletadas = Object.keys(celdasReveladas).length;
   const terminoLaPartida = Boolean(grilla && celdasCompletadas === 9);
 
-  // En online publica encabezados y casillas resueltas, nunca el nombre que permitiría copiar la respuesta.
+  // Publica solo información visible para el rival. El ✓ confirma una celda resuelta sin enviar
+  // el nombre que respondió ni la lista privada de candidatos de cada cruce.
   useEffect(() => {
     enviarProgreso({
       celdasCompletadas,
@@ -451,6 +464,7 @@ function GridGame() {
                 const clave = `r${f}_c${c}`;
                 const revelada = celdasReveladas[clave];
 
+                // Cada casilla selecciona el cruce país-club que se va a contestar.
                 return (
                   <div
                     key={clave}
@@ -505,6 +519,7 @@ function GridGame() {
               Celda ({celdaActiva.fila + 1}, {celdaActiva.col + 1}) -{" "}
               {jugadoresCeldaActiva.length} jugador(es)
             </h3>
+            {/* Escribir un nombre siempre usa la lista completa; Enter ejecuta la misma validación que el botón. */}
             <input
               type="text"
               placeholder="Buscar jugador..."

@@ -8,6 +8,15 @@ import { BACKEND_URL } from "../../config/backend";
 // URL del servidor Express que entrega la lista de jugadores.
 const URL_API = BACKEND_URL;
 
+/*
+ * Reglas de Fútbol 11:
+ * - Se arma una formación de once posiciones, cada una asociada a un rol numérico.
+ * - En cada ronda se sortea un país que todavía tenga un jugador válido para un hueco.
+ * - El autocompletado ayuda a encontrar nombres, pero la función de colocación valida país,
+ *   posición y que el mismo jugador no se use dos veces.
+ * - En online cada persona completa su propia formación; solo publica el avance visible.
+ */
+
 // Define los roles del esquema 1–11 y el sector visual de cada hueco.
 // Estos códigos describen posiciones futbolísticas; no son el dorsal de la camiseta.
 const POSICIONES = [
@@ -195,7 +204,7 @@ function Fulbo11Game() {
       return;
     }
 
-    // 3. Busca coincidencias exactas por nombre
+    // 3. Busca coincidencias exactas por nombre. La lista sugerida no autoriza una respuesta por sí sola.
     const coincidencias = jugadores.filter(
       (j) => normalizarTexto(j.nombre) === normalizarTexto(texto)
     );
@@ -231,7 +240,7 @@ function Fulbo11Game() {
       return;
     }
 
-    // Si pasa todas las validaciones, lo colocamos en el equipo
+    // Si pasa todas las validaciones, se reemplaza una sola celda de la formación.
     const nuevoEquipo = [...equipo];
     nuevoEquipo[indice] = jugador;
     setEquipo(nuevoEquipo);
@@ -253,7 +262,8 @@ function Fulbo11Game() {
   const progreso = Math.round((cantidadColocados / POSICIONES.length) * 100);
   const terminoLaPartida = cantidadColocados === POSICIONES.length;
 
-  // En partidas online envía solo el tablero visible. El backend filtra y vuelve a validar estos datos.
+  // Este efecto corre cuando cambia el equipo o el país. En modo solo no emite nada;
+  // en online envía únicamente el tablero visible y el país de la ronda al servidor.
   useEffect(() => {
     enviarProgreso({
       jugadoresColocados: cantidadColocados,

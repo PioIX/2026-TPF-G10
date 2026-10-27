@@ -5,7 +5,8 @@ import { BACKEND_URL } from "../config/backend";
 const DEFAULT_OPTIONS = {};
 
 // Hook reutilizable: concentra la conexión para que una página solo tenga que
-// hacer: const { socket, isConnected } = useSocket();
+// hacer: const { socket, isConnected } = useSocket(). La conexión comparte el ID del usuario
+// guardado al iniciar sesión; el backend lo resuelve a un perfil público en el handshake.
 export default function useSocket(
   serverUrl = BACKEND_URL,
   options = DEFAULT_OPTIONS
@@ -23,7 +24,7 @@ export default function useSocket(
     });
     socketRef.current = socket;
 
-    // on() escucha eventos que manda el servidor.
+    // connect/disconnect mantienen el indicador de conexión que usan los lobbies y el chat.
     const alConectar = () => {
       setIsConnected(true);
       console.log("WebSocket conectado");

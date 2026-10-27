@@ -6,6 +6,11 @@ import { useEffect, useState } from "react";
 import useSocket from "../hooks/useSocket";
 
 // Uso: panel lateral de /menu. Socket.IO comparte historial y mensajes; el backend valida el usuario.
+/*
+ * Al conectarse, el chat emite joinGlobalChat y recibe chat-messages con el historial reciente.
+ * Después agrega cada newMessage entrante. Al enviar, sendMessage devuelve una confirmación:
+ * solo si el backend la acepta se limpia el campo de texto.
+ */
 export default function GlobalChat() {
   const { socket, isConnected } = useSocket();
   const [mensajes, setMensajes] = useState([]);

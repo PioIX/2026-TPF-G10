@@ -27,6 +27,15 @@ const NOMBRES_JUEGO = {
   grid: "Grid",
 };
 
+/*
+ * Mapa de eventos de una sala:
+ * - El navegador solicita crear o entrar con createRoom / joinRoom y recibe una confirmación.
+ * - roomUpdated mantiene la espera sincronizada; roomMatched avisa que ya están los dos jugadores.
+ * - sendProgress lleva el avance de un juego; opponentProgress actualiza el panel del rival.
+ * - leaveRoom, roomPlayerLeft y roomClosed liberan o cierran la sala; disconnect cubre una caída.
+ * Los juegos pasan por Context el estado y la función para publicar progreso, sin conocer el socket.
+ */
+
 // Coordina conexión, espera y partida. Al cambiar de fase sigue montado y conserva su socket.
 export default function GameLobby({ game, children }) {
   const { socket, isConnected } = useSocket(BACKEND_URL);
@@ -69,6 +78,7 @@ export default function GameLobby({ game, children }) {
   useEffect(() => {
     if (!socket) return undefined;
 
+    // Ignora actualizaciones de otros minijuegos o de una sala anterior que ya se abandonó.
     const actualizarSala = (estadoSala) => {
       if (!estadoSala || estadoSala.game !== game) return;
       if (salaActual.current && salaActual.current.room !== estadoSala.room) return;
@@ -78,6 +88,7 @@ export default function GameLobby({ game, children }) {
       if (estadoSala.status === "esperando") setFase("esperando");
     };
 
+    // El servidor emite roomMatched cuando la segunda persona entra; recién ahí inicia el juego.
     const iniciarPartidaCompartida = (estadoSala) => {
       if (!estadoSala || estadoSala.game !== game) return;
       salaActual.current = estadoSala;
@@ -89,6 +100,7 @@ export default function GameLobby({ game, children }) {
       setFase("jugando");
     };
 
+    // Recibe solo el progreso que el servidor aprobó y limpió para ese tipo de juego.
     const actualizarProgresoRival = (datos) => {
       if (datos && datos.progress) setProgresoRival(datos);
     };
@@ -175,7 +187,7 @@ export default function GameLobby({ game, children }) {
     setFase("jugando");
   };
 
-  // Emite createRoom; el callback confirma si se creó la sala y trae el código generado por el servidor.
+  // Emite createRoom; la respuesta de confirmación trae el código y el estado inicial de la sala.
   const crearSala = () => {
     setError("");
     if (!socket || !socket.connected || !isConnected) {
@@ -204,7 +216,7 @@ export default function GameLobby({ game, children }) {
     });
   };
 
-  // Emite joinRoom; el backend valida código, juego y cupo antes de confirmar el ingreso.
+  // Emite joinRoom; el backend valida que el código exista, sea de este juego y tenga lugar.
   const unirseASala = (evento) => {
     evento.preventDefault();
     setError("");
@@ -260,7 +272,8 @@ export default function GameLobby({ game, children }) {
     }
   };
 
-  // En online transmite el avance; el backend valida los campos antes de reenviarlos al rival.
+  // Los juegos llaman esta función sin acceder a Socket.IO. En modo solo no se emite nada;
+  // en online el servidor revisa los datos y los reenvía como opponentProgress al rival.
   const enviarProgreso = useCallback((progress) => {
     if (modo !== "online" || !socket || !sala || sala.status !== "jugando") return;
     socket.emit("sendProgress", { progress });
