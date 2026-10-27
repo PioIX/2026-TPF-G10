@@ -11,29 +11,37 @@ const RUTAS_DE_JUEGO = [
   "/adivinaeljugador",
 ];
 
-// Uso: encabezado global. Desde un minijuego vuelve al menú y en las demás rutas conserva el inicio.
 export default function SiteHeader() {
   const rutaActual = usePathname() || "";
   const estaEnJuego = RUTAS_DE_JUEGO.some(
     (ruta) => rutaActual === ruta || rutaActual.startsWith(`${ruta}/`)
   );
+  const estaEnMenu = rutaActual === "/menu";
+  const destinoLogo = estaEnJuego ? "/menu" : "/";
 
   return (
-    <header>
-      <h1>FULBO 11</h1>
+    <header className="siteHeader">
       <Link
-        href={estaEnJuego ? "/menu" : "/"}
-        aria-label={estaEnJuego ? "Volver al menú" : "Volver al inicio"}
+        className="siteHeaderMarca"
+        href={destinoLogo}
+        aria-label={estaEnJuego ? "Fulbo 11, volver al menú" : "Fulbo 11, ir al inicio"}
       >
-        {/* El logo aparece al inicio de la página y se descarga de forma prioritaria. */}
-        <Image
-          src="/logo.png"
-          alt="Logo Fulbo 11"
-          width={80}
-          height={80}
-          loading="eager"
-        />
+        <span className="siteHeaderLogo">
+          <Image src="/logo.png" alt="" width={48} height={48} priority />
+        </span>
+        <span className="siteHeaderTexto">
+          <span className="siteHeaderNombre">FULBO 11</span>
+          <span className="siteHeaderSubtitulo">Minijuegos de fútbol</span>
+        </span>
       </Link>
+
+      <nav className="siteHeaderNav" aria-label="Navegación principal">
+        {estaEnMenu ? (
+          <Link className="siteHeaderLink" href="/">Inicio</Link>
+        ) : (
+          <Link className="siteHeaderLink" href="/menu">Menú de juegos</Link>
+        )}
+      </nav>
     </header>
   );
 }

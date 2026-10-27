@@ -3,7 +3,9 @@
 import { useState, useEffect, useCallback } from "react";
 import "../global.css";
 import GameLobby, { useGameSession } from "../../components/GameLobby";
+import GoalCelebration from "../../components/GoalCelebration";
 import { BACKEND_URL } from "../../config/backend";
+import { comentarioFutbolero } from "../../utils/comentariosFutboleros";
 
 const API_URL = BACKEND_URL;
 const MAX_INTENTOS = 6;
@@ -165,7 +167,7 @@ function WordleGame() {
 
     if (intento === palabraSecreta) {
       setJuegoTerminado(true);
-      setMensaje("¡Ganaste!");
+      setMensaje(`${comentarioFutbolero("victoria")} ¡Ganaste!`);
       return;
     }
 
@@ -223,7 +225,7 @@ function WordleGame() {
   const intentosUsados = filas.filter((fila) =>
     fila.some((celda) => celda.color !== "transparent")
   ).length;
-  const gano = juegoTerminado && mensaje === "¡Ganaste!";
+  const gano = juegoTerminado && mensaje.endsWith("¡Ganaste!");
 
   // En modo online publica filas coloreadas e intentos usados, pero excluye palabraSecreta.
   useEffect(() => {
@@ -247,6 +249,7 @@ function WordleGame() {
 
   return (
     <>
+      {gano && <GoalCelebration />}
       <main className="wordle-main">
         <div id="mensaje">{mensaje}</div>
 

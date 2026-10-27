@@ -4,8 +4,10 @@ import { useState, useEffect, useCallback } from "react";
 import "../global.css";
 import GameLobby, { useGameSession } from "../../components/GameLobby";
 import PlayerSilhouette from "../../components/PlayerSilhouette";
+import GoalCelebration from "../../components/GoalCelebration";
 import { BACKEND_URL } from "../../config/backend";
 import obtenerImagenDeportiva from "../../utils/imagenes";
+import { comentarioFutbolero } from "../../utils/comentariosFutboleros";
 
 const API_URL = BACKEND_URL;
 const OPCIONES_POSICION = Array.from({ length: 11 }, (_, indice) =>
@@ -359,7 +361,9 @@ function AdivinaElJugadorGame() {
 
     if (limpiarTexto(texto) === limpiarTexto(jugadorSecreto.nombre)) {
       setJuegoTerminado(true);
-      setMensaje(`¡Adivinaste! El jugador es ${jugadorSecreto.nombre}.`);
+      setMensaje(
+        `${comentarioFutbolero("acierto")} Adivinaste: ${jugadorSecreto.nombre}.`
+      );
       setRespuestas((prev) => [
         `✅ ACIERTO: ${jugadorSecreto.nombre}`,
         ...prev,
@@ -418,6 +422,7 @@ function AdivinaElJugadorGame() {
 
   return (
     <>
+      {terminoLaPartida && adivino && <GoalCelebration />}
       <main id="main">
         <div id="contenedor-jugador-top">
           <div id="contenedor-jugador">

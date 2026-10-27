@@ -283,17 +283,22 @@ export default function AdminPage() {
   };
 
   return (
-    <main style={{ padding: "20px", maxWidth: "800px", width: "100%" }}>
+    <main className="adminPagina">
       {/* El primer formulario guarda al jugador y después completa sus tablas relacionadas. */}
-      <h1>Panel de Administración</h1>
-      <p>
-        Bienvenido, administrador.{" "}
-        {isConnected ? "🟢 Conectado en tiempo real" : "🔴 Desconectado"}
-      </p>
+      <div className="adminEncabezado">
+        <div>
+          <p className="adminEyebrow">GESTIÓN DEL JUEGO</p>
+          <h1>Panel de administración</h1>
+          <p>Actualizá la información de jugadores y clubes.</p>
+        </div>
+        <span className={`adminEstado ${isConnected ? "adminEstadoConectado" : ""}`}>
+          <span aria-hidden="true" />{isConnected ? "En línea" : "Desconectado"}
+        </span>
+      </div>
 
-      <section style={{ marginTop: "20px" }}>
+      <section className="adminSeccion">
         <h2>Jugador completo</h2>
-        <form id="form-jugador-completo" onSubmit={handleSubmitJugador}>
+        <form id="form-jugador-completo" className="adminFormulario" onSubmit={handleSubmitJugador}>
           <h3>Jugadores</h3>
           <input type="text" name="nombre" placeholder="Nombre" value={jugadorForm.nombre} onChange={handleJugadorChange} required />
           <input type="text" name="apellido" placeholder="Apellido" value={jugadorForm.apellido} onChange={handleJugadorChange} required />
@@ -364,9 +369,9 @@ export default function AdminPage() {
       </section>
 
       {/* Este formulario crea registros independientes en Equipos. */}
-      <section style={{ marginTop: "30px" }}>
+      <section className="adminSeccion">
         <h2>Clubes</h2>
-        <form id="form-clubes" onSubmit={handleSubmitClubes}>
+        <form id="form-clubes" className="adminFormulario" onSubmit={handleSubmitClubes}>
           <input type="text" name="nombre_equipo" placeholder="Nombre del club" value={clubForm.nombre_equipo} onChange={handleClubChange} required />
           <input type="number" name="anio_creacion" placeholder="Año de creación" value={clubForm.anio_creacion} onChange={handleClubChange} required />
           <input type="number" name="titulos_nacionales" placeholder="Títulos nacionales" value={clubForm.titulos_nacionales} onChange={handleClubChange} required />

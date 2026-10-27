@@ -174,6 +174,10 @@ export default function LoginPage() {
   return (
     <>
       <div className="contenedor-auth">
+        <div className="authEncabezado">
+          <h2>{esRegistro ? "Sumate al equipo" : "Qué bueno verte"}</h2>
+          <p>{esRegistro ? "Creá tu cuenta y empezá a jugar." : "Iniciá sesión para entrar a los desafíos."}</p>
+        </div>
         {/* CONDITIONAL RENDERING: Cambia la clase y la función onSubmit según el estado */}
         <form
           className={esRegistro ? "registro" : "login"}
