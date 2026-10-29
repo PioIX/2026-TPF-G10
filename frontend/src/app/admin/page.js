@@ -72,7 +72,9 @@ export default function AdminPage() {
     estadio: "",
   });
 
-  // Se suscribe a avisos del backend y quita los listeners al cambiar conexión o desmontar.
+  // Administración también abre su propia conexión useSocket.
+  // El backend emite estos avisos globalmente después de altas exitosas; el payload actual
+  // es { mensaje }. En esta pantalla se registran en consola; no reemplazan los fetch de datos.
   useEffect(() => {
     if (!socket || !isConnected) return;
 
@@ -83,8 +85,8 @@ export default function AdminPage() {
       console.log("WebSocket - Equipos:", data.mensaje);
     };
 
-    socket.on("actualizacionJugadores", alActualizarJugadores);
-    socket.on("actualizacionEquipos", alActualizarEquipos);
+    socket.on("actualizacionJugadores", alActualizarJugadores); // Evento global enviado tras POST /jugadores.
+    socket.on("actualizacionEquipos", alActualizarEquipos); // Evento global enviado tras POST /equipos.
 
     return () => {
       socket.off("actualizacionJugadores", alActualizarJugadores);

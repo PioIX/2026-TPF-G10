@@ -227,9 +227,11 @@ function WordleGame() {
   ).length;
   const gano = juegoTerminado && mensaje.endsWith("¡Ganaste!");
 
-  // En modo online publica filas coloreadas e intentos usados, pero excluye palabraSecreta.
+  // Puente entre la lógica local y el lobby: al cambiar el tablero/resultado crea este payload:
+  // { intentosUsados, terminado, gano, tablero }. No incluye `palabraSecreta`.
+  // El efecto también corre al entrar a la sesión; GameLobby ignora el envío si aún no está online.
   useEffect(() => {
-    enviarProgreso({
+    enviarProgreso({ // Envía una foto del tablero actual cada vez que cambia una dependencia de abajo.
       intentosUsados,
       terminado: juegoTerminado,
       gano,
@@ -294,7 +296,8 @@ function WordleGame() {
   );
 }
 
-// Ruta /wordle: el lobby elige modo y mantiene viva la misma instancia del minijuego.
+// WordleGame llega como `children`, pero no se monta hasta que GameLobby pasa a "jugando".
+// Así sus llamadas a useGameSession quedan debajo del Provider que crea el lobby.
 export default function WordlePage() {
   return (
     <GameLobby game="wordle">

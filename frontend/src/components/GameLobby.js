@@ -1,6 +1,12 @@
-// Uso: envuelve los cuatro juegos. Presenta los modos, gestiona la sala Socket.IO y muestra el avance rival.
-// React Context comparte estado con el juego hijo sin pasar props por todos los componentes intermedios.
-// Context es una herramienta de React que no aparece en los apuntes de clase.
+/*
+ * Lo menos obvio de este componente es su ciclo de vida:
+ * - GameLobby se monta al entrar a la ruta y abre el socket desde useSocket.
+ * - El minijuego llega como `children`, pero el selector no lo incluye en su return;
+ *   por eso el componente del juego todavía no se monta ni puede leer el contexto.
+ * - Al pasar `fase` a "jugando", React vuelve a dibujar GameLobby. Esta vez children queda
+ *   debajo del Provider y recién ahí el minijuego se monta y puede usar useGameSession.
+ * - Cambiar fase no navega ni desmonta GameLobby: su estado y su conexión siguen vivos.
+ */
 "use client";
 
 import {
@@ -16,7 +22,8 @@ import useSocket from "../hooks/useSocket";
 import OpponentProgress from "./OpponentProgress";
 import { BACKEND_URL } from "../config/backend";
 
-// Canal local de React para que cada minijuego lea modo, sala y funciones de progreso.
+// Comunicación interna de React, no un evento de Socket.IO. El Provider entrega estos datos
+// al juego hijo sin pasar props por todos sus componentes intermedios.
 const GameSessionContext = createContext(null);
 
 // El servidor usa estos identificadores al validar salas y progreso.
@@ -27,16 +34,7 @@ const NOMBRES_JUEGO = {
   grid: "Grid",
 };
 
-/*
- * Mapa de eventos de una sala:
- * - El navegador solicita crear o entrar con createRoom / joinRoom y recibe una confirmación.
- * - roomUpdated mantiene la espera sincronizada; roomMatched avisa que ya están los dos jugadores.
- * - sendProgress lleva el avance de un juego; opponentProgress actualiza el panel del rival.
- * - leaveRoom, roomPlayerLeft y roomClosed liberan o cierran la sala; disconnect cubre una caída.
- * Los juegos pasan por Context el estado y la función para publicar progreso, sin conocer el socket.
- */
-
-// Coordina conexión, espera y partida. Al cambiar de fase sigue montado y conserva su socket.
+// `game` debe coincidir con el ID validado por el backend; `children` es el minijuego de la ruta.
 export default function GameLobby({ game, children }) {
   const { socket, isConnected } = useSocket(BACKEND_URL);
   const [fase, setFase] = useState("elegir");
@@ -47,7 +45,9 @@ export default function GameLobby({ game, children }) {
   const [aviso, setAviso] = useState("");
   const [progresoRival, setProgresoRival] = useState(null);
   const [partidaPropiaTerminada, setPartidaPropiaTerminada] = useState(false);
-  // useRef guarda la sala sin provocar renders; los callbacks consultan siempre el valor más reciente.
+  // Los listeners registrados abajo pueden sobrevivir muchos renders y conservar una `sala`
+  // vieja en su closure. Esta ref se actualiza aparte para comparar eventos con el código vigente
+  // sin destruir y registrar de nuevo todos los listeners cada vez que cambia la sala.
   const salaActual = useRef(null);
 
   // Informa cuando el primer intento de conexión tarda, incluso si el hook todavía no expone el socket.
@@ -73,12 +73,22 @@ export default function GameLobby({ game, children }) {
     salaActual.current = sala;
   }, [sala]);
 
-  // Registra eventos del backend y actualiza la interfaz; el cleanup quita cada listener al desmontar.
-  // Esta página permanece montada entre espera y partida, así que no se pierde la conexión al entrar.
+  // Aquí se registran los listeners del cliente para eventos que emite el backend:
+  // - roomUpdated: estado/cantidad de jugadores de la sala.
+  // - roomMatched: la segunda persona entró; los dos lobbies pasan a jugar.
+  // - opponentProgress: datos públicos del progreso del rival.
+  // - roomPlayerLeft / roomClosed: salida del rival o cierre de sala.
+  // - disconnect / connect_error: caída del socket o error al conectarse.
   useEffect(() => {
+    // useSocket asigna el objeto a un ref, y asignar un ref no causa un render.
+    // Al primer render `socket` suele ser null y todavía no registramos nada. Cuando llega
+    // connect, useSocket cambia isConnected; ese estado sí renderiza de nuevo y este efecto
+    // recibe el socket para instalar los listeners. Los botones de sala están deshabilitados
+    // hasta entonces. Si nunca conecta, el temporizador de arriba muestra el aviso de espera.
     if (!socket) return undefined;
 
-    // Ignora actualizaciones de otros minijuegos o de una sala anterior que ya se abandonó.
+    // Payload de roomUpdated: { room, game, status, players }.
+    // Filtra por juego y por código para no pintar una actualización vieja o ajena.
     const actualizarSala = (estadoSala) => {
       if (!estadoSala || estadoSala.game !== game) return;
       if (salaActual.current && salaActual.current.room !== estadoSala.room) return;
@@ -88,7 +98,9 @@ export default function GameLobby({ game, children }) {
       if (estadoSala.status === "esperando") setFase("esperando");
     };
 
-    // El servidor emite roomMatched cuando la segunda persona entra; recién ahí inicia el juego.
+    // Payload de roomMatched: el mismo estado público de sala.
+    // El invitado también puede haber pasado a jugando por su ACK de joinRoom; repetir setState
+    // con el mismo estado no cambia la pantalla. El anfitrión depende de este broadcast para arrancar.
     const iniciarPartidaCompartida = (estadoSala) => {
       if (!estadoSala || estadoSala.game !== game) return;
       salaActual.current = estadoSala;
@@ -100,11 +112,14 @@ export default function GameLobby({ game, children }) {
       setFase("jugando");
     };
 
-    // Recibe solo el progreso que el servidor aprobó y limpió para ese tipo de juego.
+    // Payload de opponentProgress: { position, name, progress, updatedAt }.
+    // `progress` ya fue reconstruido/filtrado por el backend para el juego actual.
     const actualizarProgresoRival = (datos) => {
       if (datos && datos.progress) setProgresoRival(datos);
     };
 
+    // Payload de roomPlayerLeft: { position, reason }.
+    // El servidor deja la sala esperando a una nueva persona.
     const avisarSalidaRival = (datos) => {
       setProgresoRival(null);
       setAviso(
@@ -116,7 +131,9 @@ export default function GameLobby({ game, children }) {
       setFase("esperando");
     };
 
-    // La conexión perdida invalida el código de la sala guardada en memoria.
+    // En paralelo, useSocket marca isConnected=false. El backend elimina el socket viejo de
+    // su sala; si Socket.IO logra reconectar, el nuevo socket.id no vuelve a entrar a esa sala.
+    // Por eso descartamos el código local y pedimos crear una sala nueva o ingresar otra.
     const manejarDesconexion = () => {
       if (!salaActual.current) return;
       salaActual.current = null;
@@ -126,12 +143,14 @@ export default function GameLobby({ game, children }) {
       setAviso("Se perdió la conexión. Creá una sala nueva o volvé a ingresar un código.");
     };
 
-    // Explica en pantalla los errores del handshake en vez de dejar el lobby cargando sin respuesta.
+    // Error inicial de conexión. Este listener se instala cuando GameLobby ya recibe el socket;
+    // si nunca hubo conexión exitosa, el temporizador de arriba es el aviso que sí queda activo.
     const manejarErrorConexion = (errorConexion) => {
       const mensaje = errorConexion?.message || "error de conexión";
       setAviso(`No se pudo conectar con el servidor (${mensaje}). Revisá que el backend esté activo.`);
     };
 
+    // Payload de roomClosed: { room }. Solo afecta a la pantalla si coincide con nuestra sala.
     const cerrarSala = (datos) => {
       if (!salaActual.current || !datos || datos.room !== salaActual.current.room) return;
       salaActual.current = null;
@@ -141,15 +160,16 @@ export default function GameLobby({ game, children }) {
       setAviso("La sala se cerró.");
     };
 
-    socket.on("roomUpdated", actualizarSala);
-    socket.on("roomMatched", iniciarPartidaCompartida);
-    socket.on("opponentProgress", actualizarProgresoRival);
-    socket.on("roomPlayerLeft", avisarSalidaRival);
-    socket.on("roomClosed", cerrarSala);
-    socket.on("disconnect", manejarDesconexion);
-    socket.on("connect_error", manejarErrorConexion);
+    socket.on("roomUpdated", actualizarSala); // Backend: io.to(código).emit; refleja estado de sala.
+    socket.on("roomMatched", iniciarPartidaCompartida); // Broadcast al anfitrión y al invitado.
+    socket.on("opponentProgress", actualizarProgresoRival); // Backend: socket.to(sala), solo rival.
+    socket.on("roomPlayerLeft", avisarSalidaRival); // Lo recibe quien sigue dentro de la sala.
+    socket.on("roomClosed", cerrarSala); // Handler preparado; hoy el último participante se limpia localmente.
+    socket.on("disconnect", manejarDesconexion); // Evento local del transporte, no del backend de juego.
+    socket.on("connect_error", manejarErrorConexion); // Error local; si nunca conectó, queda el aviso del temporizador.
 
-    // Quita estos listeners al salir del juego para evitar respuestas duplicadas.
+    // Se quita exactamente la misma función que se registró con cada .on.
+    // Así al volver a la ruta no quedan handlers viejos ni se procesa un evento dos veces.
     return () => {
       socket.off("roomUpdated", actualizarSala);
       socket.off("roomMatched", iniciarPartidaCompartida);
@@ -161,22 +181,26 @@ export default function GameLobby({ game, children }) {
     };
   }, [socket, game]);
 
-  // Cleanup al salir de la ruta: avisa al backend para liberar el lugar del usuario.
+  // Al desmontar la ruta este cleanup intenta leaveRoom si el socket sigue conectado.
+  // useSocket también cierra el transporte al desmontar; por eso el backend tiene `disconnect`
+  // como limpieza definitiva aunque leaveRoom ya no pueda salir por la red.
   useEffect(() => {
     return () => {
-      if (salaActual.current && socket?.connected) socket.emit("leaveRoom");
+      if (salaActual.current && socket?.connected) socket.emit("leaveRoom"); // Pide liberar la sala.
     };
   }, [socket]);
 
-  // Lee el nombre público del navegador; el control de sesión real lo conserva la cookie del backend.
+  // Nombre de respaldo que se manda en createRoom/joinRoom. El servidor prefiere el nombre
+  // que resolvió desde MySQL durante el handshake; este valor se usa si el socket no tiene perfil.
   const obtenerNombre = () => {
     if (typeof window === "undefined") return "Jugador";
     return window.localStorage.getItem("usuarioNombre") || "Jugador";
   };
 
-  // Activa el modo individual; no crea sala ni envía progreso a otro usuario.
+  // Cambia de pantalla dentro de la ruta y monta el mismo hijo, pero no crea sala.
+  // Si había una sala anterior, la deja primero; enviarProgreso no emite en modo "solo".
   const jugarSolo = () => {
-    if (salaActual.current && socket) socket.emit("leaveRoom");
+    if (salaActual.current && socket) socket.emit("leaveRoom"); // No queda ocupando una sala online.
     salaActual.current = null;
     setSala(null);
     setModo("solo");
@@ -187,7 +211,9 @@ export default function GameLobby({ game, children }) {
     setFase("jugando");
   };
 
-  // Emite createRoom; la respuesta de confirmación trae el código y el estado inicial de la sala.
+  // Emite createRoom { game, name }. El callback es un ACK privado para este navegador;
+  // no es lo que avisa a otros sockets. timeout(8000) limita la espera por ese ACK;
+  // si vence, el primer argumento del callback es el error de timeout.
   const crearSala = () => {
     setError("");
     if (!socket || !socket.connected || !isConnected) {
@@ -195,8 +221,9 @@ export default function GameLobby({ game, children }) {
       return;
     }
 
-    // El timeout permite distinguir una sala rechazada de un backend que no contestó.
+    // Con respuesta: { ok, room } o { ok:false, error }. Sin respuesta en 8 s: timeout.
     socket.timeout(8000).emit("createRoom", { game, name: obtenerNombre() }, (tiempoAgotado, respuesta) => {
+      // El timeout no es el rechazo del backend: error significa que no llegó ningún ACK a tiempo.
       if (tiempoAgotado) {
         setError("El servidor no respondió al crear la sala. Revisá la conexión e intentá otra vez.");
         return;
@@ -211,12 +238,14 @@ export default function GameLobby({ game, children }) {
       setModo("online");
       setProgresoRival(null);
       setPartidaPropiaTerminada(false);
+      // El creador NO empieza al recibir el ACK de createRoom: queda esperando a roomMatched.
       setFase("esperando");
       setAviso("");
     });
   };
 
-  // Emite joinRoom; el backend valida que el código exista, sea de este juego y tenga lugar.
+  // Emite joinRoom { room, game, name }. El ACK vuelve solo al invitado y contiene estado.
+  // Aparte, roomMatched se emite a toda la sala: ese segundo mensaje es el que despierta al anfitrión.
   const unirseASala = (evento) => {
     evento.preventDefault();
     setError("");
@@ -228,7 +257,7 @@ export default function GameLobby({ game, children }) {
     // El timeout hace visible el caso en que el evento de unión no recibe confirmación.
     socket.timeout(8000).emit(
       "joinRoom",
-      { room: codigoIngresado.trim().toUpperCase(), game, name: obtenerNombre() },
+      { room: codigoIngresado.trim().toUpperCase(), game, name: obtenerNombre() }, // Código + juego esperado.
       (tiempoAgotado, respuesta) => {
         if (tiempoAgotado) {
           setError("El servidor no respondió al ingresar a la sala. Revisá la conexión e intentá otra vez.");
@@ -244,15 +273,18 @@ export default function GameLobby({ game, children }) {
         setModo("online");
         setProgresoRival(null);
         setPartidaPropiaTerminada(false);
+        // En este punto solo el invitado recibe el ACK; si el backend devuelve "jugando", monta el juego.
+        // El anfitrión usa el evento roomMatched que el backend emite a toda la sala.
         setFase(respuesta.room.status === "jugando" ? "jugando" : "esperando");
         setAviso("");
       }
     );
   };
 
-  // Emite leaveRoom y vuelve a la pantalla de elección de modo.
+  // leaveRoom no lleva código de sala: el servidor usa socket.data.room, dato que él controla.
+  // La pantalla local vuelve enseguida al selector y no espera la confirmación del backend.
   const salirDePartida = () => {
-    if (salaActual.current && socket) socket.emit("leaveRoom");
+    if (salaActual.current && socket) socket.emit("leaveRoom"); // El servidor toma la sala desde socket.data.
     salaActual.current = null;
     setSala(null);
     setModo(null);
@@ -272,19 +304,22 @@ export default function GameLobby({ game, children }) {
     }
   };
 
-  // Los juegos llaman esta función sin acceder a Socket.IO. En modo solo no se emite nada;
-  // en online el servidor revisa los datos y los reenvía como opponentProgress al rival.
+  // API que recibe cada minijuego por Context. Cada uno arma su propio objeto progress;
+  // acá se envuelve como { progress } para el evento sendProgress.
+  // useCallback mantiene estable esta función: las useEffect de los juegos la tienen como
+  // dependencia y, si cambiara en cada render, podrían publicar progreso innecesariamente.
   const enviarProgreso = useCallback((progress) => {
     if (modo !== "online" || !socket || !sala || sala.status !== "jugando") return;
-    socket.emit("sendProgress", { progress });
+    socket.emit("sendProgress", { progress }); // Sin ACK usado: el backend valida y avisa solo al rival.
   }, [modo, sala, socket]);
 
-  // Activa el seguimiento grande del rival cuando termina esta partida.
+  // Solo amplía el panel rival en esta pantalla. No emite evento ni guarda resultado en backend;
+  // el estado público ya se envía desde la useEffect del juego mediante enviarProgreso.
   const marcarPartidaTerminada = useCallback(() => {
     setPartidaPropiaTerminada(true);
   }, []);
 
-  // useMemo evita crear un objeto de contexto nuevo si ninguno de estos valores cambió.
+  // Mantener estable el `value` evita renders/efectos extra del hijo que podrían republicar progreso.
   const valorSesion = useMemo(() => ({
     game,
     modo,
@@ -294,7 +329,8 @@ export default function GameLobby({ game, children }) {
     marcarPartidaTerminada,
   }), [game, modo, sala, progresoRival, enviarProgreso, marcarPartidaTerminada]);
 
-  // Selector previo: jugar solo, crear un código o ingresar al código de otra persona.
+  // Mientras la fase no sea "jugando", se muestra SOLO el lobby.
+  // `children` sigue guardado como prop, pero no aparece en este return: el minijuego no está montado.
   if (fase !== "jugando") {
     return (
       <main className="lobbyJuego">
@@ -354,7 +390,9 @@ export default function GameLobby({ game, children }) {
     );
   }
 
-  // Partida activa: dibuja el juego hijo y, en online, la sala y el seguimiento rival.
+  // Ahora sí arranca el juego: el Provider pone el contexto por encima de `children`.
+  // Por eso WordleGame puede llamar useGameSession() y recibir los valores declarados arriba.
+  // En modo solo tampoco se muestra barra ni panel de rival.
   return (
     <GameSessionContext.Provider value={valorSesion}>
       <div className="sesionJuego">

@@ -31,7 +31,9 @@ export default function LoginPage() {
   // Estado para mostrar mensajes de error o éxito
   const [modalInfo, setModalInfo] = useState({ titulo: "", mensaje: "" });
 
-  // Guarda el ID devuelto por el login; Socket.IO lo manda al backend para buscar al usuario.
+  // Guarda en el navegador el ID/nombre que devolvió el backend.
+  // useSocket manda el ID en el próximo handshake para que el backend vuelva a buscar el perfil.
+  // Esto es el mecanismo actual del proyecto; no crea por sí solo una cookie o sesión segura.
   const guardarUsuarioLocal = (usuario) => {
     localStorage.setItem("usuarioId", usuario.id);
     localStorage.setItem("usuarioNombre", usuario.name);

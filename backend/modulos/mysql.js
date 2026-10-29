@@ -2,7 +2,8 @@
 const mySql = require("mysql2/promise");
 
 /**
- * Objeto con la configuración de la base de datos MySQL a utilizar.
+ * Configuración MySQL leída del entorno del backend.
+ * Estas credenciales solo las usa Node; nunca se envían al frontend.
  */
 const SQL_CONFIGURATION_DATA =
 {
@@ -15,9 +16,13 @@ const SQL_CONFIGURATION_DATA =
 }
 
 /**
- * Realiza una query a la base de datos MySQL indicada en el archivo "mysql.js".
- * @param {String} queryString Query que se desea realizar. Textual como se utilizaría en el MySQL Workbench.
- * @returns Respuesta de la base de datos. Suele ser un vector de objetos.
+ * Ejecuta una consulta en MySQL.
+ * @param {String} queryString SQL a ejecutar. Puede usar placeholders `?`.
+ * @param {Array} valores Valores que mysql2 coloca en esos placeholders, en el mismo orden.
+ * @returns {Array} Filas devueltas (o [] si no se obtuvieron filas).
+ *
+ * Abre una conexión para esta consulta, ejecuta con mysql2/promise y la cierra al terminar.
+ * Los endpoints HTTP y el middleware de handshake usan esta función; los juegos no llaman MySQL.
  */
 exports.realizarQuery = async function (queryString, valores = [])
 {
@@ -25,7 +30,9 @@ exports.realizarQuery = async function (queryString, valores = [])
 	let connection;
 	try
 	{
+		// Abre una conexión para esta consulta (no es un pool compartido entre requests).
 		connection = await mySql.createConnection(SQL_CONFIGURATION_DATA);
+		// execute separa los valores `?` del SQL para las consultas que usan placeholders.
 		returnObject = await connection.execute(queryString, valores);
 	}
 	catch(err)
@@ -34,6 +41,7 @@ exports.realizarQuery = async function (queryString, valores = [])
 	}
 	finally
 	{
+		// También se ejecuta si la query falla; evita dejar esta conexión abierta.
 		if(connection && connection.end) connection.end();
 	}
 	return returnObject?.[0] || [];

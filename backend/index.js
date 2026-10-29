@@ -1,4 +1,14 @@
-// backend/index.js
+/*
+ * Punto de entrada del backend.
+ *
+ * En el mismo proceso hay dos formas de atender al navegador:
+ * - Express responde pedidos HTTP puntuales (login, datos de jugadores, altas de admin).
+ * - Socket.IO mantiene conexiones abiertas y entrega eventos en tiempo real (salas y chat).
+ *
+ * Los navegadores NO se conectan entre sí: cada uno se conecta a este servidor.
+ * El servidor decide a qué socket o grupo de sockets reenviar cada evento.
+ * MySQL se consulta desde acá; las páginas nunca abren una conexión directa a la base.
+ */
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -7,7 +17,8 @@ const crypto = require('node:crypto'); // Módulo nativo de Node.js, usado para 
 const { Server } = require('socket.io'); // Importamos Socket.IO
 const { realizarQuery } = require('./modulos/mysql');
 
-// Express atiende los pedidos HTTP y comparte el servidor con Socket.IO.
+// Express define las rutas HTTP. Socket.IO se adjunta al mismo servidor HTTP más abajo,
+// así REST y sockets escuchan en el mismo puerto y proceso del backend.
 const app = express();
 const port = process.env.PORT || 4000;
 const cacheImagenesExternas = new Map();
@@ -20,7 +31,7 @@ function normalizarClaveImagen(texto) {
         .toLowerCase();
 }
 
-// Creamos el servidor HTTP envolviendo la app de Express
+// Node crea el servidor HTTP que ejecuta Express; Socket.IO se conectará a este objeto.
 const server = http.createServer(app);
 
 const opcionesCors = {
@@ -28,23 +39,28 @@ const opcionesCors = {
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
 };
 
-// Inicializa Socket.IO con las mismas reglas de origen que el backend HTTP.
+// Inicializa el servidor Socket.IO sobre el mismo HTTP server.
+// CORS permite que el frontend (normalmente puerto 3000) se conecte al backend (4000).
 const io = new Server(server, {
   cors: opcionesCors
 });
 
-// Los middleware convierten formularios/JSON y habilitan CORS antes de cada ruta.
+// Middleware HTTP de Express: interpreta cuerpos de formularios/JSON y habilita CORS.
+// Estos middleware afectan las rutas HTTP; Socket.IO tiene su configuración CORS arriba.
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(cors(opcionesCors));
 
-// El navegador manda el ID devuelto por /login en el handshake del socket.
-// El backend lo busca en MySQL y conserva únicamente el perfil público.
+// Middleware del handshake Socket.IO: corre antes de aceptar cada conexión nueva.
+// El cliente manda `query.userId` desde localStorage; no es el socket.id ni una sesión/cookie.
+// Buscamos en MySQL y guardamos un perfil público en socket.data.user para reutilizarlo
+// en las salas y el chat. Si falta/no sirve el ID, el socket igual conecta como anónimo;
+// las acciones que requieren usuario (por ejemplo, chat) deciden luego si lo rechazan.
 io.use(async (socket, next) => {
     const userId = Number(socket.handshake.query?.userId);
     if (!Number.isSafeInteger(userId) || userId < 1) {
         socket.data.user = null;
-        return next();
+        return next(); // Permite socket anónimo; cada evento decide luego si exige usuario.
     }
 
     try {
@@ -53,16 +69,16 @@ io.use(async (socket, next) => {
             [userId]
         );
         socket.data.user = usuarios?.[0] || null;
-        return next();
+        return next(); // Continúa al evento connection con el perfil público asociado a este socket.
     } catch (error) {
         return next(error);
     }
 });
 
 
-// Las salas y el chat se guardan en memoria: al reiniciar el servidor se vacían.
-// Map y Set son colecciones nativas de JavaScript; el apunte no desarrolla estas estructuras.
-// Map permite buscar salas por código; Set evita valores repetidos al validar juegos.
+// Estado temporal de tiempo real (no se persiste en MySQL): al reiniciar el proceso se borra.
+// `salas` busca una sala por su código; `juegosDisponibles` valida identificadores admitidos.
+// `historialChat` conserva solo los mensajes recientes mientras corre este proceso.
 // --- CONFIGURACIÓN DE WEBSOCKETS ---
 const juegosDisponibles = new Set([
     'wordle',
@@ -77,7 +93,8 @@ const historialChat = [];
 const ultimoMensajeChat = new Map();
 const salaChatGlobal = 'chat:global';
 
-// Crea un código corto y evita letras o números que se confunden al leerlos.
+// Crea un código corto para compartir. randomInt elige seis símbolos del alfabeto,
+// que evita caracteres fáciles de confundir; el bucle evita repetir un código activo.
 function generarCodigoSala() {
     let codigo;
     do {
@@ -90,7 +107,8 @@ function generarCodigoSala() {
     return codigo;
 }
 
-// Devuelve solo los datos que los dos participantes necesitan compartir.
+// Convierte el objeto interno de sala al formato público que reciben los navegadores.
+// No incluye socketId ni otros detalles internos del servidor.
 function obtenerEstadoSala(sala) {
     return {
         room: sala.codigo,
@@ -104,12 +122,14 @@ function obtenerEstadoSala(sala) {
     };
 }
 
-// Actualiza la pantalla de espera de cada conexión unida a la sala.
+// Broadcast a todos los sockets que ya están dentro del código de sala, incluido el emisor.
 function emitirEstadoSala(sala) {
-    io.to(sala.codigo).emit('roomUpdated', obtenerEstadoSala(sala));
+    io.to(sala.codigo).emit('roomUpdated', obtenerEstadoSala(sala)); // Todos en la sala, incluido quien disparó el cambio.
 }
 
-// Retira la conexión de su sala actual y limpia el código guardado en el socket.
+// Rutina común para salir manualmente, cambiar de sala o desconectarse.
+// Busca la sala desde socket.data.room (el cliente no puede elegir qué sala liberar),
+// quita el socket de la lista y de la sala Socket.IO, y luego actualiza/cierra el estado.
 function retirarDeSala(socket, motivo) {
     const codigo = socket.data.room;
     const sala = codigo ? salas.get(codigo) : null;
@@ -123,15 +143,21 @@ function retirarDeSala(socket, motivo) {
     // La sala identifica a cada integrante por la conexión Socket.IO abierta en ese navegador.
     const indice = sala.jugadores.findIndex((jugador) => jugador.socketId === socket.id);
     const jugador = indice === -1 ? null : sala.jugadores.splice(indice, 1)[0];
-    socket.leave(sala.codigo);
+    socket.leave(sala.codigo); // Lo quita del grupo Socket.IO; también lo quitamos de sala.jugadores arriba.
 
     if (sala.jugadores.length === 0) {
+        // Sin participantes, el código deja de existir y podrá generarse de nuevo en el futuro.
         salas.delete(sala.codigo);
+        // La última conexión ya salió; hoy el cliente que cierra se limpia localmente y no queda
+        // nadie dentro para recibir este broadcast. El código se elimina del Map de todos modos.
         io.to(sala.codigo).emit('roomClosed', { room: sala.codigo });
     } else if (jugador) {
+        // Si queda una persona, la partida termina y esa persona vuelve a ser anfitriona
+        // de una sala en espera, lista para recibir a alguien más.
         sala.estado = 'esperando';
         sala.jugadores[0].posicion = 1;
         sala.jugadores[0].anfitrion = true;
+        // io.to incluye a quienes siguen en el grupo (el rival), no al socket que ya hizo leave.
         io.to(sala.codigo).emit('roomPlayerLeft', {
             position: jugador.posicion,
             reason: motivo
@@ -143,9 +169,18 @@ function retirarDeSala(socket, motivo) {
 }
 
 /*
- * Contrato de sendProgress. Cada juego envía una forma distinta, así que el servidor construye
- * un objeto nuevo con los campos permitidos en vez de reenviar el objeto del navegador tal cual.
- * Así se comparten los tableros visibles, pero no las soluciones ni las respuestas pendientes.
+ * Contrato de `sendProgress`.
+ * Cada página de juego crea su objeto `progress`, pero el backend nunca reenvía ese objeto
+ * directamente: arma uno nuevo con campos permitidos para el juego de la sala.
+ *
+ * Formatos públicos actuales:
+ * - wordle: cantidad/fin/resultado y tablero coloreado (no la palabra secreta).
+ * - adivinaeljugador: preguntas/fin/resultado, pista y respuestas filtradas (no el nombre acertado).
+ * - futbol11: cantidad/fin, formación visible y país actual.
+ * - grid: cantidad/puntaje/fin, encabezados y celdas ya reveladas.
+ *
+ * Esto valida estructura y límites para la interfaz; no vuelve autoritativo al backend:
+ * el servidor no ejecuta las reglas ni comprueba si una respuesta del cliente es verdadera.
  */
 function limpiarProgreso(juego, progreso) {
     if (!progreso || typeof progreso !== 'object' || Array.isArray(progreso)) return null;
@@ -248,24 +283,34 @@ function limpiarProgreso(juego, progreso) {
 }
 
 /*
- * Eventos de Socket.IO que atiende cada navegador:
- * createRoom / joinRoom crean la partida; roomUpdated / roomMatched informan cambios de estado.
- * sendProgress valida y reenvía avance; leaveRoom / disconnect liberan el lugar.
- * joinGlobalChat / sendMessage controlan el chat. Los callbacks `confirmar` contestan
- * inmediatamente al emisor, mientras que los eventos `emit` pueden avisar al resto de la sala.
- * pingAll queda como evento de ejemplo y no participa en los juegos.
+ * Esta función se ejecuta una vez por cada socket nuevo. `socket` representa esa conexión:
+ * tiene un socket.id propio, datos asociados en socket.data, listeners y membresías de sala.
+ *
+ * Convención de eventos:
+ * - `socket.on(nombre, handler)`: registrar qué hace el servidor cuando el cliente emite ese evento.
+ * - `socket.emit(...)`: contestar/enviar un evento a esa conexión concreta.
+ * - `io.to(sala).emit(...)`: enviar a todos los miembros de una sala, también al emisor si pertenece.
+ * - `socket.to(sala).emit(...)`: enviar a los demás miembros de una sala, sin incluir al emisor.
+ * - `confirmar(...)`: callback de acuse para quien hizo la petición; no es un broadcast.
+ *
+ * `pingAll` es un ejemplo global de broadcast, pero el chat usa su propia sala `chat:global`.
  */
 // Este bloque se registra una vez por cada conexión nueva del navegador.
 io.on('connection', (socket) => {
+  // Este bloque corre una vez por conexión. Dos pestañas/personas producen dos socket.id distintos.
   console.log(`Nuevo cliente conectado vía WebSocket: ${socket.id}`);
 
-  // Conserva el evento de prueba que explica el envío de mensajes a todos los sockets.
+  // Evento de ejemplo: el cliente manda pingAll con cualquier dato y el backend lo retransmite
+  // a TODOS los sockets conectados mediante io.emit. No participa en las partidas ni en el chat.
   socket.on('pingAll', (data) => {
-      io.emit('pingAll', { event: 'Ping to all', message: data });
+      io.emit('pingAll', { event: 'Ping to all', message: data }); // io.emit no filtra por sala: llega a todos.
   });
 
-  // Crea una sala para el minijuego y guarda su código en la conexión.
-  // El callback de confirmación devuelve el resultado a quien emitió el evento.
+  // Evento entrante: createRoom { game, name }.
+  // `game` debe coincidir con juegosDisponibles. `name` es respaldo si el socket no tiene perfil.
+  // El backend crea una sala en memoria, añade este socket como anfitrión y responde por callback:
+  // { ok: true, room: { room, game, status: "esperando", players } }.
+  // También manda roomUpdated a los miembros (en ese momento, el creador).
   socket.on('createRoom', (data = {}, confirmar = () => {}) => {
       if (!juegosDisponibles.has(data.game)) {
           return confirmar({ ok: false, error: 'Ese juego no está disponible.' });
@@ -275,6 +320,7 @@ io.on('connection', (socket) => {
 
       const codigo = generarCodigoSala();
       const usuario = socket.data.user || {};
+      // Estado interno. socketId sirve para reconocer conexiones; obtenerEstadoSala no lo expone.
       const sala = {
           codigo,
           juego: data.game,
@@ -290,13 +336,17 @@ io.on('connection', (socket) => {
       salas.set(codigo, sala);
       // Las salas viven en memoria mientras este proceso de backend siga activo.
       console.log(`[salas] Creada ${codigo} para ${data.game}. Salas activas: ${salas.size}.`);
-      socket.data.room = codigo;
-      socket.join(codigo);
+      socket.data.room = codigo; // Fuente de verdad de la sala para leaveRoom/sendProgress.
+      // Asociación lógica que permite al backend emitir después a esta sala por código.
+      socket.join(codigo); // Desde ahora io.to(codigo) puede dirigir mensajes a este anfitrión.
       emitirEstadoSala(sala);
-      return confirmar({ ok: true, room: obtenerEstadoSala(sala) });
+      return confirmar({ ok: true, room: obtenerEstadoSala(sala) }); // ACK privado que permite mostrar el código.
   });
 
-  // Sigue el patrón joinRoom del apunte: sale de la sala anterior y entra a la indicada.
+  // Evento entrante: joinRoom { room, game, name }.
+  // Se normaliza el código, se valida que exista/sea del juego correcto/tenga lugar y,
+  // si todo sale bien, el socket entra en la sala. El callback confirma al que se unió.
+  // Además, roomUpdated y roomMatched se emiten a la sala para que ambos lobbies reaccionen.
   socket.on('joinRoom', (data = {}, confirmar = () => {}) => {
       const codigo = String(data.room || '').trim().toUpperCase();
       const sala = salas.get(codigo);
@@ -323,22 +373,25 @@ io.on('connection', (socket) => {
           anfitrion: false
       });
       sala.estado = 'jugando';
-      socket.data.room = codigo;
-      socket.join(codigo);
+      socket.data.room = codigo; // El backend mantiene esta relación; el cliente no manda room en sendProgress.
+      socket.join(codigo); // El invitado entra al grupo antes de emitir roomMatched.
       emitirEstadoSala(sala);
-      io.to(codigo).emit('roomMatched', obtenerEstadoSala(sala));
-      return confirmar({ ok: true, room: obtenerEstadoSala(sala) });
+      io.to(codigo).emit('roomMatched', obtenerEstadoSala(sala)); // El anfitrión se entera por este broadcast.
+      return confirmar({ ok: true, room: obtenerEstadoSala(sala) }); // El invitado recibe su ACK aparte.
   });
 
-  // Sale de la sala actual y deja su lugar disponible.
+  // Evento entrante: leaveRoom sin datos. El servidor ya sabe la sala por socket.data.room.
+  // Callback de salida: { ok: true, room }. retirarDeSala avisa al rival y libera el lugar.
   socket.on('leaveRoom', (confirmar = () => {}) => {
       const room = socket.data.room || null;
       retirarDeSala(socket, 'salida');
-      return confirmar({ ok: true, room });
+      return confirmar({ ok: true, room }); // Solo informa a quien pidió salir; roomPlayerLeft avisa al rival.
   });
 
-  // Reenvía al rival las métricas públicas del juego, no las respuestas secretas.
-  // socket.to(room) envía el evento a los demás integrantes sin incluir al emisor.
+  // Evento entrante: sendProgress { progress }.
+  // La sala no se acepta desde el payload: se toma de socket.data.room para limitar al jugador
+  // a la sala a la que realmente se unió. Se valida estado, formato de progreso y pertenencia.
+  // Luego opponentProgress llega SOLO al otro socket de la sala; el emisor recibe { ok: true }.
   socket.on('sendProgress', (data = {}, confirmar = () => {}) => {
       const room = socket.data.room;
       const sala = salas.get(room);
@@ -346,6 +399,7 @@ io.on('connection', (socket) => {
           return confirmar({ ok: false, error: 'No hay una partida en curso.' });
       }
 
+      // El tipo de juego sale de la sala guardada en el servidor, no de un game enviado por el cliente.
       const progreso = limpiarProgreso(sala.juego, data.progress);
       if (!progreso) {
           return confirmar({ ok: false, error: 'El progreso enviado no es válido.' });
@@ -356,23 +410,28 @@ io.on('connection', (socket) => {
           return confirmar({ ok: false, error: 'No formas parte de esta sala.' });
       }
 
+      // El prefijo socket.to excluye a este jugador; con salas de 2, lo recibe solo su rival.
       socket.to(room).emit('opponentProgress', {
           position: jugador.posicion,
           name: jugador.nombre,
           progress: progreso,
           updatedAt: Date.now()
       });
-      return confirmar({ ok: true });
+      return confirmar({ ok: true }); // ACK de validación al emisor; no confirma que el rival lo haya leído.
   });
 
-  // Une al chat global solo a usuarios encontrados en la base y entrega mensajes recientes.
+  // Evento entrante: joinGlobalChat sin payload. El perfil vino en el handshake del socket.
+  // Si existe, entra en la sala exclusiva `chat:global`; luego recibe chat-messages:
+  // { user, room, messages }. No se usa pingAll porque no queremos enviar chat a sockets
+  // que no se hayan unido al canal.
   socket.on('joinGlobalChat', (confirmar = () => {}) => {
       if (!socket.data.user) {
           return confirmar({ ok: false, error: 'Iniciá sesión para usar el chat.' });
       }
 
-      socket.join(salaChatGlobal);
-      socket.emit('chat-messages', {
+      socket.join(salaChatGlobal); // La pertenencia controla quién podrá enviar/recibir mensajes del canal.
+      // Historial solo a este socket. No es broadcast: los mensajes futuros sí irán a toda la sala.
+      socket.emit('chat-messages', { // Unicast: entrega el historial solo a quien acaba de unirse.
           user: socket.data.user,
           room: salaChatGlobal,
           messages: historialChat
@@ -380,8 +439,10 @@ io.on('connection', (socket) => {
       return confirmar({ ok: true });
   });
 
-  // Envía mensajes a los miembros autenticados del chat global.
-  // El máximo de caracteres y la pausa mínima frenan mensajes vacíos o repetidos.
+  // Evento entrante: sendMessage { message }.
+  // Solo acepta sockets con perfil y membresía en chat:global; recorta espacios, limita a 500
+  // caracteres y exige 500 ms entre mensajes del mismo socket. La confirmación es privada;
+  // newMessage se emite al canal para que cada GlobalChat actualice su pantalla.
   socket.on('sendMessage', (data = {}, confirmar = () => {}) => {
       const texto = typeof data.message === 'string' ? data.message.trim() : '';
       const ahora = Date.now();
@@ -397,6 +458,7 @@ io.on('connection', (socket) => {
       }
 
       ultimoMensajeChat.set(socket.id, ahora);
+      // El autor se toma del perfil resuelto por el backend, no del texto que manda el cliente.
       const mensaje = {
           id: crypto.randomUUID(),
           user: socket.data.user,
@@ -406,16 +468,21 @@ io.on('connection', (socket) => {
       historialChat.push(mensaje);
       if (historialChat.length > 50) historialChat.shift();
 
-      io.to(salaChatGlobal).emit('newMessage', {
+      // Guarda los últimos 50 mensajes solo en memoria y los transmite a miembros del canal.
+      io.to(salaChatGlobal).emit('newMessage', { // El emisor también está en la sala y recibe su propio mensaje.
           room: salaChatGlobal,
           message: mensaje
       });
-      return confirmar({ ok: true, message: mensaje });
+      return confirmar({ ok: true, message: mensaje }); // ACK al emisor, separado del newMessage al canal.
   });
 
-  // Libera la sala de juego cuando la conexión se cierra.
+  // Evento de ciclo de vida de Socket.IO: se ejecuta al cerrar pestaña, perder transporte
+  // o desconectar explícitamente. Las salas Socket.IO se limpian y retiramos la sala de juego
+  // de nuestro Map para que el rival pueda volver a esperar a otra persona.
   socket.on('disconnect', (motivo) => {
       ultimoMensajeChat.delete(socket.id);
+      // Socket.IO ya retira memberships de su adapter; nuestro Map `salas` es dato propio,
+      // así que retirarDeSala también debe borrar el jugador de la estructura de la aplicación.
       retirarDeSala(socket, 'desconexión');
       // El motivo y el código ayudan a ver si la sala se perdió por cierre del cliente o del transporte.
       console.log(`[socket] Disconnect ${socket.id}: ${motivo}.`);
@@ -424,10 +491,18 @@ io.on('connection', (socket) => {
 // ------------------------------------
 
 
-// --- RUTAS HTTP (FETCH) ---
-// Cada ruta responde a una petición fetch del frontend u otro pedido HTTP.
+/*
+ * --- RUTAS HTTP (FETCH) ---
+ * Esta parte es independiente de los handlers Socket.IO de arriba: cada función de Express
+ * recibe una solicitud, puede consultar MySQL mediante realizarQuery y devuelve una respuesta.
+ * En el frontend se usa fetch() para estas operaciones puntuales.
+ *
+ * Lecturas usadas por los juegos: /jugadores, /grid, /imagen y datos asociados.
+ * Acceso/registro: POST /login y POST /usuarios.
+ * Administración: POST /jugadores, /datos, /estadisticas, /trayectoria y /equipos.
+ */
 
-// Ruta de estado: sirve para confirmar que el proceso HTTP respondió.
+// Ruta de estado simple: permite comprobar que Express responde por HTTP.
 app.get('/', function(req, res){
     res.status(200).send({
         message: 'Backend Funcionando - Listo para Next.js!'
@@ -455,7 +530,9 @@ app.get('/usuarios', async function(req,res){
     res.send(respuesta);
 })
 
-// Valida el correo y la contraseña en la base, y devuelve el perfil público del usuario.
+// Login HTTP: recibe { email, password }, consulta el usuario en MySQL y compara la contraseña.
+// Si coincide devuelve { id, name, email }; el frontend guarda id/name y luego los usa
+// para identificarse en el handshake Socket.IO. Esta respuesta no crea una sesión del servidor.
 app.post('/login', async function(req, res) {
     try {
         const usuarios = await realizarQuery(
@@ -504,6 +581,7 @@ app.get('/estadisticas', async function(req,res){
 })
 
 // Devuelve jugadores con sus datos básicos y trayectoria de clubes.
+// Los juegos llaman este endpoint por fetch para cargar sus datos; las jugadas online no pasan por aquí.
 app.get('/jugadores', async function(req,res){
     // Este JOIN también devuelve una fila por registro de trayectoria; el frontend agrupa por id_jugador.
     let respuesta;
@@ -589,7 +667,7 @@ app.get('/equipos', async function(req,res){
     res.send(respuesta);
 })
 
-// Entrega los tres conjuntos que Grid cruza: jugadores, clubes y vínculos jugador-club.
+// Un solo fetch para Grid: devuelve jugadores, equipos y trayectorias en un objeto JSON.
 app.get('/grid', async function(req, res) {
     try {
         const jugadores = await realizarQuery("SELECT id_jugador, nombre, apellido, pais FROM Jugadores");
@@ -605,7 +683,8 @@ app.get('/grid', async function(req, res) {
 
 // Pedidos POST
 
-// Registra un jugador si todavía no existe otro con el mismo apellido.
+// Alta administrativa por HTTP, no por Socket.IO. Después del INSERT se emite un aviso en vivo
+// a todos los sockets; cada cliente decide si escucha actualizacionJugadores.
 app.post('/jugadores', async function(req,res) {
     console.log(req.body)
     let jugadorExistente = await realizarQuery(`SELECT apellido FROM Jugadores WHERE Jugadores.apellido="${req.body.apellido}"`);
@@ -620,13 +699,14 @@ app.post('/jugadores', async function(req,res) {
         `)
         
         // Ejemplo de WebSocket: Avisar al frontend que se agregó un jugador
-        io.emit('actualizacionJugadores', { mensaje: 'Se agregó un nuevo jugador' });
+        io.emit('actualizacionJugadores', { mensaje: 'Se agregó un nuevo jugador' }); // Broadcast a cualquier socket, no solo admin.
         
         res.send("Jugador agregado")
     }
 })
 
-// Registra una cuenta y evita duplicar direcciones de correo.
+// Alta de cuenta por HTTP. El cliente luego hace POST /login para obtener el perfil público
+// y guardarlo localmente; esta ruta de registro no abre un socket ni inicia sesión por sí sola.
 app.post('/usuarios', async function(req,res) {
     console.log(req.body)
     let usuarioExistente = await realizarQuery(`SELECT email FROM Usuarios WHERE Usuarios.email="${req.body.email}"`);
@@ -704,14 +784,15 @@ app.post('/equipos', async function(req,res) {
         (${req.body.anio_creacion},${req.body.titulos_nacionales},${req.body.titulos_internacionales},"${req.body.ciudad}","${req.body.presidente}","${req.body.dt_actual}","${req.body.apodo}",${req.body.cantidad_socios},"${req.body.estadio}","${req.body.nombre_equipo}");
         `)
         
-        // Ejemplo WebSocket
-        io.emit('actualizacionEquipos', { mensaje: 'Se agregó un nuevo equipo' });
+        // Broadcast global de notificación: { mensaje }. No es la sala del chat ni una sala de juego.
+        io.emit('actualizacionEquipos', { mensaje: 'Se agregó un nuevo equipo' }); // Broadcast a cualquier socket, no solo admin.
 
         res.send("Equipo agregado")
     }
 })
 
 // El servidor HTTP recibe solicitudes Express y conexiones Socket.IO en el mismo puerto.
+// Inicia Express y Socket.IO juntos. Con el puerto por defecto, ambos están en :4000.
 server.listen(port, function(){
     console.log(`Server HTTP y WebSocket running in http://localhost:${port}`);
 });
