@@ -400,10 +400,11 @@ function GridGame() {
   const celdasCompletadas = Object.keys(celdasReveladas).length;
   const terminoLaPartida = Boolean(grilla && celdasCompletadas === 9);
 
-  // Publica solo información visible para el rival. El ✓ confirma una celda resuelta sin enviar
-  // el nombre que respondió ni la lista privada de candidatos de cada cruce.
+  // Puente entre la grilla local y el lobby. Payload: cantidad/puntaje, terminado,
+  // nombres de filas/columnas y claves de celdas ya resueltas marcadas con ✓.
+  // No manda el nombre ingresado ni la lista privada de respuestas posibles.
   useEffect(() => {
-    enviarProgreso({
+    enviarProgreso({ // El servidor vuelve a construir este snapshot antes de reenviarlo al rival.
       celdasCompletadas,
       puntaje: celdasCompletadas,
       terminado: terminoLaPartida,
@@ -569,7 +570,6 @@ function GridGame() {
   );
 }
 
-// Ruta /grid: el lobby debe quedar montado para conservar la conexión al pasar del menú al juego.
 export default function GridPage() {
   return (
     <GameLobby game="grid">

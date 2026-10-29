@@ -266,10 +266,11 @@ function Fulbo11Game() {
   const progreso = Math.round((cantidadColocados / POSICIONES.length) * 100);
   const terminoLaPartida = cantidadColocados === POSICIONES.length;
 
-  // Este efecto corre cuando cambia el equipo o el país. En modo solo no emite nada;
-  // en online envía únicamente el tablero visible y el país de la ronda al servidor.
+  // Puente entre la formación local y el lobby. Payload: cantidad colocada, terminado,
+  // los once nombres visibles (vacío si no hay jugador) y el país de la ronda.
+  // En modo solo el lobby no lo transmite; el backend vuelve a validar/limitar esos campos.
   useEffect(() => {
-    enviarProgreso({
+    enviarProgreso({ // Reemplaza el snapshot anterior del rival por la formación visible actual.
       jugadoresColocados: cantidadColocados,
       terminado: terminoLaPartida,
       formacion: equipo.map((jugador) => (jugador ? jugador.nombre : "")),
@@ -422,7 +423,8 @@ function Fulbo11Game() {
   );
 }
 
-// Ruta /fulbo11: GameLobby pide primero el modo y mantiene montada la conexión durante la partida.
+// El identificador del protocolo es "futbol11" aunque la URL pública sea /fulbo11;
+// el backend valida el identificador del juego, no el nombre de la ruta.
 export default function Fulbo11Page() {
   return (
     <GameLobby game="futbol11">

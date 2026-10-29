@@ -5,11 +5,19 @@
 import { useEffect, useState } from "react";
 import useSocket from "../hooks/useSocket";
 
-// Uso: panel lateral de /menu. Socket.IO comparte historial y mensajes; el backend valida el usuario.
+// El menú es el único lugar que monta este panel, pero el servidor no liga chat:global a una ruta.
+// Este hook crea un socket separado del de GameLobby; al salir del menú, el disconnect lo saca del canal.
 /*
- * Al conectarse, el chat emite joinGlobalChat y recibe chat-messages con el historial reciente.
- * Después agrega cada newMessage entrante. Al enviar, sendMessage devuelve una confirmación:
- * solo si el backend la acepta se limpia el campo de texto.
+ * Flujo de eventos:
+ * 1. Cuando ya hay socket conectado, escuchamos `chat-messages` y `newMessage`.
+ * 2. Emitimos `joinGlobalChat` sin payload. El backend valida el perfil, agrega el socket
+ *    a `chat:global` y devuelve el historial reciente mediante `chat-messages`.
+ * 3. Al enviar, emitimos `sendMessage` con { message: texto }.
+ * 4. El callback de confirmación responde solo al emisor. Si acepta, limpiamos el input;
+ *    los miembros del canal reciben además `newMessage` por broadcast de sala.
+ *
+ * No usamos `pingAll`: el chat tiene una sala lógica exclusiva llamada `chat:global`.
+ * Es global entre quienes se unan, aunque visualmente el panel esté en el menú.
  */
 export default function GlobalChat() {
   const { socket, isConnected } = useSocket();
@@ -17,37 +25,49 @@ export default function GlobalChat() {
   const [texto, setTexto] = useState("");
   const [error, setError] = useState("");
 
-  // Se une al canal global y escucha el historial y los mensajes nuevos.
+  // Es importante registrar los .on antes de emitir joinGlobalChat: el backend envía
+  // chat-messages inmediatamente dentro del handler de unión, y si escucháramos después
+  // podríamos perder el historial inicial.
   useEffect(() => {
     if (!socket || !isConnected) return;
 
-    // Reemplaza el listado local por los últimos mensajes que envía el backend al unirse.
+    // Evento entrante `chat-messages`: { user, room, messages }.
+    // Reemplaza la lista local con los últimos mensajes que mantiene el servidor en memoria.
     const recibirHistorial = (datos) => setMensajes(datos.messages || []);
-    // Agrega el mensaje nuevo y limita la vista a los últimos 50 elementos.
+    // Evento entrante `newMessage`: { room, message }. Agrega el mensaje a la lista visual.
+    // El servidor también limita su historial a 50; el slice mantiene acotada esta vista.
     const recibirMensaje = (datos) => {
       setMensajes((anteriores) => [...anteriores, datos.message].slice(-50));
     };
 
-    socket.on("chat-messages", recibirHistorial);
-    socket.on("newMessage", recibirMensaje);
-    socket.emit("joinGlobalChat", (respuesta) => {
+    socket.on("chat-messages", recibirHistorial); // Mensaje inicial con el historial al entrar.
+    socket.on("newMessage", recibirMensaje); // Cada mensaje nuevo que el backend emite al canal.
+    // Evento saliente `joinGlobalChat`: no requiere datos; la identidad viajó en el handshake.
+    socket.emit("joinGlobalChat", (respuesta) => { // Se une a chat:global; ACK privado de aceptación.
       if (!respuesta.ok) setError(respuesta.error);
     });
 
     return () => {
       socket.off("chat-messages", recibirHistorial);
       socket.off("newMessage", recibirMensaje);
+      // Este cleanup solo quita listeners. Si la conexión cae, Socket.IO sale de la sala;
+      // si el componente se desmonta, useSocket cierra el socket.
     };
+  // Si el transporte se reconecta, isConnected vuelve a true, este efecto se registra otra vez
+  // y emite joinGlobalChat de nuevo; el chat sí vuelve a unirse automáticamente a su sala.
   }, [socket, isConnected]);
 
-  // Envía el texto al backend y limpia el campo solo si el servidor lo acepta.
-  // La respuesta del callback también permite mostrar las validaciones del servidor.
+  // Evento saliente `sendMessage`: { message }. El servidor recorta/valida longitud,
+  // membresía del canal y ritmo de envío. El callback es una confirmación privada;
+  // el evento newMessage es lo que actualiza los paneles de todos los participantes.
   const enviarMensaje = (evento) => {
     evento.preventDefault();
     if (!texto.trim() || !socket) return;
 
-    socket.emit("sendMessage", { message: texto }, (respuesta) => {
+    socket.emit("sendMessage", { message: texto }, (respuesta) => { // ACK solo para decidir si limpiar/error.
       if (respuesta.ok) {
+        // No agregamos el mensaje acá: el backend también emite newMessage a esta sala,
+        // y ese listener lo agrega una sola vez tanto al emisor como a los demás.
         setTexto("");
         setError("");
       } else {

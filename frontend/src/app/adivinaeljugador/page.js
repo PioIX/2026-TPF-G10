@@ -397,10 +397,11 @@ function AdivinaElJugadorGame() {
   const adivino = respuestas.some((respuesta) => respuesta.startsWith("✅ ACIERTO:"));
   const terminoLaPartida = juegoTerminado || preguntasRestantes <= 0;
 
-  // Publica progreso rival cuando cambian preguntas, respuestas o la pista. El nombre secreto
-  // nunca viaja en este objeto; el backend vuelve a filtrar las respuestas antes de reenviarlas.
+  // Puente entre la lógica local y el lobby. Payload: preguntas usadas, terminado, si adivinó,
+  // respuestas visibles y si usó pista. No se agrega el jugador secreto; el backend además
+  // filtra las respuestas que empiecen con el texto de acierto antes de transmitirlas.
   useEffect(() => {
-    enviarProgreso({
+    enviarProgreso({ // Snapshot; no son eventos de cada pregunta ni se envía el jugador secreto.
       preguntasUsadas,
       terminado: terminoLaPartida,
       adivino: terminoLaPartida && adivino,
@@ -643,7 +644,6 @@ function AdivinaElJugadorGame() {
   );
 }
 
-// Ruta /adivinaeljugador: primero el modo; después el lobby mantiene el juego y el socket montados.
 export default function AdivinaElJugadorPage() {
   return (
     <GameLobby game="adivinaeljugador">
