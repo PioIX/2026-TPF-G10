@@ -1,16 +1,24 @@
 "use client";
-// Ventana modal genérica; la ruta /login actual muestra su propio cartel y aún no importa este componente.
 
+// Diálogo reutilizable para avisos que requieren una acción de cierre.
 export default function Modal({ abierto, titulo, children, onCerrar }) {
-  // Si está cerrada no genera nodos; si está abierta, el clic interno no se propaga al fondo.
   if (!abierto) return null;
+
   return (
     <div className="modal-fondo" onClick={onCerrar}>
-      <div className="modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
-        <h3>{titulo}</h3>
+      <section
+        className="modal"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="modal-titulo"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 id="modal-titulo">{titulo}</h2>
         <p>{children}</p>
-        <button className="btn btn-primary" onClick={onCerrar}>Cerrar</button>
-      </div>
+        <button className="btn-cerrar-modal" type="button" onClick={onCerrar}>
+          Cerrar
+        </button>
+      </section>
     </div>
   );
 }

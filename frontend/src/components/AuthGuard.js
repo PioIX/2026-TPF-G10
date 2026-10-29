@@ -1,6 +1,6 @@
 // Protección visual reutilizable: espera al navegador y redirige si no hay usuario en localStorage.
-// localStorage pertenece al navegador y no está explicado en los apuntes; el backend sigue validando el login.
-// No reemplaza la validación de sesión del backend. Actualmente ninguna ruta lo importa.
+// localStorage pertenece al navegador; el backend sigue validando las acciones protegidas.
+// Se aplica al menú para evitar mostrar el chat global antes del inicio de sesión.
 "use client";
 // Comprueba la sesión local y redirige al login si no hay usuario.
 import { useEffect, useState } from "react";

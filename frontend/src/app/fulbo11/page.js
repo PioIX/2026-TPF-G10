@@ -4,6 +4,11 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import "../global.css";
 import GameLobby, { useGameSession } from "../../components/GameLobby";
 import GoalCelebration from "../../components/GoalCelebration";
+import Pitch from "../../components/Pitch";
+import InfoPanel from "../../components/InfoPanel";
+import ProgressBar from "../../components/ProgressBar";
+import ResultCard from "../../components/ResultCard";
+import AutocompleteInput from "../../components/AutocompleteInput";
 import { BACKEND_URL } from "../../config/backend";
 import { comentarioFutbolero } from "../../utils/comentariosFutboleros";
 
@@ -263,7 +268,6 @@ function Fulbo11Game() {
 
   // Valores derivados de equipo; no se guardan aparte porque se pueden calcular en cada render.
   const cantidadColocados = equipo.filter(Boolean).length;
-  const progreso = Math.round((cantidadColocados / POSICIONES.length) * 100);
   const terminoLaPartida = cantidadColocados === POSICIONES.length;
 
   // Puente entre la formación local y el lobby. Payload: cantidad colocada, terminado,
@@ -299,47 +303,17 @@ function Fulbo11Game() {
     return Array.from(nombres.values()).sort((a, b) => a.localeCompare(b, "es"));
   }, [jugadores]);
 
-  // Genera los botones de un sector de la cancha y conecta cada uno con su índice de posición.
-  const renderFilaGrupo = (nombreGrupo) => {
-    return POSICIONES.map((posicion, indice) => {
-      if (posicion.grupo !== nombreGrupo) return null;
+  const idsUsados = useMemo(
+    () => new Set(equipo.filter(Boolean).map((jugador) => jugador.id)),
+    [equipo]
+  );
 
-      const asignado = equipo[indice];
-      const estaSeleccionado = posicionSeleccionada === indice;
-      const yaUsados = new Set(
-        equipo.filter(Boolean).map((jugador) => jugador.id)
-      );
-      const hayJugadorParaEsePuesto = jugadores.some(
-        (jugador) =>
-          normalizarTexto(jugador.pais) === normalizarTexto(paisActual) &&
-          !yaUsados.has(jugador.id) &&
-          puedeJugarEnPosicion(jugador, posicion)
-      );
-      const estaBloqueado = Boolean(asignado) || !hayJugadorParaEsePuesto;
-
-      return (
-        <button
-          key={posicion.numero}
-          type="button"
-          className={`casillero ${estaSeleccionado ? "casilleroSeleccionado" : ""} ${
-            asignado ? "casilleroOcupado ocupado" : ""
-          } ${!asignado && !hayJugadorParaEsePuesto ? "casilleroBloqueado" : ""}`}
-          disabled={estaBloqueado}
-          title={
-            !asignado && !hayJugadorParaEsePuesto
-              ? `No hay jugadores disponibles de ${paisActual} para ${posicion.nombre}.`
-              : undefined
-          }
-          onClick={() => seleccionarPosicion(indice)}
-        >
-          <strong>
-            {posicion.numero} - {posicion.nombre}
-          </strong>
-          <span>{asignado ? asignado.nombre : "Vacío"}</span>
-        </button>
-      );
-    });
-  };
+  const puedeSeleccionarPosicion = (posicion) => jugadores.some(
+    (jugador) =>
+      normalizarTexto(jugador.pais) === normalizarTexto(paisActual) &&
+      !idsUsados.has(jugador.id) &&
+      puedeJugarEnPosicion(jugador, posicion)
+  );
 
   return (
     <>
@@ -350,51 +324,37 @@ function Fulbo11Game() {
           formación.
         </p>
 
-        <div className="estadoJuego">
-          <div>
-            <strong>País:</strong> <span id="paisActual">{paisActual}</span>
-          </div>
-          <div>
-            <strong>Ronda:</strong> <span id="rondaActual">{ronda}</span>
-          </div>
-          <div>
-            <strong>Jugadores colocados:</strong>{" "}
-            <span id="jugadoresColocados">{cantidadColocados}</span>
-          </div>
-        </div>
+        <InfoPanel
+          items={[
+            { label: "País", valor: paisActual || "—", id: "paisActual" },
+            { label: "Ronda", valor: ronda, id: "rondaActual" },
+            { label: "Jugadores colocados", valor: cantidadColocados, id: "jugadoresColocados" },
+          ]}
+        />
 
         <div id="mensajeJuego" className="mensajeJuego">
           {mensaje}
         </div>
 
-        <div className="barraProgreso">
-          <div
-            id="rellenoProgreso"
-            className="rellenoProgreso"
-            style={{ width: `${progreso}%` }}
-          ></div>
-        </div>
-
-        <div id="textoProgreso" style={{ fontSize: "13px", opacity: 0.9 }}>
-          {cantidadColocados} de {POSICIONES.length} posiciones completas
-        </div>
+        <ProgressBar
+          valor={cantidadColocados}
+          total={POSICIONES.length}
+          texto={`${cantidadColocados} de ${POSICIONES.length} posiciones completas`}
+          textClassName="textoProgreso"
+          textId="textoProgreso"
+        />
 
         <div className="areaEntrada">
-          <input
-            id="entradaJugador"
-            type="text"
-            list="sugerenciasJugadores"
+          <AutocompleteInput
+            inputId="entradaJugador"
+            className=""
+            opciones={sugerenciasJugadores}
+            valor={entradaJugador}
+            onCambio={setEntradaJugador}
             placeholder="Escribí el nombre del jugador"
-            value={entradaJugador}
-            onChange={(e) => setEntradaJugador(e.target.value)}
+            ariaLabel="Nombre del jugador"
           />
-          <datalist id="sugerenciasJugadores">
-            {sugerenciasJugadores.map((nombre) => (
-              <option key={normalizarTexto(nombre)} value={nombre} />
-            ))}
-          </datalist>
 
-          {/* Tu compañero puede reemplazar este botón por su componente <Button> */}
           <button
             id="botonReiniciar"
             type="button"
@@ -405,20 +365,22 @@ function Fulbo11Game() {
         </div>
       </div>
 
-      <div className="cancha">
-        <div className="fila delanteros" id="delanteros">
-          {renderFilaGrupo("delanteros")}
-        </div>
-        <div className="fila mediocampistas" id="mediocampistas">
-          {renderFilaGrupo("mediocampistas")}
-        </div>
-        <div className="fila defensas" id="defensas">
-          {renderFilaGrupo("defensas")}
-        </div>
-        <div className="fila arquero" id="arquero">
-          {renderFilaGrupo("arquero")}
-        </div>
-      </div>
+      <Pitch
+        posiciones={POSICIONES}
+        equipo={equipo}
+        seleccion={posicionSeleccionada}
+        onSeleccionar={seleccionarPosicion}
+        puedeSeleccionar={puedeSeleccionarPosicion}
+      />
+      {terminoLaPartida && (
+        <ResultCard
+          gano
+          titulo="¡Formación completa!"
+          detalle="Completaste las once posiciones."
+          onReiniciar={() => cargarJugadores()}
+          className="resultadoPartida"
+        />
+      )}
     </>
   );
 }

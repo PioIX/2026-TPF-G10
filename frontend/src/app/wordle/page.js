@@ -1,9 +1,12 @@
 // src/app/wordle/page.js
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import "../global.css";
 import GameLobby, { useGameSession } from "../../components/GameLobby";
 import GoalCelebration from "../../components/GoalCelebration";
+import WordleBoard, { estadoLetra } from "../../components/WordleBoard";
+import Keyboard from "../../components/Keyboard";
+import ResultCard from "../../components/ResultCard";
 import { BACKEND_URL } from "../../config/backend";
 import { comentarioFutbolero } from "../../utils/comentariosFutboleros";
 
@@ -23,12 +26,6 @@ const MAX_INTENTOS = 6;
 const COLOR_CORRECTO = "#4caf50";
 const COLOR_CERCANO = "#f1c40f";
 const COLOR_INCORRECTO = "#7f8c8d";
-
-const FILAS_TECLADO = [
-  ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
-  ["A", "S", "D", "F", "G", "H", "J", "K", "L"],
-  ["ENTER", "Z", "X", "C", "V", "B", "N", "M", "BKSP"],
-];
 
 // Convierte el apellido en la palabra que se juega: solo letras A-Z, sin tildes.
 function limpiarTexto(texto) {
@@ -96,13 +93,6 @@ function WordleGame() {
     Promise.resolve().then(iniciarJuego);
   }, [iniciarJuego]);
 
-  // Decide el color de una celda comparando su letra con la solución.
-  const colorDeLetra = useCallback((letra, indice) => {
-    if (letra === palabraSecreta[indice]) return COLOR_CORRECTO;
-    if (palabraSecreta.includes(letra)) return COLOR_CERCANO;
-    return COLOR_INCORRECTO;
-  }, [palabraSecreta]);
-
   // Actualiza una copia de la matriz para que React detecte el cambio y vuelva a dibujar el tablero.
   const escribirLetra = useCallback(
     (letra) => {
@@ -160,7 +150,11 @@ function WordleGame() {
       const copia = prevFilas.map((fila) => [...fila]);
       copia[intentoActual] = copia[intentoActual].map((celda, i) => ({
         ...celda,
-        color: colorDeLetra(intento[i], i),
+        color: {
+          ok: COLOR_CORRECTO,
+          cerca: COLOR_CERCANO,
+          no: COLOR_INCORRECTO,
+        }[estadoLetra(intento, i, palabraSecreta)],
       }));
       return copia;
     });
@@ -179,7 +173,7 @@ function WordleGame() {
       setJuegoTerminado(true);
       setMensaje(`Perdiste. La palabra era ${palabraSecreta}`);
     }
-  }, [juegoTerminado, palabraSecreta, filas, intentoActual, colorDeLetra]);
+  }, [juegoTerminado, palabraSecreta, filas, intentoActual]);
 
   // Unifica teclas del navegador y botones del teclado visual: letra, borrar o confirmar intento.
   const manejarTecla = useCallback(
@@ -226,6 +220,23 @@ function WordleGame() {
     fila.some((celda) => celda.color !== "transparent")
   ).length;
   const gano = juegoTerminado && mensaje.endsWith("¡Ganaste!");
+  const usadas = useMemo(() => {
+    const prioridad = { no: 1, cerca: 2, ok: 3 };
+    const porColor = {
+      [COLOR_INCORRECTO]: "no",
+      [COLOR_CERCANO]: "cerca",
+      [COLOR_CORRECTO]: "ok",
+    };
+
+    return filas.flat().reduce((acumuladas, celda) => {
+      if (celda.letra === "_" || celda.color === "transparent") return acumuladas;
+      const estado = porColor[celda.color];
+      if (estado && prioridad[estado] > (prioridad[acumuladas[celda.letra]] || 0)) {
+        acumuladas[celda.letra] = estado;
+      }
+      return acumuladas;
+    }, {});
+  }, [filas]);
 
   // Puente entre la lógica local y el lobby: al cambiar el tablero/resultado crea este payload:
   // { intentosUsados, terminado, gano, tablero }. No incluye `palabraSecreta`.
@@ -253,44 +264,18 @@ function WordleGame() {
     <>
       {gano && <GoalCelebration />}
       <main className="wordle-main">
-        <div id="mensaje">{mensaje}</div>
-
-        {/* Tablero generado por estado */}
-        <div id="tablero" className="tablero">
-          {filas.map((fila, iFila) => (
-            <div key={iFila} className="fila">
-              {fila.map((celda, iCol) => (
-                <div
-                  key={iCol}
-                  className="letra"
-                  style={{ background: celda.color }}
-                >
-                  {celda.letra}
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
-
-        {/* Teclado en pantalla */}
-        <div id="teclado">
-          {FILAS_TECLADO.map((filaTeclas, idx) => (
-            <div key={idx} className="fila-teclado">
-              {filaTeclas.map((tecla) => (
-                <button
-                  key={tecla}
-                  type="button"
-                  className={`tecla ${
-                    tecla === "ENTER" || tecla === "BKSP" ? "grande" : ""
-                  }`}
-                  onClick={() => manejarTecla(tecla)}
-                >
-                  {tecla}
-                </button>
-              ))}
-            </div>
-          ))}
-        </div>
+        <div id="mensaje">{juegoTerminado ? "" : mensaje}</div>
+        <WordleBoard filas={filas} />
+        <Keyboard onTecla={manejarTecla} usadas={usadas} />
+        {juegoTerminado && (
+          <ResultCard
+            gano={gano}
+            titulo={gano ? "¡Ganaste!" : "Se terminaron los intentos"}
+            detalle={mensaje}
+            onReiniciar={iniciarJuego}
+            className="resultadoPartida"
+          />
+        )}
       </main>
     </>
   );

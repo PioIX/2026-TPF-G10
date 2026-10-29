@@ -1,6 +1,7 @@
 // src/app/layout.jsx
 import './global.css';
 import SiteHeader from '../components/SiteHeader';
+import Footer from '../components/Footer';
 
 // Metadatos compartidos por todas las rutas que usan este layout raíz.
 export const metadata = {
@@ -18,6 +19,7 @@ export default function RootLayout({ children }) {
         
         {/* Next reemplaza children por el contenido de la ruta activa, por ejemplo /menu o /wordle. */}
         {children}
+        <Footer />
       </body>
     </html>
   );

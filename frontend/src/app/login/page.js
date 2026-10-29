@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import "../global.css";
+import AuthForm from "../../components/AuthForm";
+import Modal from "../../components/Modal";
 import { BACKEND_URL } from "../../config/backend";
 
 // Validación de interfaz: evita enviar un correo sin el formato básico esperado.
@@ -46,9 +48,7 @@ export default function LoginPage() {
   };
 
   // Envía email y contraseña por POST; el backend devuelve el usuario validado en la base.
-  const loginUsuario = async (e) => {
-    e.preventDefault();
-
+  const loginUsuario = async () => {
     if (email.trim() === "" || password.trim() === "") {
       setModalInfo({
         titulo: "Error",
@@ -90,9 +90,7 @@ export default function LoginPage() {
   };
 
   // Registra en la base y, si sale bien, hace login para obtener el ID validado del usuario.
-  const registrarUsuario = async (e) => {
-    e.preventDefault();
-
+  const registrarUsuario = async () => {
     if (nombre.trim() === "" || email.trim() === "" || password.trim() === "") {
       setModalInfo({
         titulo: "Error",
@@ -180,84 +178,25 @@ export default function LoginPage() {
           <h2>{esRegistro ? "Sumate al equipo" : "Qué bueno verte"}</h2>
           <p>{esRegistro ? "Creá tu cuenta y empezá a jugar." : "Iniciá sesión para entrar a los desafíos."}</p>
         </div>
-        {/* CONDITIONAL RENDERING: Cambia la clase y la función onSubmit según el estado */}
-        <form
-          className={esRegistro ? "registro" : "login"}
+        <AuthForm
+          modo={esRegistro ? "registro" : "login"}
           onSubmit={esRegistro ? registrarUsuario : loginUsuario}
-        >
-          {/* Solo se renderiza el input de Nombre si 'esRegistro' es true */}
-          {esRegistro && (
-            <input
-              type="text"
-              className="campo"
-              placeholder="NOMBRE DE USUARIO:"
-              id="nombre"
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-            />
-          )}
-
-          <input
-            type="email"
-            className="campo"
-            placeholder="CORREO ELECTRÓNICO:"
-            id="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-
-          <input
-            type="password"
-            className="campo"
-            placeholder="CONTRASEÑA:"
-            id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-
-          {/* Botón principal: cambia su texto según el modo */}
-          <button type="submit" className="btn">
-            {esRegistro ? "REGISTRARSE" : "INICIAR SESIÓN"}
-          </button>
-
-          {/* Si está en modo Login, el botón para ir a Registro va adentro de la tarjeta */}
-          {!esRegistro && (
-            <button
-              type="button"
-              className="btn btn-secundario"
-              onClick={cambiarModo}
-            >
-              REGISTRARSE
-            </button>
-          )}
-        </form>
-
-        {/* Si está en modo Registro, el botón para volver al Login va afuera (como en tu diseño original) */}
-        {esRegistro && (
-          <button
-            type="button"
-            className="btn btn-volver"
-            onClick={cambiarModo}
-          >
-            Volver al inicio de sesión
-          </button>
-        )}
-
-        {/* Cartel de aviso / Modal reactivo */}
-        {modalInfo.mensaje && (
-          <div className="alerta-modal">
-            <h4>{modalInfo.titulo}</h4>
-            <p>{modalInfo.mensaje}</p>
-            <button
-              type="button"
-              className="btn-cerrar-modal"
-              onClick={() => setModalInfo({ titulo: "", mensaje: "" })}
-            >
-              Cerrar
-            </button>
-          </div>
-        )}
+          onCambiarModo={cambiarModo}
+          nombre={nombre}
+          onNombreChange={setNombre}
+          email={email}
+          onEmailChange={setEmail}
+          password={password}
+          onPasswordChange={setPassword}
+        />
       </div>
+      <Modal
+        abierto={Boolean(modalInfo.mensaje)}
+        titulo={modalInfo.titulo}
+        onCerrar={() => setModalInfo({ titulo: "", mensaje: "" })}
+      >
+        {modalInfo.mensaje}
+      </Modal>
     </>
   );
 }

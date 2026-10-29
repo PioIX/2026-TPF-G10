@@ -1,5 +1,5 @@
-// Galería visual preparada como otra modalidad de Adivina el jugador; la partida activa no la usa.
-// companeros: [{ nombre, imagen }] (5 jugadores con los que compartió equipo)
+// Galería de compañeros que se muestra como pista adicional en Adivina el jugador.
+// companeros: [{ nombre, imagen }] (hasta 5 jugadores que compartieron equipo)
 import Image from "next/image";
 
 // Recibe la lista de compañeros y, al revelarse, muestra sus nombres y el jugador misterioso.
