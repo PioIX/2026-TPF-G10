@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import AuthGuard from "../../components/AuthGuard";
+import GameCard from "../../components/GameCard";
 import GlobalChat from "../../components/GlobalChat";
 
 const juegos = [
@@ -39,7 +40,14 @@ export default function MenuPage() {
     );
   };
 
+  const cerrarSesion = () => {
+    localStorage.removeItem("usuarioId");
+    localStorage.removeItem("usuarioNombre");
+    router.replace("/login");
+  };
+
   return (
+    <AuthGuard>
     <main className="menuPagina">
       <section className="menuHero" aria-labelledby="tituloMenu">
         <div>
@@ -72,23 +80,11 @@ export default function MenuPage() {
       <div className="menuConChat">
         <section className="juegos" aria-label="Juegos disponibles">
           {juegos.map((juego) => (
-            <Link
-              className={`juegoTarjeta juegoTarjeta-${juego.estilo} ${juegoSorpresa?.href === juego.href ? "juegoTarjetaSorteada" : ""}`}
-              href={juego.href}
+            <GameCard
               key={juego.href}
-            >
-              <span className="juegoTarjetaImagen">
-                <Image src={juego.imagen} alt="" width={240} height={240} />
-              </span>
-              <span className="juegoTarjetaInfo">
-                <span className="juegoTarjetaTitulo">{juego.titulo}</span>
-                <span className="juegoTarjetaDetalle">{juego.detalle}</span>
-                <span className="juegoTarjetaAccion">
-                  <span className="juegoTarjetaBalon" aria-hidden="true">⚽</span>
-                  Jugar
-                </span>
-              </span>
-            </Link>
+              {...juego}
+              sorteada={juegoSorpresa?.href === juego.href}
+            />
           ))}
         </section>
 
@@ -96,9 +92,10 @@ export default function MenuPage() {
       </div>
 
       <nav className="menuAcciones" aria-label="Otras opciones">
-        <Link href="/login" className="menuAccion">Cerrar sesion</Link>
+        <button type="button" className="menuAccion" onClick={cerrarSesion}>Cerrar sesión</button>
         <Link href="/admin" className="menuAccion menuAccionAdmin">Administración</Link>
       </nav>
     </main>
+    </AuthGuard>
   );
 }

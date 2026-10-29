@@ -5,6 +5,13 @@ import "../global.css";
 import GameLobby, { useGameSession } from "../../components/GameLobby";
 import PlayerSilhouette from "../../components/PlayerSilhouette";
 import GoalCelebration from "../../components/GoalCelebration";
+import AnswerList from "../../components/AnswerList";
+import DifficultyBadge from "../../components/DifficultyBadge";
+import QuestionPanel from "../../components/QuestionPanel";
+import GuessBox from "../../components/GuessBox";
+import ClueBox from "../../components/ClueBox";
+import LinkGallery from "../../components/LinkGallery";
+import ResultCard from "../../components/ResultCard";
 import { BACKEND_URL } from "../../config/backend";
 import obtenerImagenDeportiva from "../../utils/imagenes";
 import { comentarioFutbolero } from "../../utils/comentariosFutboleros";
@@ -134,6 +141,7 @@ function AdivinaElJugadorGame() {
   const [inputTexto, setInputTexto] = useState("");
   const [inputAdivinar, setInputAdivinar] = useState("");
   const [fotoJugador, setFotoJugador] = useState("");
+  const [companerosConImagen, setCompanerosConImagen] = useState([]);
 
   // Consulta el backend, agrupa las filas repetidas del JOIN y sortea el desafío local.
   const cargarJugadores = useCallback(async () => {
@@ -184,6 +192,35 @@ function AdivinaElJugadorGame() {
       activo = false;
     };
   }, [jugadorSecreto]);
+
+  // Al pedir una pista, busca fotos de jugadores que compartieron club con el secreto.
+  useEffect(() => {
+    if (!pistaActiva || !jugadorSecreto) {
+      setCompanerosConImagen([]);
+      return undefined;
+    }
+
+    const clubesDelSecreto = new Set((jugadorSecreto.clubes || []).map(limpiarTexto));
+    const companeros = jugadores
+      .filter((jugador) => (
+        jugador.id !== jugadorSecreto.id &&
+        (jugador.clubes || []).some((club) => clubesDelSecreto.has(limpiarTexto(club)))
+      ))
+      .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"))
+      .slice(0, 5);
+
+    let activo = true;
+    Promise.all(companeros.map(async (jugador) => ({
+      nombre: jugador.nombre,
+      imagen: await obtenerImagenDeportiva("jugador", jugador.nombre),
+    }))).then((lista) => {
+      if (activo) setCompanerosConImagen(lista);
+    });
+
+    return () => {
+      activo = false;
+    };
+  }, [pistaActiva, jugadorSecreto, jugadores]);
 
   // Permite revisar el sorteo en desarrollo sin revelar el secreto en la versión publicada.
   useEffect(() => {
@@ -390,9 +427,25 @@ function AdivinaElJugadorGame() {
     }
   };
 
-  const esEdad = categoria === "edad";
-  const catTexto = ["club", "pais", "posicion", "liga"].includes(categoria);
-  const opcionesSugerencias = catTexto ? sugerencias[categoria] || [] : [];
+  const reiniciarPartida = () => {
+    setPreguntasRestantes(10);
+    setCategoria(null);
+    setComparador(null);
+    setValorRango(180);
+    setPeriodo("actual");
+    setJuegoTerminado(false);
+    setJugadorSecreto(null);
+    setRespuestas([]);
+    setPistaActiva(false);
+    setInputTexto("");
+    setInputAdivinar("");
+    setMensaje("Selecciona una categoría y haz tu primera pregunta.");
+    cargarJugadores();
+  };
+
+  const opcionesSugerencias = ["club", "pais", "posicion", "liga"].includes(categoria)
+    ? sugerencias[categoria] || []
+    : [];
   const preguntasUsadas = 10 - preguntasRestantes;
   const adivino = respuestas.some((respuesta) => respuesta.startsWith("✅ ACIERTO:"));
   const terminoLaPartida = juegoTerminado || preguntasRestantes <= 0;
@@ -434,211 +487,75 @@ function AdivinaElJugadorGame() {
               size={100}
             />
           </div>
-          <div id="dificultad">⚽⚽⚽</div>
+          <div id="dificultad"><DifficultyBadge nivel={3} max={3} /></div>
         </div>
 
-        <div id="caja-preguntas">
-          <p id="titulo-preguntas">Haz preguntas haciendo clic abajo:</p>
+        <QuestionPanel
+          categoria={categoria}
+          onCategoria={seleccionarCategoria}
+          periodo={periodo}
+          onPeriodo={setPeriodo}
+          comparador={comparador}
+          onComparador={seleccionarComparador}
+          valor={valorRango}
+          onValor={setValorRango}
+          texto={inputTexto}
+          onTexto={setInputTexto}
+          opciones={opcionesSugerencias}
+          onPreguntar={hacerPregunta}
+          restantes={preguntasRestantes}
+          deshabilitado={!puedeHacerPregunta}
+        />
 
-          {/* Actual y Pasado solo modifican preguntas sobre la trayectoria de clubes. */}
-          {categoria === "club" && (
-            <div className="fila-botones">
-              <div id="grupo-botones-1">
-                <button
-                  id="actual"
-                  type="button"
-                  className={`btn-pill ${periodo === "actual" ? "selected" : ""}`}
-                  onClick={() => setPeriodo("actual")}
-                >
-                  Actual
-                </button>
-                <button
-                  id="pasado"
-                  type="button"
-                  className={`btn-pill ${periodo === "pasado" ? "selected" : ""}`}
-                  onClick={() => setPeriodo("pasado")}
-                >
-                  Pasado
-                </button>
-              </div>
-            </div>
-          )}
-
-          <div className="fila-botones">
-            <div id="grupo-botones-2">
-              {[
-                { id: "club", label: "Club" },
-                { id: "liga", label: "Liga actual" },
-                { id: "pais", label: "País" },
-                { id: "posicion", label: "Posición" },
-                { id: "edad", label: "Edad" },
-                { id: "altura", label: "Altura" },
-              ].map((boton) => (
-                <button
-                  key={boton.id}
-                  id={boton.id}
-                  type="button"
-                  className={`btn-pill ${
-                    categoria === boton.id ? "selected" : ""
-                  }`}
-                  onClick={() => seleccionarCategoria(boton.id)}
-                >
-                  {boton.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div
-            id="comparador"
-            className={!["edad", "altura"].includes(categoria) ? "hidden" : ""}
-          >
-            <div className="fila-botones">
-              {[
-                { id: "mayor", label: "Mayor que" },
-                { id: "menor", label: "Menor que" },
-                { id: "exactamente", label: "Exactamente" },
-              ].map((comp) => (
-                <button
-                  key={comp.id}
-                  id={comp.id}
-                  type="button"
-                  className={`btn-pill ${
-                    comparador === comp.id ? "selected" : ""
-                  }`}
-                  onClick={() => seleccionarComparador(comp.id)}
-                >
-                  {comp.label}
-                </button>
-              ))}
-            </div>
-
-            <div id="slider-contenedor">
-              <input
-                type="range"
-                id="input-rango"
-                min={esEdad ? 16 : 150}
-                max={esEdad ? 45 : 210}
-                value={valorRango}
-                onChange={(e) => setValorRango(Number(e.target.value))}
-              />
-              <span id="valor-rango">
-                {valorRango} {esEdad ? "años" : "cm"}
-              </span>
-            </div>
-          </div>
-
-          <div className="fila-input-preguntar">
-            <input
-              type="text"
-              id="input-texto"
-              className="input-pill"
-              list="sugerencias"
-              disabled={!catTexto}
-              placeholder={
-                catTexto
-                  ? "Selecciona o escribe aquí"
-                  : categoria
-                  ? "Usa el slider numérico"
-                  : "Elige una categoría"
-              }
-              value={inputTexto}
-              onChange={(e) => setInputTexto(e.target.value)}
-            />
-            <datalist id="sugerencias">
-              {opcionesSugerencias.map((opcion) => (
-                <option key={opcion} value={opcion} />
-              ))}
-            </datalist>
-
-            {/* Tu compañero puede reemplazar este botón por su componente <Button> */}
-            <button
-              id="btn-preguntar"
-              type="button"
-              className="btn-accion"
-              disabled={!puedeHacerPregunta}
-              onClick={hacerPregunta}
-            >
-              Hacer pregunta
-            </button>
-          </div>
-        </div>
-
-        <p id="preguntas-restantes">
-          Tienes {preguntasRestantes} preguntas restantes:
-        </p>
         <p id="mensaje-juego" className="mensaje-juego">
-          {mensaje}
+          {terminoLaPartida ? "" : mensaje}
         </p>
 
-        <div id="caja-respuestas">
-          {respuestas.slice(0, 10).map((t, index) => (
-            <div key={index} className="respuesta">
-              {t}
-            </div>
-          ))}
-        </div>
+        <AnswerList
+          respuestas={respuestas}
+          onMarcar={marcarRespuesta}
+          juegoTerminado={terminoLaPartida}
+          buttonClassName="btn-accion"
+        />
 
-        <div id="caja-adivinar">
-          <input
-            type="text"
-            id="input-adivinar"
-            className="input-pill"
-            list="sugerencias-adivinar"
-            placeholder="Escribe el nombre del futbolista"
-            value={inputAdivinar}
-            onChange={(e) => setInputAdivinar(e.target.value)}
+        <GuessBox
+          opciones={sugerencias.nombres}
+          valor={inputAdivinar}
+          onCambio={setInputAdivinar}
+          onAdivinar={intentarAdivinar}
+          deshabilitado={
+            juegoTerminado ||
+            preguntasRestantes <= 0 ||
+            !opcionValida("nombres", inputAdivinar)
+          }
+        />
+
+        <ClueBox
+          pista={jugadorSecreto
+            ? `País: ${jugadorSecreto.pais || "?"} • Club actual: ${jugadorSecreto.clubActual || "?"} • Posición: ${jugadorSecreto.posicion || "?"} • Edad: ${jugadorSecreto.edad || "?"} años • Altura: ${jugadorSecreto.altura || "?"} cm`
+            : ""}
+          usada={pistaActiva}
+          onPedir={mostrarPista}
+          deshabilitada={terminoLaPartida}
+        />
+
+        {pistaActiva && companerosConImagen.length > 0 && (
+          <LinkGallery
+            companeros={companerosConImagen}
+            revelado={terminoLaPartida}
+            jugadorMisterioso={jugadorSecreto?.nombre}
           />
-          <datalist id="sugerencias-adivinar">
-            {sugerencias.nombres.map((nombre) => (
-              <option key={limpiarTexto(nombre)} value={nombre} />
-            ))}
-          </datalist>
-          <button
-            id="btn-adivinar"
-            type="button"
-            className="btn-icono"
-            disabled={
-              juegoTerminado ||
-              preguntasRestantes <= 0 ||
-              !opcionValida("nombres", inputAdivinar)
-            }
-            onClick={intentarAdivinar}
-          >
-            🚩
-          </button>
-        </div>
+        )}
 
-        <div id="pista" className={`pista ${pistaActiva ? "visible" : ""}`}>
-          {pistaActiva && jugadorSecreto
-            ? `País: ${jugadorSecreto.pais || "?"} • Club Act: ${
-                jugadorSecreto.clubActual || "?"
-              } • Posición: ${jugadorSecreto.posicion || "?"} • Edad: ${
-                jugadorSecreto.edad || "?"
-              } años • Altura: ${jugadorSecreto.altura || "?"} cm`
-            : "Pulsa el icono de cámara para mostrar una pista."}
-        </div>
-
-        <div id="botones-inferiores">
-          <button
-            id="btn-marcar"
-            type="button"
-            className="btn-accion"
-            disabled={juegoTerminado || respuestas.length === 0}
-            onClick={marcarRespuesta}
-          >
-            🚩 Marcar respuesta
-          </button>
-          <button
-            id="btn-camara"
-            type="button"
-            className="btn-icono"
-            disabled={juegoTerminado}
-            onClick={mostrarPista}
-          >
-            📸
-          </button>
-        </div>
+        {terminoLaPartida && (
+          <ResultCard
+            gano={adivino}
+            titulo={adivino ? "¡Jugador encontrado!" : "Se terminaron las preguntas"}
+            detalle={`El jugador era ${jugadorSecreto?.nombre || "desconocido"}.`}
+            onReiniciar={reiniciarPartida}
+            className="resultadoPartida"
+          />
+        )}
       </main>
     </>
   );

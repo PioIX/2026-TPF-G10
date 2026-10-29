@@ -1,11 +1,27 @@
-// Barra accesible reutilizable; los juegos activos calculan sus barras dentro de cada página.
-export default function ProgressBar({ valor, total, texto }) {
+// Barra accesible para mostrar el avance de una partida.
+export default function ProgressBar({
+  valor,
+  total,
+  texto,
+  className = "barraProgreso",
+  fillClassName = "rellenoProgreso",
+  textClassName = "textoProgreso",
+  textId,
+}) {
+  const porcentaje = total > 0 ? Math.round((valor / total) * 100) : 0;
+
   return (
     <>
-      <div className="barra" role="progressbar" aria-valuenow={valor} aria-valuemax={total}>
-        <div className="relleno" style={{ width: `${Math.round((valor / total) * 100)}%` }} />
+      <div
+        className={className}
+        role="progressbar"
+        aria-valuenow={valor}
+        aria-valuemin={0}
+        aria-valuemax={total}
+      >
+        <div className={fillClassName} style={{ width: `${porcentaje}%` }} />
       </div>
-      {texto && <div className="progreso-texto">{texto}</div>}
+      {texto && <div id={textId} className={textClassName}>{texto}</div>}
     </>
   );
 }

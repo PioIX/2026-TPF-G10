@@ -2,6 +2,8 @@
 "use client";
 import { useState, useEffect } from "react";
 import useSocket from "../../hooks/useSocket";
+import AdminPlayerForm from "../../components/AdminPlayerForm";
+import ClubForm from "../../components/ClubForm";
 import "../global.css";
 import { BACKEND_URL } from "../../config/backend";
 
@@ -31,47 +33,6 @@ export default function AdminPage() {
   const [msgJugador, setMsgJugador] = useState("");
   const [msgClubes, setMsgClubes] = useState("");
 
-  // Valores de los inputs de jugador, Datos y Estadisticas, que son tablas relacionadas.
-  const [jugadorForm, setJugadorForm] = useState({
-    nombre: "",
-    apellido: "",
-    pais: "",
-    posicion: "",
-    liga_actual: "",
-    dorsal_equipo: "",
-    dorsal_seleccion: "",
-    valor_mercado: "",
-    id_equipo: "",
-    edad: "",
-    altura: "",
-    peso: "",
-    pierna_habil: "",
-    goles: "",
-    asistencias: "",
-    titulos_equipo: "",
-    titulos_seleccion: "",
-    titulos_individuales: "",
-  });
-
-  // Cada elemento representa una fila editable de la tabla Trayectoria.
-  const [trayectorias, setTrayectorias] = useState([
-    { anio_traspaso: "", anio_ingreso: "" },
-  ]);
-
-  // Valores que se envían a la tabla Equipos.
-  const [clubForm, setClubForm] = useState({
-    nombre_equipo: "",
-    anio_creacion: "",
-    titulos_nacionales: "",
-    titulos_internacionales: "",
-    ciudad: "",
-    presidente: "",
-    dt_actual: "",
-    apodo: "",
-    cantidad_socios: "",
-    estadio: "",
-  });
-
   // Administración también abre su propia conexión useSocket.
   // El backend emite estos avisos globalmente después de altas exitosas; el payload actual
   // es { mensaje }. En esta pantalla se registran en consola; no reemplazan los fetch de datos.
@@ -94,38 +55,8 @@ export default function AdminPage() {
     };
   }, [socket, isConnected]);
 
-  // Actualizan el input cuyo atributo name coincide con una propiedad del estado.
-  const handleJugadorChange = (e) => {
-    const { name, value } = e.target;
-    setJugadorForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleTrayectoriaChange = (index, e) => {
-    const { name, value } = e.target;
-    setTrayectorias((prev) =>
-      prev.map((fila, i) => (i === index ? { ...fila, [name]: value } : fila))
-    );
-  };
-
-  // Agrega una fila editable copiando el arreglo anterior para respetar el estado inmutable de React.
-  const agregarFilaTrayectoria = () => {
-    setTrayectorias((prev) => [...prev, { anio_traspaso: "", anio_ingreso: "" }]);
-  };
-
-  // Quita la fila seleccionada y conserva las demás.
-  const quitarFilaTrayectoria = (index) => {
-    setTrayectorias((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  // Actualiza un campo del formulario de Equipos.
-  const handleClubChange = (e) => {
-    const { name, value } = e.target;
-    setClubForm((prev) => ({ ...prev, [name]: value }));
-  };
-
   // Primero crea Jugadores; después usa su ID para enviar Datos, Estadisticas y Trayectoria.
-  const handleSubmitJugador = async (e) => {
-    e.preventDefault();
+  const handleSubmitJugador = async ({ trayectorias, ...jugadorForm }) => {
     setMsgJugador("Creando...");
 
     const jugadorPayload = {
@@ -134,8 +65,6 @@ export default function AdminPage() {
       pais: jugadorForm.pais,
       posicion: jugadorForm.posicion,
       liga_actual: jugadorForm.liga_actual,
-      // Alias antiguo que el backend ignora; se conserva mientras el formulario usa `posicion`.
-      poisicion: jugadorForm.posicion,
       dorsal_equipo: Number(jugadorForm.dorsal_equipo) || 0,
       dorsal_seleccion: Number(jugadorForm.dorsal_seleccion) || 0,
       valor_mercado: Number(jugadorForm.valor_mercado) || 0,
@@ -152,7 +81,7 @@ export default function AdminPage() {
       const text1 = await res1.text();
       if (!res1.ok) {
         setMsgJugador(text1);
-        return;
+        return false;
       }
 
       const jugadores = await (await fetch(`${API_URL}/jugadores`)).json();
@@ -165,7 +94,7 @@ export default function AdminPage() {
 
       if (!idJugador) {
         setMsgJugador("No se obtuvo el ID.");
-        return;
+        return false;
       }
 
       const datosPayload = {
@@ -221,39 +150,20 @@ export default function AdminPage() {
 
       if (respuestas.some((r) => !r.ok)) {
         setMsgJugador(textos.join(" | "));
-      } else {
-        setMsgJugador(`${text1} · Guardado.`);
-        setJugadorForm({
-          nombre: "",
-          apellido: "",
-          pais: "",
-          posicion: "",
-          liga_actual: "",
-          dorsal_equipo: "",
-          dorsal_seleccion: "",
-          valor_mercado: "",
-          id_equipo: "",
-          edad: "",
-          altura: "",
-          peso: "",
-          pierna_habil: "",
-          goles: "",
-          asistencias: "",
-          titulos_equipo: "",
-          titulos_seleccion: "",
-          titulos_individuales: "",
-        });
-        setTrayectorias([{ anio_traspaso: "", anio_ingreso: "" }]);
+        return false;
       }
+
+      setMsgJugador(`${text1} · Guardado.`);
+      return true;
     } catch (err) {
       console.error(err);
       setMsgJugador("No se pudo conectar con el backend.");
+      return false;
     }
   };
 
-  // Envía un alta de Equipo y limpia el formulario si el servidor responde correctamente.
-  const handleSubmitClubes = async (e) => {
-    e.preventDefault();
+  // Envía un alta de Equipo; el formulario compartido se limpia si la respuesta fue correcta.
+  const handleSubmitClubes = async (clubForm) => {
     setMsgClubes("Guardando...");
 
     try {
@@ -264,23 +174,11 @@ export default function AdminPage() {
       });
       const t = await r.text();
       setMsgClubes(t);
-      if (r.ok) {
-        setClubForm({
-          nombre_equipo: "",
-          anio_creacion: "",
-          titulos_nacionales: "",
-          titulos_internacionales: "",
-          ciudad: "",
-          presidente: "",
-          dt_actual: "",
-          apodo: "",
-          cantidad_socios: "",
-          estadio: "",
-        });
-      }
+      return r.ok;
     } catch (err) {
       console.error(err);
       setMsgClubes("No se pudo conectar con el backend.");
+      return false;
     }
   };
 
@@ -300,93 +198,13 @@ export default function AdminPage() {
 
       <section className="adminSeccion">
         <h2>Jugador completo</h2>
-        <form id="form-jugador-completo" className="adminFormulario" onSubmit={handleSubmitJugador}>
-          <h3>Jugadores</h3>
-          <input type="text" name="nombre" placeholder="Nombre" value={jugadorForm.nombre} onChange={handleJugadorChange} required />
-          <input type="text" name="apellido" placeholder="Apellido" value={jugadorForm.apellido} onChange={handleJugadorChange} required />
-          <input type="text" name="pais" placeholder="País" value={jugadorForm.pais} onChange={handleJugadorChange} required />
-          <input type="text" name="posicion" placeholder="Posición" value={jugadorForm.posicion} onChange={handleJugadorChange} required />
-          <input type="text" name="liga_actual" placeholder="Liga actual" value={jugadorForm.liga_actual} onChange={handleJugadorChange} required />
-          <input type="number" name="dorsal_equipo" placeholder="Dorsal equipo" value={jugadorForm.dorsal_equipo} onChange={handleJugadorChange} required />
-          <input type="number" name="dorsal_seleccion" placeholder="Dorsal selección" value={jugadorForm.dorsal_seleccion} onChange={handleJugadorChange} required />
-          <input type="number" name="valor_mercado" placeholder="Valor de mercado" value={jugadorForm.valor_mercado} onChange={handleJugadorChange} required />
-          <input type="number" name="id_equipo" placeholder="ID del equipo" value={jugadorForm.id_equipo} onChange={handleJugadorChange} required />
-
-          <h3>Datos</h3>
-          <input type="number" name="edad" placeholder="Edad" value={jugadorForm.edad} onChange={handleJugadorChange} required />
-          <input type="number" name="altura" placeholder="Altura" value={jugadorForm.altura} onChange={handleJugadorChange} required />
-          <input type="number" name="peso" placeholder="Peso" value={jugadorForm.peso} onChange={handleJugadorChange} required />
-          <input type="text" name="pierna_habil" placeholder="Pierna hábil" value={jugadorForm.pierna_habil} onChange={handleJugadorChange} required />
-
-          <h3>Estadísticas</h3>
-          <input type="number" name="goles" placeholder="Goles" value={jugadorForm.goles} onChange={handleJugadorChange} required />
-          <input type="number" name="asistencias" placeholder="Asistencias" value={jugadorForm.asistencias} onChange={handleJugadorChange} required />
-          <input type="number" name="titulos_equipo" placeholder="Títulos equipo" value={jugadorForm.titulos_equipo} onChange={handleJugadorChange} required />
-          <input type="number" name="titulos_seleccion" placeholder="Títulos selección" value={jugadorForm.titulos_seleccion} onChange={handleJugadorChange} required />
-          <input type="number" name="titulos_individuales" placeholder="Títulos individuales" value={jugadorForm.titulos_individuales} onChange={handleJugadorChange} required />
-
-          {/* Las filas dinámicas representan los clubes por los que pasó el jugador. */}
-          <h3>Trayectoria</h3>
-          <p>
-            La trayectoria representa la relación muchos a muchos entre jugador y
-            equipo. Podés cargar una fila por equipo en el que pasó.
-          </p>
-          <button id="btn-agregar-trayectoria" type="button" onClick={agregarFilaTrayectoria}>
-            +
-          </button>
-
-          <div id="trayectoria">
-            {trayectorias.map((fila, index) => (
-              <div key={index} className="celda-trayectoria">
-                <input
-                  type="number"
-                  name="anio_traspaso"
-                  placeholder="Año de traspaso"
-                  value={fila.anio_traspaso}
-                  onChange={(e) => handleTrayectoriaChange(index, e)}
-                  required
-                />
-                <input
-                  type="number"
-                  name="anio_ingreso"
-                  placeholder="Año de ingreso"
-                  value={fila.anio_ingreso}
-                  onChange={(e) => handleTrayectoriaChange(index, e)}
-                  required
-                />
-                <button
-                  type="button"
-                  className="btn-quitar-trayectoria"
-                  onClick={() => quitarFilaTrayectoria(index)}
-                >
-                  −
-                </button>
-              </div>
-            ))}
-          </div>
-
-          <button type="submit">Guardar jugador completo</button>
-          <p id="mensaje-jugador-completo">{msgJugador}</p>
-        </form>
+        <AdminPlayerForm onGuardar={handleSubmitJugador} mensaje={msgJugador} />
       </section>
 
       {/* Este formulario crea registros independientes en Equipos. */}
       <section className="adminSeccion">
         <h2>Clubes</h2>
-        <form id="form-clubes" className="adminFormulario" onSubmit={handleSubmitClubes}>
-          <input type="text" name="nombre_equipo" placeholder="Nombre del club" value={clubForm.nombre_equipo} onChange={handleClubChange} required />
-          <input type="number" name="anio_creacion" placeholder="Año de creación" value={clubForm.anio_creacion} onChange={handleClubChange} required />
-          <input type="number" name="titulos_nacionales" placeholder="Títulos nacionales" value={clubForm.titulos_nacionales} onChange={handleClubChange} required />
-          <input type="number" name="titulos_internacionales" placeholder="Títulos internacionales" value={clubForm.titulos_internacionales} onChange={handleClubChange} required />
-          <input type="text" name="ciudad" placeholder="Ciudad" value={clubForm.ciudad} onChange={handleClubChange} required />
-          <input type="text" name="presidente" placeholder="Presidente" value={clubForm.presidente} onChange={handleClubChange} required />
-          <input type="text" name="dt_actual" placeholder="DT actual" value={clubForm.dt_actual} onChange={handleClubChange} required />
-          <input type="text" name="apodo" placeholder="Apodo" value={clubForm.apodo} onChange={handleClubChange} required />
-          <input type="number" name="cantidad_socios" placeholder="Cantidad de socios" value={clubForm.cantidad_socios} onChange={handleClubChange} required />
-          <input type="text" name="estadio" placeholder="Estadio" value={clubForm.estadio} onChange={handleClubChange} required />
-          <button type="submit">Guardar club</button>
-          <p id="mensaje-clubes">{msgClubes}</p>
-        </form>
+        <ClubForm onGuardar={handleSubmitClubes} mensaje={msgClubes} />
       </section>
     </main>
   );

@@ -1,5 +1,4 @@
 "use client";
-// Teclado preparado para Wordle; la ruta activa genera sus teclas directamente en wordle/page.js.
 
 const FILAS = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"];
 
@@ -7,14 +6,34 @@ const FILAS = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"];
 export default function Keyboard({ onTecla, usadas = {} }) {
   // Cada tecla delega su acción a onTecla; el padre conserva el estado y los colores ya descubiertos.
   return (
-    <div className="teclado">
+    <div id="teclado">
       {FILAS.map((fila, i) => (
-        <div className="fila-k" key={i}>
-          {i === 2 && <button className="tecla grande" onClick={() => onTecla("ENTER")}>ENTER</button>}
-          {[...fila].map((l) => (
-            <button key={l} className={`tecla ${usadas[l] || ""}`} onClick={() => onTecla(l)}>{l}</button>
+        <div className="fila-teclado" key={i}>
+          {i === 2 && (
+            <button className="tecla grande" type="button" onClick={() => onTecla("ENTER")}>
+              ENTER
+            </button>
+          )}
+          {[...fila].map((letra) => (
+            <button
+              key={letra}
+              type="button"
+              className={`tecla ${usadas[letra] || ""}`}
+              onClick={() => onTecla(letra)}
+            >
+              {letra}
+            </button>
           ))}
-          {i === 2 && <button className="tecla grande" onClick={() => onTecla("BKSP")} aria-label="Borrar">⌫</button>}
+          {i === 2 && (
+            <button
+              className="tecla grande"
+              type="button"
+              onClick={() => onTecla("BKSP")}
+              aria-label="Borrar"
+            >
+              ⌫
+            </button>
+          )}
         </div>
       ))}
     </div>

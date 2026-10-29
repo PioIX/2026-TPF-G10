@@ -155,6 +155,24 @@ hr {
     font-size: 12px;
 }
 
+.tecla.ok {
+    background: #4caf50;
+    border-color: #4caf50;
+    color: white;
+}
+
+.tecla.cerca {
+    background: #c49a00;
+    border-color: #c49a00;
+    color: white;
+}
+
+.tecla.no {
+    background: #59656a;
+    border-color: #59656a;
+    color: white;
+}
+
 /* --- ESTILOS LOGIN Y REGISTRO --- */
 .contenedor-auth {
     width: 100%;
@@ -679,6 +697,46 @@ a.btn:hover {
     text-align: center;
 }
 
+.gridResultadosCelda h3 {
+    margin: 0 0 10px;
+}
+
+.gridBusquedaCelda {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.gridSearchInput {
+    width: min(100%, 420px);
+    min-width: 0;
+    min-height: 42px;
+    padding: 8px 12px;
+    border: 0;
+    border-radius: 8px;
+    color: var(--color-texto-oscuro);
+    font: inherit;
+}
+
+.gridSearchButton {
+    width: auto;
+    min-height: 42px;
+    height: auto;
+    margin: 0;
+    padding: 8px 16px;
+    border-radius: 8px;
+    background: var(--color-boton);
+    color: var(--color-texto-oscuro);
+    font: inherit;
+    font-weight: 700;
+}
+
+.gridFeedback {
+    margin-top: 10px;
+    font-weight: 700;
+}
+
 .cell {
     background: rgba(255, 255, 255, 0.9);
     border-radius: 8px;
@@ -960,6 +1018,12 @@ a.btn:hover {
     box-shadow: inset 0 4px 15px rgba(0, 0, 0, 0.5);
 }
 
+#caja-respuestas > #btn-marcar {
+    align-self: flex-end;
+    width: auto;
+    margin-top: auto;
+}
+
 .respuesta {
     background-color: var(--color-tarjeta);
     padding: 10px 15px;
@@ -970,6 +1034,10 @@ a.btn:hover {
 }
 
 .pista {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
     font-size: 15px;
     color: var(--color-boton);
     margin-bottom: 25px;
@@ -981,6 +1049,12 @@ a.btn:hover {
 .pista.visible {
     opacity: 1;
     font-weight: bold;
+}
+
+.pista .mensaje {
+    padding: 0;
+    border: 0;
+    background: transparent;
 }
 
 #caja-adivinar {
@@ -2127,27 +2201,44 @@ hr {
 
 .adminFormulario {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     gap: 10px;
 }
 
-.adminFormulario h3,
-.adminFormulario > p,
-.adminFormulario > button,
-.adminFormulario #trayectoria,
-.adminFormulario > [id^="mensaje-"] {
+.adminFormulario .adminFormSection {
     grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
 }
 
-.adminFormulario h3 {
-    margin: 8px 0 2px;
+.adminFormulario .adminFormSection > legend {
+    grid-column: 1 / -1;
+    width: 100%;
+    margin-bottom: 2px;
     padding-bottom: 7px;
     border-bottom: 1px solid rgba(205, 231, 211, 0.1);
     color: var(--verde-vivo);
     font-size: 0.9rem;
+    font-weight: 800;
+}
+
+.adminFormulario .field {
+    display: grid;
+    gap: 5px;
+    min-width: 0;
+    color: var(--texto-suave);
+    font-size: 0.75rem;
+    font-weight: 700;
 }
 
 .adminFormulario input {
+    box-sizing: border-box;
+    width: 100%;
     min-width: 0;
     min-height: 43px;
     padding: 0 11px;
@@ -2159,23 +2250,43 @@ hr {
     font-size: 0.87rem;
 }
 
-.adminFormulario input::placeholder {
-    color: #a3b6a8;
-}
-
 .adminFormulario input:focus {
     border-color: var(--verde-vivo);
     outline: 1px solid rgba(155, 214, 165, 0.2);
 }
 
-.adminFormulario > p {
+.adminFormulario .adminAyudaTrayectoria,
+.adminFormulario .adminFormMensaje {
+    grid-column: 1 / -1;
+    margin: 0;
     color: var(--texto-suave);
     font-size: 0.86rem;
     line-height: 1.5;
 }
 
-.adminFormulario > button {
+.adminFormulario .adminTrayectoriaFilas {
+    grid-column: 1 / -1;
+    display: grid;
+    gap: 10px;
+}
+
+.adminFormulario .celda-trayectoria {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.adminFormulario .celda-trayectoriaConAccion {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) 42px;
+    align-items: end;
+}
+
+.adminFormulario .adminBoton {
+    grid-column: 1 / -1;
+    width: 100%;
     min-height: 43px;
+    height: auto;
+    margin: 0;
     padding: 0 14px;
     border: 0;
     border-radius: 9px;
@@ -2187,32 +2298,28 @@ hr {
     cursor: pointer;
 }
 
-.adminFormulario > button:hover {
+.adminFormulario .adminBoton:hover {
     background: var(--color-boton-hover);
 }
 
-.adminFormulario #btn-agregar-trayectoria {
-    width: 42px;
-    grid-column: auto;
+.adminFormulario .adminAgregarTrayectoria {
+    width: auto;
+    min-height: 40px;
+    height: auto;
+    margin: 0;
+    padding: 0 12px;
     justify-self: start;
     border: 1px solid var(--borde-menu);
     background: rgba(255, 255, 255, 0.05);
     color: var(--verde-vivo);
-    font-size: 1.2rem;
+    font-size: 0.82rem;
 }
 
-.adminFormulario #trayectoria {
-    display: grid;
-    gap: 8px;
-}
-
-.adminFormulario .celda-trayectoria {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) 42px;
-    gap: 8px;
-}
-
-.adminFormulario .celda-trayectoria button {
+.adminFormulario .adminQuitarTrayectoria {
+    width: 42px;
+    min-height: 43px;
+    height: 43px;
+    margin: 0;
     border: 1px solid rgba(252, 165, 165, 0.2);
     border-radius: 9px;
     background: rgba(127, 29, 29, 0.14);
@@ -2221,7 +2328,7 @@ hr {
     cursor: pointer;
 }
 
-.adminFormulario > [id^="mensaje-"] {
+.adminFormulario .adminFormMensaje {
     min-height: 1.3em;
     color: var(--verde-vivo);
     font-size: 0.86rem;
@@ -2487,22 +2594,20 @@ hr {
         grid-template-columns: 1fr;
     }
 
-    .adminFormulario > *,
-    .adminFormulario h3,
-    .adminFormulario > p,
-    .adminFormulario > button,
-    .adminFormulario #trayectoria,
-    .adminFormulario > [id^="mensaje-"] {
+    .adminFormulario .adminFormSection {
+        grid-template-columns: 1fr;
+    }
+
+    .adminFormulario .adminFormSection > legend,
+    .adminFormulario .adminAyudaTrayectoria,
+    .adminFormulario .adminTrayectoriaFilas,
+    .adminFormulario .adminBoton,
+    .adminFormulario .adminFormMensaje {
         grid-column: 1;
     }
 
-    .adminFormulario .celda-trayectoria {
-        grid-template-columns: 1fr 1fr 40px;
-    }
-
-    .adminFormulario #btn-agregar-trayectoria,
-    .adminFormulario > button:not(#btn-agregar-trayectoria) {
-        grid-column: 1;
+    .adminFormulario .celda-trayectoriaConAccion {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 40px;
     }
 }
 
@@ -2739,5 +2844,269 @@ hr {
 
     .juegoTarjetaSorteada {
         transform: none;
+    }
+}
+
+/* Campos del formulario de acceso: Field los envuelve en una etiqueta accesible. */
+.authField {
+    display: block;
+    width: 100%;
+}
+
+.authField .campo {
+    display: block;
+    width: 100%;
+}
+
+/* Ajustes de componentes compartidos usados dentro de los juegos. */
+.fila-input-preguntar > .btn-accion {
+    width: auto;
+    min-width: max-content;
+    height: auto;
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+.cell.clickable {
+    appearance: none;
+    border: 0;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.cell.clickable:hover {
+    background: #fff4c2;
+}
+
+.mensaje {
+    padding: 9px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 8px;
+}
+
+.mensaje-info {
+    color: #e6f0f5;
+}
+
+.mensaje-ok {
+    border-color: rgba(134, 239, 172, 0.35);
+    background: rgba(22, 101, 52, 0.35);
+    color: #dcfce7;
+}
+
+.mensaje-error {
+    border-color: rgba(252, 165, 165, 0.35);
+    background: rgba(127, 29, 29, 0.35);
+    color: #fee2e2;
+}
+
+.link {
+    width: 100%;
+    margin: 4px 0 24px;
+    padding: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 14px;
+    background: rgba(0, 0, 0, 0.22);
+    text-align: center;
+}
+
+.jugador-card {
+    display: grid;
+    width: 96px;
+    height: 96px;
+    margin: 0 auto 10px;
+    place-items: center;
+    border: 2px solid var(--color-boton);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.12);
+    font-size: 2rem;
+    font-weight: 800;
+}
+
+.imagenes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(78px, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.imagenes figure {
+    display: grid;
+    min-width: 0;
+    gap: 5px;
+    justify-items: center;
+    font-size: 0.75rem;
+}
+
+.imagenes img,
+.img-vacia {
+    width: min(100%, 100px);
+    height: 100px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.12);
+    object-fit: cover;
+}
+
+.img-vacia {
+    display: grid;
+    place-items: center;
+    color: var(--color-boton);
+    font-size: 1.4rem;
+    font-weight: 800;
+}
+
+.dificultad {
+    display: inline-flex;
+    gap: 3px;
+}
+
+/* El resultado mantiene las acciones a mano sin tapar el tablero ni la formación. */
+.result {
+    width: min(100%, 620px);
+    margin: 18px auto 8px;
+    padding: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 14px;
+    background: rgba(7, 25, 18, 0.88);
+    text-align: center;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
+}
+
+.result-ok {
+    border-color: rgba(134, 239, 172, 0.5);
+}
+
+.result-mal {
+    border-color: rgba(252, 165, 165, 0.45);
+}
+
+.result h2 {
+    margin-bottom: 7px;
+}
+
+.result p {
+    color: var(--texto-suave, rgba(255, 255, 255, 0.78));
+}
+
+.result-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.result-acciones .btn {
+    width: auto;
+    min-width: 145px;
+    min-height: 42px;
+    height: auto;
+    margin: 0;
+    padding: 9px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 9px;
+    background: var(--color-boton);
+    color: #14200e;
+    font: inherit;
+    font-weight: 750;
+}
+
+.result-acciones .btn:hover {
+    background: var(--color-boton-hover);
+    box-shadow: none;
+    transform: none;
+}
+
+.result-acciones .btn-ghost {
+    background: transparent;
+    color: #e7f0e9;
+}
+
+.result-acciones .btn-ghost:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+/* Diálogo de avisos del inicio de sesión. */
+.modal-fondo {
+    position: fixed;
+    z-index: 1100;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: rgba(2, 12, 7, 0.72);
+}
+
+.modal {
+    width: min(100%, 460px);
+    padding: 22px;
+    border: 1px solid rgba(248, 201, 76, 0.45);
+    border-radius: 14px;
+    background: var(--superficie-menu, #10291f);
+    color: #e9f1eb;
+    text-align: center;
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.4);
+}
+
+.modal h2 {
+    margin-bottom: 10px;
+    color: var(--color-boton);
+}
+
+.modal p {
+    line-height: 1.5;
+}
+
+.modal .btn-cerrar-modal {
+    margin-top: 16px;
+}
+
+button.menuAccion {
+    background: transparent;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.footer {
+    width: min(1180px, calc(100% - 40px));
+    margin: auto auto 0;
+    padding: 17px 0 20px;
+    border-top: 1px solid var(--borde-menu, rgba(205, 231, 211, 0.16));
+    color: var(--texto-suave, #b7c8bc);
+    font-size: 0.76rem;
+    text-align: center;
+}
+
+@media (max-width: 560px) {
+    .fila-input-preguntar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .fila-input-preguntar > .btn-accion {
+        width: 100%;
+    }
+
+    .gridBusquedaCelda {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .gridSearchButton {
+        width: 100%;
+    }
+
+    .result-acciones {
+        flex-direction: column;
+    }
+
+    .result-acciones .btn {
+        width: 100%;
+    }
+
+    .footer {
+        width: calc(100% - 28px);
     }
 }

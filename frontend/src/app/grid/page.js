@@ -4,8 +4,10 @@ import { useState, useEffect, useCallback } from "react";
 import "../global.css";
 import GameLobby, { useGameSession } from "../../components/GameLobby";
 import GoalCelebration from "../../components/GoalCelebration";
+import GridBoard from "../../components/GridBoard";
+import CellSearchPanel from "../../components/CellSearchPanel";
+import ResultCard from "../../components/ResultCard";
 import { BACKEND_URL } from "../../config/backend";
-import obtenerImagenDeportiva from "../../utils/imagenes";
 import { comentarioFutbolero } from "../../utils/comentariosFutboleros";
 
 const BACKEND = BACKEND_URL;
@@ -263,10 +265,8 @@ function GridGame() {
   const [grilla, setGrilla] = useState(null);
   const [todosLosJugadores, setTodosLosJugadores] = useState([]);
   const [error, setError] = useState("");
-  const [escudos, setEscudos] = useState({});
   const [celdaActiva, setCeldaActiva] = useState(null); // { fila, col }
-  const [celdasReveladas, setCeldasReveladas] = useState({}); // { r0_c0: { apellido, foto } }
-  const [busqueda, setBusqueda] = useState("");
+  const [celdasReveladas, setCeldasReveladas] = useState({}); // { r0_c0: { nombre, apellido } }
   const [respuestaFeed, setRespuestaFeed] = useState("");
   const codigoSala = sala?.room;
 
@@ -277,6 +277,7 @@ function GridGame() {
       setError("");
       setCeldaActiva(null);
       setCeldasReveladas({});
+      setGrilla(null);
 
       const res = await fetch(`${BACKEND}/grid`);
       const datos = await res.json();
@@ -326,15 +327,6 @@ function GridGame() {
       }
 
       setGrilla(nuevaGrilla);
-
-      // Buscar los escudos de los 3 equipos seleccionados
-      nuevaGrilla.columnas.forEach((eq) => {
-        obtenerImagenDeportiva("equipo", eq.nombre).then((escudoUrl) => {
-          if (escudoUrl) {
-            setEscudos((prev) => ({ ...prev, [eq.id]: escudoUrl }));
-          }
-        });
-      });
     } catch (e) {
       console.error(e);
       setError("Error al cargar la grilla.");
@@ -351,18 +343,18 @@ function GridGame() {
     const clave = `r${fila}_c${col}`;
     if (celdasReveladas[clave]) return; // Si ya fue adivinada, no hacer nada
     setCeldaActiva({ fila, col });
-    setBusqueda("");
     setRespuestaFeed("");
   };
 
   // El botón "Probar" o Enter llegan acá. El nombre sugerido no basta: debe estar en las respuestas
   // válidas de la celda seleccionada; si acierta, se revela el apellido y se intenta cargar su foto.
-  const comprobarJugador = async () => {
+  const comprobarJugador = (texto) => {
     if (!celdaActiva || !grilla) return;
 
     const clave = `r${celdaActiva.fila}_c${celdaActiva.col}`;
+    if (celdasReveladas[clave]) return;
     const jugadoresValidos = grilla.jugadores[clave] || [];
-    const buscado = normalizarTexto(busqueda);
+    const buscado = normalizarTexto(texto);
 
     const encontrado = jugadoresValidos.find(
       (j) => normalizarTexto(`${j.nombre} ${j.apellido}`) === buscado
@@ -374,19 +366,8 @@ function GridGame() {
       // Guardamos primero el apellido para mostrarlo inmediatamente
       setCeldasReveladas((prev) => ({
         ...prev,
-        [clave]: { apellido: encontrado.apellido, foto: "" },
+        [clave]: { nombre: encontrado.nombre, apellido: encontrado.apellido },
       }));
-
-      // Buscamos la foto del jugador en TheSportsDB
-      const nombreCompleto = `${encontrado.nombre} ${encontrado.apellido}`;
-      const fotoUrl = await obtenerImagenDeportiva("jugador", nombreCompleto);
-
-      if (fotoUrl) {
-        setCeldasReveladas((prev) => ({
-          ...prev,
-          [clave]: { ...prev[clave], foto: fotoUrl },
-        }));
-      }
     } else {
       setRespuestaFeed("Jugador incorrecto");
     }
@@ -431,139 +412,37 @@ function GridGame() {
       {terminoLaPartida && <GoalCelebration />}
       {grilla && !error && (
         <div className="gridDesbordamiento">
-          <div className="grid">
-          {/* Esquina superior izquierda */}
-          <div className="cell logo title">
-            FULBO11
-            <br />
-            GRID
-          </div>
-
-          {/* Encabezados de Equipos (Columnas) */}
-          {grilla.columnas.map((eq, indice) => (
-            <div key={`${eq.id}-${indice}`} className="cell logo">
-              {escudos[eq.id] && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={escudos[eq.id]}
-                  alt={eq.nombre}
-                  width={40}
-                  height={40}
-                  onError={(event) => {
-                    event.currentTarget.style.display = "none";
-                  }}
-                  style={{ objectFit: "contain" }}
-                />
-              )}
-              <span>{eq.nombre}</span>
-            </div>
-          ))}
-
-          {/* Filas (País + 3 celdas de jugadores) */}
-          {grilla.filas.map((pais, f) => (
-            <div key={`${pais.nombre}-${f}`} style={{ display: "contents" }}>
-              <div className="cell logo">{pais.nombre}</div>
-
-              {[0, 1, 2].map((c) => {
-                const clave = `r${f}_c${c}`;
-                const revelada = celdasReveladas[clave];
-
-                // Cada casilla selecciona el cruce país-club que se va a contestar.
-                return (
-                  <div
-                    key={clave}
-                    className={`cell player clickable ${
-                      revelada ? "found" : ""
-                    }`}
-                    style={{
-                      pointerEvents: revelada ? "none" : "auto",
-                      cursor: revelada ? "default" : "pointer",
-                      flexDirection: "column",
-                    }}
-                    onClick={() => seleccionarCelda(f, c)}
-                  >
-                    {revelada ? (
-                      <>
-                        {revelada.foto && (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={revelada.foto}
-                            alt={revelada.apellido}
-                            width={60}
-                            height={60}
-                            onError={(event) => {
-                              event.currentTarget.style.display = "none";
-                            }}
-                            style={{ objectFit: "contain" }}
-                          />
-                        )}
-                        <div style={{ fontWeight: 700 }}>
-                          {revelada.apellido}
-                        </div>
-                      </>
-                    ) : (
-                      "?"
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
-          </div>
+          <GridBoard
+            grilla={grilla}
+            celdasReveladas={celdasReveladas}
+            onCelda={seleccionarCelda}
+          />
         </div>
       )}
 
       {/* Contenedor de resultados / buscador */}
       <div id="results" className="results gridResults">
         {error && <p>{error}</p>}
-
         {celdaActiva && !error && (
-          <div>
-            <h3 style={{ marginBottom: "10px" }}>
-              Celda ({celdaActiva.fila + 1}, {celdaActiva.col + 1}) -{" "}
-              {jugadoresCeldaActiva.length} jugador(es)
-            </h3>
-            {/* Escribir un nombre siempre usa la lista completa; Enter ejecuta la misma validación que el botón. */}
-            <input
-              type="text"
-              placeholder="Buscar jugador..."
-              id="buscadorJugador"
-              list="listaJugadores"
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") comprobarJugador();
-              }}
-              style={{ padding: "8px 12px", borderRadius: "8px", border: "none" }}
-            />
-            <datalist id="listaJugadores">
-              {todosLosJugadores.map((nombre) => (
-                <option key={normalizarTexto(nombre)} value={nombre} />
-              ))}
-            </datalist>
-            {/* Tu compañero puede reemplazar este botón por su componente <Button> */}
-            <button
-              id="btnProbar"
-              type="button"
-              onClick={comprobarJugador}
-              style={{
-                marginLeft: "10px",
-                padding: "8px 16px",
-                borderRadius: "8px",
-                border: "none",
-                background: "var(--color-boton)",
-                color: "var(--color-texto-oscuro)",
-                fontWeight: "bold",
-                cursor: "pointer",
-              }}
-            >
-              Probar
-            </button>
-
-            <p id="respuestaFeed" style={{ marginTop: "10px", fontWeight: "bold" }}>
-              {respuestaFeed}
-            </p>
-          </div>
+          <CellSearchPanel
+            key={`${celdaActiva.fila}-${celdaActiva.col}`}
+            fila={celdaActiva.fila}
+            columna={celdaActiva.col}
+            opciones={todosLosJugadores}
+            cantidadValidas={jugadoresCeldaActiva.length}
+            onProbar={comprobarJugador}
+            feedback={respuestaFeed}
+            deshabilitado={Boolean(celdasReveladas[claveActiva]) || terminoLaPartida}
+          />
+        )}
+        {terminoLaPartida && (
+          <ResultCard
+            gano
+            titulo="¡Grid completo!"
+            detalle="Resolviste los nueve cruces."
+            onReiniciar={cargarGrilla}
+            className="resultadoPartida"
+          />
         )}
       </div>
     </main>
