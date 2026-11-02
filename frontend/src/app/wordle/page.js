@@ -9,6 +9,8 @@ import Keyboard from "../../components/Keyboard";
 import ResultCard from "../../components/ResultCard";
 import { BACKEND_URL } from "../../config/backend";
 import { comentarioFutbolero } from "../../utils/comentariosFutboleros";
+import GameLobby, { useGameSession } from "../../components/GameLobby";
+import useRegistrarResultado from "../../hooks/useRegistrarResultado";
 
 const API_URL = BACKEND_URL;
 const MAX_INTENTOS = 6;
@@ -259,7 +261,7 @@ function WordleGame() {
     enviarProgreso,
     marcarPartidaTerminada,
   ]);
-
+ useRegistrarResultado("wordle", juegoTerminado, gano);
   return (
     <>
       {gano && <GoalCelebration />}

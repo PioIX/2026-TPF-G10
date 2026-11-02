@@ -15,6 +15,7 @@ import ResultCard from "../../components/ResultCard";
 import { BACKEND_URL } from "../../config/backend";
 import obtenerImagenDeportiva from "../../utils/imagenes";
 import { comentarioFutbolero } from "../../utils/comentariosFutboleros";
+import useRegistrarResultado from "../../hooks/useRegistrarResultado";
 
 const API_URL = BACKEND_URL;
 const OPCIONES_POSICION = Array.from({ length: 11 }, (_, indice) =>
@@ -473,6 +474,7 @@ function AdivinaElJugadorGame() {
     enviarProgreso,
     marcarPartidaTerminada,
   ]);
+  useRegistrarResultado("adivinaeljugador", terminoLaPartida, adivino);
 
   return (
     <>

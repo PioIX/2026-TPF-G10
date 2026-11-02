@@ -3110,3 +3110,18 @@ button.menuAccion {
         width: calc(100% - 28px);
     }
 }
+.siteHeaderPerfil {
+    display: grid;
+    width: 38px;
+    height: 38px;
+    place-items: center;
+    overflow: hidden;
+    border-radius: 50%;
+    background: #fff;
+}
+
+.siteHeaderPerfil img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
