@@ -38,9 +38,11 @@ export default function SiteHeader() {
       <nav className="siteHeaderNav" aria-label="Navegación principal">
         {estaEnMenu ? (
           <Link className="siteHeaderLink" href="/">Inicio</Link>
+          
         ) : (
           <Link className="siteHeaderLink" href="/menu">Menú de juegos</Link>
         )}
+        <Link className="siteHeaderLink" href="/Perfil">Perfil</Link>
       </nav>
     </header>
   );
