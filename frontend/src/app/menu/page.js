@@ -44,7 +44,7 @@ export default function MenuPage() {
       <section className="menuHero" aria-labelledby="tituloMenu">
         <div>
           <h2 id="tituloMenu">Elegí un juego</h2>
-          <p>Todos los desafíos de Fulbo 11, en un solo lugar.</p>
+          <p>Todos los desafíos de fútbol, en un solo lugar.</p>
         </div>
       </section>
 
