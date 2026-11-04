@@ -9,7 +9,7 @@ import { comentarioFutbolero } from "../../utils/comentariosFutboleros";
 
 const API_URL = BACKEND_URL;
 const PISTAS_TOTALES = 5;
-const MAX_INTENTOS = 6; // 5 para destapar a todos + 1 chance extra al final
+const MAX_INTENTOS = 6; 
 
 function limpiarTexto(texto) {
   return String(texto || "")
@@ -20,21 +20,18 @@ function limpiarTexto(texto) {
     .trim();
 }
 
-// Verifica si dos rangos de tiempo en el mismo club se cruzan (solapamiento temporal)
 function compartieronCanchaTemporalmente(trayectoriaA, trayectoriaB) {
   for (const tA of trayectoriaA) {
     for (const tB of trayectoriaB) {
       if (limpiarTexto(tA.club) === limpiarTexto(tB.club)) {
         const currentYear = new Date().getFullYear();
         
-        // Si el backend manda 0, se asume inicio muy viejo o presente para no romper por falta de datos
         const inicioA = tA.ingreso > 0 ? tA.ingreso : 1900;
         const finA = tA.traspaso > 0 ? tA.traspaso : currentYear;
         
         const inicioB = tB.ingreso > 0 ? tB.ingreso : 1900;
         const finB = tB.traspaso > 0 ? tB.traspaso : currentYear;
 
-        // Lógica de intersección de rangos: El inicio de uno es menor al fin del otro, y viceversa
         if (inicioA <= finB && finA >= inicioB) {
           return true;
         }
@@ -70,7 +67,6 @@ function LinkGame() {
     const jugadoresMap = new Map();
     const nombresSet = new Set();
 
-    // 1. Agrupar historial por jugador con sus fechas
     datos.forEach((fila) => {
       const id = fila.id_jugador;
       if (!id) return;
@@ -95,7 +91,6 @@ function LinkGame() {
         });
       }
       
-      // Aseguramos el club actual como un periodo hasta la fecha
       if (fila.club_actual && limpiarTexto(fila.club_actual) !== limpiarTexto(club)) {
         jugador.trayectoria.push({
           club: fila.club_actual,
@@ -109,7 +104,6 @@ function LinkGame() {
     setJugadoresTotales(listaJugadores);
     setNombresSugerencias(Array.from(nombresSet).sort());
 
-    // 2. Buscar un objetivo válido con chequeo temporal estricto
     const posiblesObjetivos = [...listaJugadores].sort(() => Math.random() - 0.5);
     let objetivoElegido = null;
     let companerosElegidos = [];
@@ -198,54 +192,30 @@ function LinkGame() {
     <>
       {estadoPartida === "ganado" && <GoalCelebration />}
       <main id="main">
-        <h2 style={{ textAlign: "center", color: "#f1c40f", marginBottom: "10px" }}>
-          FUTBOL11 LINK
-        </h2>
+        <h2 className="link-titulo">FUTBOL11 LINK</h2>
         
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: "20px" }}>
+        <div className="link-arbol-contenedor">
           
           {/* Jugador Objetivo */}
           <div 
-            style={{ 
-              width: "120px", height: "140px", backgroundColor: "#c0392b",
-              border: estadoPartida === "jugando" ? "2px solid #e74c3c" : "2px solid #2ecc71", 
-              borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center",
-              color: "white", fontWeight: "bold", textAlign: "center", padding: "10px",
-              boxShadow: estadoPartida !== "jugando" ? "0 0 15px #2ecc71" : "0 0 15px #e74c3c",
-              zIndex: 2
-            }}
+            className={`link-jugador-objetivo ${estadoPartida === "jugando" ? "link-objetivo-jugando" : "link-objetivo-revelado"}`}
           >
-            {estadoPartida !== "jugando" 
-              ? jugadorObjetivo?.nombre 
-              : "?"}
+            {estadoPartida !== "jugando" ? jugadorObjetivo?.nombre : "?"}
           </div>
 
           {/* Llaves conectoras */}
-          <div style={{
-            width: "80%", height: "20px",
-            borderTop: "2px solid #3498db", borderLeft: "2px solid #3498db", borderRight: "2px solid #3498db",
-            marginTop: "-2px", zIndex: 1
-          }}></div>
-          <div style={{
-            width: "2px", height: "20px", backgroundColor: "#3498db", zIndex: 1
-          }}></div>
+          <div className="link-linea-horizontal"></div>
+          <div className="link-linea-vertical"></div>
 
           {/* Compañeros */}
-          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", justifyContent: "center" }}>
+          <div className="link-contenedor-pistas">
             {pistas.map((pista, index) => {
-              // La primera (index 0) siempre se ve. Las demás se ven según los fallos.
               const visible = estadoPartida !== "jugando" || index <= intentosFallidos;
 
               return (
-                <div key={index} style={{ textAlign: "center", width: "90px" }}>
+                <div key={index} className="link-pista-wrapper">
                   <div 
-                    style={{ 
-                      width: "100%", height: "110px", backgroundColor: visible ? "#2980b9" : "#34495e",
-                      border: "2px solid #3498db", borderRadius: "8px",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      color: visible ? "white" : "#7f8c8d", fontSize: visible ? "0.8rem" : "2rem",
-                      padding: "5px"
-                    }}
+                    className={`link-tarjeta-pista ${visible ? "link-pista-visible" : "link-pista-oculta"}`}
                   >
                     {visible ? pista.nombre : "?"}
                   </div>
@@ -255,12 +225,12 @@ function LinkGame() {
           </div>
         </div>
 
-        <div id="caja-preguntas" style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: "40px" }}>
-          <p id="mensaje-juego" className="mensaje-juego" style={{ height: "40px", textAlign: "center" }}>
+        <div id="caja-preguntas" className="link-caja-preguntas">
+          <p id="mensaje-juego" className="mensaje-juego link-mensaje-juego">
             {mensaje}
           </p>
 
-          <div id="caja-adivinar" style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+          <div id="caja-adivinar" className="link-caja-adivinar">
             <input
               type="text"
               id="input-adivinar"
