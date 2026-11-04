@@ -25,6 +25,9 @@ export default function LoginPage() {
   // false = muestra Login | true = muestra Registro
   const [esRegistro, setEsRegistro] = useState(false);
 
+  // Estado para controlar la carga de peticiones
+  const [isLoading, setIsLoading] = useState(false);
+
   // Estados de los inputs
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
@@ -57,6 +60,8 @@ export default function LoginPage() {
       return;
     }
 
+    setIsLoading(true);
+
     try {
       const response = await fetch(`${BACKEND_URL}/login`, {
         method: "POST",
@@ -86,6 +91,8 @@ export default function LoginPage() {
         titulo: "Error",
         mensaje: "Error al conectar con el servidor: " + error.message,
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -114,6 +121,8 @@ export default function LoginPage() {
       });
       return;
     }
+
+    setIsLoading(true);
 
     try {
       const response = await fetch(`${BACKEND_URL}/usuarios`, {
@@ -168,6 +177,8 @@ export default function LoginPage() {
         titulo: "Error",
         mensaje: "Error al conectar con el servidor: " + error.message,
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -188,6 +199,7 @@ export default function LoginPage() {
           onEmailChange={setEmail}
           password={password}
           onPasswordChange={setPassword}
+          isLoading={isLoading}
         />
       </div>
       <Modal
