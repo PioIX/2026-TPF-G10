@@ -14,6 +14,7 @@ export default function AuthForm({
   onEmailChange,
   password = "",
   onPasswordChange,
+  isLoading = false, // <-- 1. Agregamos la prop
 }) {
   const registro = modo === "registro";
 
@@ -30,6 +31,7 @@ export default function AuthForm({
             value={nombre}
             onChange={(e) => onNombreChange(e.target.value)}
             required={false}
+            disabled={isLoading} // <-- 2. Bloqueamos el campo
           />
         )}
         <Field
@@ -42,6 +44,7 @@ export default function AuthForm({
           value={email}
           onChange={(e) => onEmailChange(e.target.value)}
           required={false}
+          disabled={isLoading} // <-- 2. Bloqueamos el campo
         />
         <Field
           label="Contraseña"
@@ -53,15 +56,18 @@ export default function AuthForm({
           value={password}
           onChange={(e) => onPasswordChange(e.target.value)}
           required={false}
+          disabled={isLoading} // <-- 2. Bloqueamos el campo
         />
-        <Button type="submit">
-          {registro ? "REGISTRARSE" : "INICIAR SESIÓN"}
+        <Button type="submit" disabled={isLoading}>
+          {/* 3. Cambiamos el texto dinámicamente si está cargando */}
+          {isLoading ? "CARGANDO..." : (registro ? "REGISTRARSE" : "INICIAR SESIÓN")}
         </Button>
         {!registro && (
           <Button
             type="button"
             className="btn-secundario"
             onClick={onCambiarModo}
+            disabled={isLoading} // <-- 2. Bloqueamos el botón secundario
           >
             REGISTRARSE
           </Button>
@@ -72,6 +78,7 @@ export default function AuthForm({
           type="button"
           className="btn-volver"
           onClick={onCambiarModo}
+          disabled={isLoading} // <-- 2. Bloqueamos el botón de volver
         >
           Volver al inicio de sesión
         </Button>
