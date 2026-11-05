@@ -1,24 +1,44 @@
-// Panel preparado para el Grid: la página actual todavía tiene el buscador dentro de grid/page.js.
 "use client";
-// Panel de búsqueda para responder una celda seleccionada del Grid.
 import { useState } from "react";
 import AutocompleteInput from "./AutocompleteInput";
 import Button from "./Button";
 import Message from "./Message";
 
-// Si se integra, muestra la celda activa, su lista de respuestas válidas y el resultado del intento.
-// opciones: nombres completos de los jugadores válidos para esa celda.
-export default function CellSearchPanel({ fila, columna, opciones, onProbar, feedback }) {
+export default function CellSearchPanel({
+  fila,
+  columna,
+  opciones,
+  cantidadValidas,
+  onProbar,
+  feedback,
+  deshabilitado = false,
+}) {
   const [txt, setTxt] = useState("");
-  const probar = () => onProbar(txt);
+
+  const probar = () => {
+    if (txt.trim() && !deshabilitado) onProbar(txt.trim());
+  };
+
   return (
-    <div className="results">
-      <h3>Celda ({fila + 1}, {columna + 1}) - {opciones.length} jugador(es)</h3>
-      <div className="entrada">
-        <AutocompleteInput opciones={opciones} valor={txt} onCambio={setTxt} onEnter={probar} placeholder="Buscar jugador..." />
-        <Button onClick={probar}>Probar</Button>
+    <div className="gridResultadosCelda">
+      <h3>Celda ({fila + 1}, {columna + 1}) - {cantidadValidas} jugador(es)</h3>
+      <div className="gridBusquedaCelda">
+        <AutocompleteInput
+          opciones={opciones}
+          valor={txt}
+          onCambio={setTxt}
+          onEnter={probar}
+          placeholder="Buscar jugador..."
+          inputId="buscadorJugador"
+          className="gridSearchInput"
+          disabled={deshabilitado}
+          ariaLabel="Buscar jugador para la celda"
+        />
+        <Button id="btnProbar" type="button" className="gridSearchButton" onClick={probar} disabled={deshabilitado}>
+          Probar
+        </Button>
       </div>
-      {feedback && <Message tipo={feedback === "Correcto" ? "ok" : "error"}>{feedback}</Message>}
+      {feedback && <Message className="gridFeedback" tipo={feedback.includes("Correcto") ? "ok" : "error"}>{feedback}</Message>}
     </div>
   );
 }

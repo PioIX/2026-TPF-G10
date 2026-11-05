@@ -1,14 +1,31 @@
-// Tarjeta visual preparada para el menú; la página /menu actual construye sus cuatro tarjetas a mano.
 import Link from "next/link";
 import Image from "next/image";
 
-export default function GameCard({ titulo, imagen, href }) {
-  // next/image optimiza la imagen local y Link navega a la ruta del juego sin recarga completa.
+// Tarjeta del menú con la ruta y los datos de presentación de cada juego.
+export default function GameCard({
+  titulo,
+  detalle,
+  imagen,
+  href,
+  estilo,
+  sorteada = false,
+}) {
   return (
-    <div className="card">
-      <Image src={imagen} alt="" width={240} height={140} className="card-img" />
-      <h3>{titulo}</h3>
-      <Link href={href} className="btn btn-primary">JUGAR</Link>
-    </div>
+    <Link
+      className={`juegoTarjeta juegoTarjeta-${estilo || "default"} ${sorteada ? "juegoTarjetaSorteada" : ""}`}
+      href={href}
+    >
+      <span className="juegoTarjetaImagen">
+        <Image src={imagen} alt="" width={240} height={240} />
+      </span>
+      <span className="juegoTarjetaInfo">
+        <span className="juegoTarjetaTitulo">{titulo}</span>
+        <span className="juegoTarjetaDetalle">{detalle}</span>
+        <span className="juegoTarjetaAccion">
+          <span className="juegoTarjetaBalon" aria-hidden="true">⚽</span>
+          Jugar
+        </span>
+      </span>
+    </Link>
   );
 }

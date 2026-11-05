@@ -156,6 +156,24 @@ hr {
     font-size: 12px;
 }
 
+.tecla.ok {
+    background: #4caf50;
+    border-color: #4caf50;
+    color: white;
+}
+
+.tecla.cerca {
+    background: #c49a00;
+    border-color: #c49a00;
+    color: white;
+}
+
+.tecla.no {
+    background: #59656a;
+    border-color: #59656a;
+    color: white;
+}
+
 /* --- ESTILOS LOGIN Y REGISTRO --- */
 .contenedor-auth {
     width: 100%;
@@ -679,6 +697,46 @@ a.btn:hover {
     text-align: center;
 }
 
+.gridResultadosCelda h3 {
+    margin: 0 0 10px;
+}
+
+.gridBusquedaCelda {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.gridSearchInput {
+    width: min(100%, 420px);
+    min-width: 0;
+    min-height: 42px;
+    padding: 8px 12px;
+    border: 0;
+    border-radius: 8px;
+    color: var(--color-texto-oscuro);
+    font: inherit;
+}
+
+.gridSearchButton {
+    width: auto;
+    min-height: 42px;
+    height: auto;
+    margin: 0;
+    padding: 8px 16px;
+    border-radius: 8px;
+    background: var(--color-boton);
+    color: var(--color-texto-oscuro);
+    font: inherit;
+    font-weight: 700;
+}
+
+.gridFeedback {
+    margin-top: 10px;
+    font-weight: 700;
+}
+
 .cell {
     background: rgba(255, 255, 255, 0.9);
     border-radius: 8px;
@@ -960,6 +1018,12 @@ a.btn:hover {
     box-shadow: inset 0 4px 15px rgba(0, 0, 0, 0.5);
 }
 
+#caja-respuestas > #btn-marcar {
+    align-self: flex-end;
+    width: auto;
+    margin-top: auto;
+}
+
 .respuesta {
     background-color: var(--color-tarjeta);
     padding: 10px 15px;
@@ -970,6 +1034,10 @@ a.btn:hover {
 }
 
 .pista {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
     font-size: 15px;
     color: var(--color-boton);
     margin-bottom: 25px;
@@ -981,6 +1049,12 @@ a.btn:hover {
 .pista.visible {
     opacity: 1;
     font-weight: bold;
+}
+
+.pista .mensaje {
+    padding: 0;
+    border: 0;
+    background: transparent;
 }
 
 #caja-adivinar {
@@ -2129,7 +2203,7 @@ hr {
 
 .adminFormulario {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     gap: 10px;
 }
 
@@ -2139,17 +2213,38 @@ hr {
 .adminFormulario #trayectoria,
 .adminFormulario>[id^="mensaje-"] {
     grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
 }
 
-.adminFormulario h3 {
-    margin: 8px 0 2px;
+.adminFormulario .adminFormSection > legend {
+    grid-column: 1 / -1;
+    width: 100%;
+    margin-bottom: 2px;
     padding-bottom: 7px;
     border-bottom: 1px solid rgba(205, 231, 211, 0.1);
     color: var(--verde-vivo);
     font-size: 0.9rem;
+    font-weight: 800;
+}
+
+.adminFormulario .field {
+    display: grid;
+    gap: 5px;
+    min-width: 0;
+    color: var(--texto-suave);
+    font-size: 0.75rem;
+    font-weight: 700;
 }
 
 .adminFormulario input {
+    box-sizing: border-box;
+    width: 100%;
     min-width: 0;
     min-height: 43px;
     padding: 0 11px;
@@ -2159,10 +2254,6 @@ hr {
     color: white;
     font: inherit;
     font-size: 0.87rem;
-}
-
-.adminFormulario input::placeholder {
-    color: #a3b6a8;
 }
 
 .adminFormulario input:focus {
@@ -2178,6 +2269,8 @@ hr {
 
 .adminFormulario>button {
     min-height: 43px;
+    height: auto;
+    margin: 0;
     padding: 0 14px;
     border: 0;
     border-radius: 9px;
@@ -2193,28 +2286,24 @@ hr {
     background: var(--color-boton-hover);
 }
 
-.adminFormulario #btn-agregar-trayectoria {
-    width: 42px;
-    grid-column: auto;
+.adminFormulario .adminAgregarTrayectoria {
+    width: auto;
+    min-height: 40px;
+    height: auto;
+    margin: 0;
+    padding: 0 12px;
     justify-self: start;
     border: 1px solid var(--borde-menu);
     background: rgba(255, 255, 255, 0.05);
     color: var(--verde-vivo);
-    font-size: 1.2rem;
+    font-size: 0.82rem;
 }
 
-.adminFormulario #trayectoria {
-    display: grid;
-    gap: 8px;
-}
-
-.adminFormulario .celda-trayectoria {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) 42px;
-    gap: 8px;
-}
-
-.adminFormulario .celda-trayectoria button {
+.adminFormulario .adminQuitarTrayectoria {
+    width: 42px;
+    min-height: 43px;
+    height: 43px;
+    margin: 0;
     border: 1px solid rgba(252, 165, 165, 0.2);
     border-radius: 9px;
     background: rgba(127, 29, 29, 0.14);
@@ -2501,8 +2590,12 @@ hr {
         grid-column: 1;
     }
 
-    .adminFormulario .celda-trayectoria {
-        grid-template-columns: 1fr 1fr 40px;
+    .adminFormulario .adminFormSection > legend,
+    .adminFormulario .adminAyudaTrayectoria,
+    .adminFormulario .adminTrayectoriaFilas,
+    .adminFormulario .adminBoton,
+    .adminFormulario .adminFormMensaje {
+        grid-column: 1;
     }
 
     .adminFormulario #btn-agregar-trayectoria,

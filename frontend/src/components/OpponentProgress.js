@@ -8,7 +8,8 @@ const DETALLES_PROGRESO = {
   grid: { campo: "celdasCompletadas", maximo: 9, unidad: "celdas" },
 };
 
-// Uso: GameLobby lo muestra en online. Dibuja el progreso público correspondiente al minijuego actual.
+// GameLobby le pasa el último objeto recibido por opponentProgress. Es una foto del estado más
+// reciente, no un historial de eventos. Este componente no abre sockets; solo representa el payload.
 export default function OpponentProgress({ game, player, expanded = false, onClose, onExpand }) {
   const definicion = DETALLES_PROGRESO[game];
   const progreso = player && player.progress;
@@ -17,7 +18,8 @@ export default function OpponentProgress({ game, player, expanded = false, onClo
     ? Math.min(100, Math.round((cantidad / definicion.maximo) * 100))
     : 0;
 
-  // Traduce el estado compartido a una frase fácil de leer.
+  // Los juegos tienen payloads distintos, pero comparten el contador indicado en DETALLES_PROGRESO
+  // y `terminado`; Wordle/Adivina agregan el booleano que permite describir cómo terminó.
   let estado = "Esperando el primer avance del rival...";
   if (progreso && progreso.terminado) {
     if (game === "wordle") estado = progreso.gano ? "Terminó: acertó" : "Terminó los intentos";

@@ -1,4 +1,4 @@
-// Tablero de Wordle preparado como componente reutilizable; wordle/page.js actualmente lo construye inline.
+// La validación de cada letra contempla repeticiones sin marcar más apariciones de las disponibles.
 export function estadoLetra(intento, i, secreta) {
   // Cuenta letras repetidas para no pintar como presentes más veces de las que aparecen en la palabra secreta.
   if (intento[i] === secreta[i]) return "ok";
@@ -7,22 +7,22 @@ export function estadoLetra(intento, i, secreta) {
   return sobrantes.filter((l) => l === intento[i]).length > yaMarcadas ? "cerca" : "no";
 }
 
-export default function WordleBoard({ intentos, actual, max = 6, secreta }) {
-  // Combina intentos confirmados, la fila actual y filas vacías hasta completar el máximo.
+export default function WordleBoard({ filas }) {
   return (
-    <div className="tablero">
-      {Array.from({ length: max }, (_, i) => {
-        const txt = i < intentos.length ? intentos[i] : i === intentos.length ? actual : "";
-        return (
-          <div className="fila-t" key={i}>
-            {Array.from({ length: secreta.length }, (_, c) => (
-              <div key={c} className={`celda ${i < intentos.length ? estadoLetra(txt, c, secreta) : ""}`}>
-                {txt[c] || ""}
-              </div>
-            ))}
-          </div>
-        );
-      })}
+    <div id="tablero" className="tablero">
+      {filas.map((fila, indiceFila) => (
+        <div className="fila" key={indiceFila}>
+          {fila.map((celda, indiceColumna) => (
+            <div
+              key={indiceColumna}
+              className="letra"
+              style={{ background: celda.color }}
+            >
+              {celda.letra}
+            </div>
+          ))}
+        </div>
+      ))}
     </div>
   );
 }

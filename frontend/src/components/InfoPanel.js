@@ -1,9 +1,12 @@
-// Panel reutilizable de datos de partida; la página de Fútbol 11 hoy imprime esos datos en su propio JSX.
-// items: [{ label: "País", valor: "Argentina" }, ...]  (Fulbo 11: país, ronda, colocados)
-export default function InfoPanel({ items }) {
+// Panel de datos de una partida, usado para mostrar el país, la ronda y el plantel.
+export default function InfoPanel({ items, className = "estadoJuego" }) {
   return (
-    <div className="estado">
-      {items.map((it) => <span key={it.label}><b>{it.label}:</b> {it.valor}</span>)}
+    <div className={className}>
+      {items.map((it) => (
+        <div key={it.label}>
+          <strong>{it.label}:</strong> <span id={it.id}>{it.valor}</span>
+        </div>
+      ))}
     </div>
   );
 }

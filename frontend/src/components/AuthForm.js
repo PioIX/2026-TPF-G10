@@ -1,22 +1,88 @@
-// Formulario reutilizable de autenticación. La ruta /login actual usa controles propios y no importa este componente.
-
 "use client";
-// Recibe el modo y la función de envío desde la página que quiera reutilizarlo.
+
 import Form, { Field } from "./Form";
 import Button from "./Button";
 
-// modo "login" pide email + contraseña; "registro" suma el nombre de usuario.
-export default function AuthForm({ modo = "login", onSubmit }) {
+// Formulario controlado de acceso y registro para la ruta de autenticación.
+export default function AuthForm({
+  modo = "login",
+  onSubmit,
+  onCambiarModo,
+  nombre = "",
+  onNombreChange,
+  email = "",
+  onEmailChange,
+  password = "",
+  onPasswordChange,
+  isLoading = false, // <-- 1. Agregamos la prop
+}) {
   const registro = modo === "registro";
+
   return (
-    <Form onSubmit={onSubmit}>
-      {registro && <Field label="Nombre de usuario" name="nombre" />}
-      <Field label="Correo electrónico" name="email" type="email" />
-      <Field label="Contraseña" name="password" type="password" minLength={6} />
-      <Button type="submit">{registro ? "Registrarse" : "Iniciar sesión"}</Button>
-      <Button href={registro ? "/login" : "/registro"} variant="ghost">
-        {registro ? "Volver al inicio de sesión" : "Crear cuenta"}
-      </Button>
-    </Form>
+    <>
+      <Form className={registro ? "registro" : "login"} onSubmit={onSubmit}>
+        {registro && (
+          <Field
+            label="Nombre de usuario"
+            name="nombre"
+            className="authField"
+            hideLabel
+            placeholder="NOMBRE DE USUARIO:"
+            value={nombre}
+            onChange={(e) => onNombreChange(e.target.value)}
+            required={false}
+            disabled={isLoading} // <-- 2. Bloqueamos el campo
+          />
+        )}
+        <Field
+          label="Correo electrónico"
+          name="email"
+          type="email"
+          className="authField"
+          hideLabel
+          placeholder="CORREO ELECTRÓNICO:"
+          value={email}
+          onChange={(e) => onEmailChange(e.target.value)}
+          required={false}
+          disabled={isLoading} // <-- 2. Bloqueamos el campo
+        />
+        <Field
+          label="Contraseña"
+          name="password"
+          type="password"
+          className="authField"
+          hideLabel
+          placeholder="CONTRASEÑA:"
+          value={password}
+          onChange={(e) => onPasswordChange(e.target.value)}
+          required={false}
+          disabled={isLoading} // <-- 2. Bloqueamos el campo
+        />
+        <Button type="submit" disabled={isLoading}>
+          {/* 3. Cambiamos el texto dinámicamente si está cargando */}
+          {isLoading ? "CARGANDO..." : (registro ? "REGISTRARSE" : "INICIAR SESIÓN")}
+        </Button>
+        {!registro && (
+          <Button
+            type="button"
+            className="btn-secundario"
+            onClick={onCambiarModo}
+            disabled={isLoading} // <-- 2. Bloqueamos el botón secundario
+          >
+            REGISTRARSE
+          </Button>
+        )}
+      </Form>
+      {registro && (
+        <Button
+          type="button"
+          className="btn-volver"
+          onClick={onCambiarModo}
+          disabled={isLoading} // <-- 2. Bloqueamos el botón de volver
+        >
+          Volver al inicio de sesión
+        </Button>
+      )}
+    </>
   );
 }

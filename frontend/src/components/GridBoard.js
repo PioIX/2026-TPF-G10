@@ -1,49 +1,87 @@
-// Tablero preparado para Grid; grid/page.js hoy dibuja una versión propia y no importa este archivo.
 "use client";
-// Dibuja la grilla, sus encabezados y las celdas de respuesta.
-import { Fragment } from "react";
+
 import Image from "next/image";
 import useSportsDbImage from "@/hooks/useSportsDbImage";
 
-// Subcomponente: obtiene y muestra el escudo y nombre de un club.
-function EncabezadoEquipo({ nombre }) {
-  const escudo = useSportsDbImage("team", nombre);
+function EncabezadoEquipo({ equipo }) {
+  const escudo = useSportsDbImage("team", equipo.nombre);
+
   return (
     <div className="cell logo">
-      {escudo && <Image src={escudo} alt="" width={40} height={40} unoptimized style={{ objectFit: "contain" }} />}
-      <span>{nombre}</span>
+      {escudo && (
+        <Image
+          src={escudo}
+          alt=""
+          width={40}
+          height={40}
+          unoptimized
+          style={{ objectFit: "contain" }}
+        />
+      )}
+      <span>{equipo.nombre}</span>
     </div>
   );
 }
 
-// Subcomponente: muestra ? hasta acertar y luego consulta/enseña la foto y el apellido.
-function CeldaJugador({ encontrado, onClick }) {
-  const foto = useSportsDbImage("player", encontrado ? `${encontrado.nombre} ${encontrado.apellido}` : "");
-  if (!encontrado) {
-    return <button className="cell player clickable" onClick={onClick}>?</button>;
+function CeldaJugador({ jugador, onClick }) {
+  const foto = useSportsDbImage(
+    "player",
+    jugador ? `${jugador.nombre} ${jugador.apellido}` : ""
+  );
+
+  if (!jugador) {
+    return (
+      <button type="button" className="cell player clickable" onClick={onClick}>
+        ?
+      </button>
+    );
   }
+
   return (
     <div className="cell player found">
-      {foto && <Image src={foto} alt="" width={60} height={60} unoptimized style={{ objectFit: "contain" }} />}
-      <strong>{encontrado.apellido}</strong>
+      {foto && (
+        <Image
+          src={foto}
+          alt=""
+          width={60}
+          height={60}
+          unoptimized
+          style={{ objectFit: "contain" }}
+        />
+      )}
+      <strong>{jugador.apellido}</strong>
     </div>
   );
 }
 
-// Props: columnas (equipos), filas (países), celdas resueltas y callback al tocar una celda.
-// celdas: matriz 3x3 con { nombre, apellido } del jugador acertado o null.
-export default function GridBoard({ columnas, filas, celdas, onCelda }) {
+// La pantalla conserva la lógica de respuestas; el tablero muestra imágenes y delega los clics.
+export default function GridBoard({ grilla, celdasReveladas, onCelda }) {
+  if (!grilla) return null;
+
   return (
     <div className="grid">
-      <div className="cell logo title">FULBO11<br />GRID</div>
-      {columnas.map((eq) => <EncabezadoEquipo key={eq} nombre={eq} />)}
-      {filas.map((pais, r) => (
-        <Fragment key={pais}>
-          <div className="cell logo">{pais}</div>
-          {columnas.map((_, c) => (
-            <CeldaJugador key={c} encontrado={celdas[r][c]} onClick={() => onCelda(r, c)} />
-          ))}
-        </Fragment>
+      <div className="cell logo title">
+        FULBO11
+        <br />
+        GRID
+      </div>
+      {grilla.columnas.map((equipo, indice) => (
+        <EncabezadoEquipo key={`${equipo.id}-${indice}`} equipo={equipo} />
+      ))}
+      {grilla.filas.map((pais, fila) => (
+        <div key={`${pais.nombre}-${fila}`} style={{ display: "contents" }}>
+          <div className="cell logo">{pais.nombre}</div>
+          {grilla.columnas.map((_, columna) => {
+            const clave = `r${fila}_c${columna}`;
+            return (
+              <CeldaJugador
+                key={clave}
+                jugador={celdasReveladas[clave]}
+                onClick={() => onCelda(fila, columna)}
+              />
+            );
+          })}
+        </div>
       ))}
     </div>
   );
