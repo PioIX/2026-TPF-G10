@@ -9,9 +9,10 @@ import GlobalChat from "../../components/GlobalChat";
 
 const juegos = [
   { titulo: "Fulbo 11", imagen: "/fulbo11.png", href: "/fulbo11", detalle: "Completá tu equipo titular", estilo: "fulbo" },
-  { titulo: "Wordle", imagen: "/wordle.png", href: "/wordle", detalle: "Adiviná el jugador", estilo: "wordle" },
+  { titulo: "Wordle", imagen: "/wordle.png", href: "/wordle", detalle: "Descifrá el jugador", estilo: "wordle" },
   { titulo: "Grid", imagen: "/grid.png", href: "/grid", detalle: "Encontrá jugadores para cada cruce", estilo: "grid" },
-  { titulo: "Adivina el jugador", imagen: "/adivinaeljugador.png", href: "/adivinaeljugador", detalle: "Descubrí al jugador oculto", estilo: "adivina" },
+  { titulo: "Adivina el jugador", imagen: "/adivinaeljugador.png", href: "/adivinaeljugador", detalle: "Adivina al jugador oculto", estilo: "adivina" },
+  {titulo: "Link", imagen: "/link.png", href: "/link", detalle: "Descubrí al jugador oculto"}
 ];
 
 export default function MenuPage() {
@@ -52,7 +53,7 @@ export default function MenuPage() {
       <section className="menuHero" aria-labelledby="tituloMenu">
         <div>
           <h2 id="tituloMenu">Elegí un juego</h2>
-          <p>Todos los desafíos de Fulbo 11, en un solo lugar.</p>
+          <p>Todos los desafíos de fútbol, en un solo lugar.</p>
         </div>
       </section>
 
