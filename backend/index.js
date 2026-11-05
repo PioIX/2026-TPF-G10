@@ -49,7 +49,7 @@ const io = new Server(server, {
 // Estos middleware afectan las rutas HTTP; Socket.IO tiene su configuración CORS arriba.
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
-app.use(cors(opcionesCors));
+app.use(cors());
 
 // Middleware del handshake Socket.IO: corre antes de aceptar cada conexión nueva.
 // El cliente manda `query.userId` desde localStorage; no es el socket.id ni una sesión/cookie.
@@ -793,6 +793,6 @@ app.post('/equipos', async function(req,res) {
 
 // El servidor HTTP recibe solicitudes Express y conexiones Socket.IO en el mismo puerto.
 // Inicia Express y Socket.IO juntos. Con el puerto por defecto, ambos están en :4000.
-server.listen(port, function(){
+server.listen(port, "0.0.0.0", function(){
     console.log(`Server HTTP y WebSocket running in http://localhost:${port}`);
 });
