@@ -9,7 +9,6 @@ import Keyboard from "../../components/Keyboard";
 import ResultCard from "../../components/ResultCard";
 import { BACKEND_URL } from "../../config/backend";
 import { comentarioFutbolero } from "../../utils/comentariosFutboleros";
-import GameLobby, { useGameSession } from "../../components/GameLobby";
 import useRegistrarResultado from "../../hooks/useRegistrarResultado";
 
 const API_URL = BACKEND_URL;
