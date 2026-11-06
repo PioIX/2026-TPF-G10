@@ -9,6 +9,7 @@ import CellSearchPanel from "../../components/CellSearchPanel";
 import ResultCard from "../../components/ResultCard";
 import { BACKEND_URL } from "../../config/backend";
 import { comentarioFutbolero } from "../../utils/comentariosFutboleros";
+import useRegistrarResultado from "../../hooks/useRegistrarResultado";
 
 const BACKEND = BACKEND_URL;
 const MINIMO_JUGADORES = 3;
@@ -406,7 +407,7 @@ function GridGame() {
     enviarProgreso,
     marcarPartidaTerminada,
   ]);
-
+useRegistrarResultado("grid", terminoLaPartida, true, celdasCompletadas);
   return (
     <main className="gridGame">
       {terminoLaPartida && <GoalCelebration />}

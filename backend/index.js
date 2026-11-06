@@ -790,7 +790,81 @@ app.post('/equipos', async function(req,res) {
         res.send("Equipo agregado")
     }
 })
+// Guarda el resultado de una partida terminada: { id_usuario, juego, gano, puntaje }.
+app.post('/partidas', async function(req, res) {
+    try {
+        const idUsuario = Number(req.body.id_usuario);
+        const juego = String(req.body.juego || '');
+        const gano = req.body.gano === true || req.body.gano === 1 ? 1 : 0;
+        const puntaje = Number.isInteger(req.body.puntaje) && req.body.puntaje >= 0 && req.body.puntaje <= 100
+            ? req.body.puntaje
+            : 0;
 
+        if (!Number.isSafeInteger(idUsuario) || idUsuario < 1) {
+            return res.status(400).json({ error: 'El ID de usuario no es válido.' });
+        }
+        if (!juegosDisponibles.has(juego)) {
+            return res.status(400).json({ error: 'Ese juego no está disponible.' });
+        }
+
+        const usuarios = await realizarQuery('SELECT id_usuario FROM Usuarios WHERE id_usuario = ?', [idUsuario]);
+        if (usuarios.length === 0) {
+            return res.status(404).json({ error: 'El usuario no existe.' });
+        }
+
+        const partida = await realizarQuery('INSERT INTO Partida (juego) VALUES (?)', [juego]);
+        if (!partida.insertId) {
+            return res.status(500).json({ error: 'No se pudo guardar la partida.' });
+        }
+
+        const resultado = await realizarQuery(
+            'INSERT INTO UsuariosXPartida (id_usuario, id_partida, puntaje, gano) VALUES (?, ?, ?, ?)',
+            [idUsuario, partida.insertId, puntaje, gano]
+        );
+        if (!resultado.insertId) {
+            return res.status(500).json({ error: 'No se pudo guardar el resultado.' });
+        }
+
+        return res.status(201).json({ ok: true, id_partida: partida.insertId });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: 'Error al guardar la partida.' });
+    }
+});
+
+// Perfil de un usuario: GET /perfil?id=3 -> { id, name, partidasJugadas, victorias }.
+app.get('/perfil', async function(req, res) {
+    try {
+        const id = Number(req.query.id);
+        if (!Number.isSafeInteger(id) || id < 1) {
+            return res.status(400).json({ error: 'El ID de usuario no es válido.' });
+        }
+
+        const filas = await realizarQuery(
+            `SELECT Usuarios.id_usuario, Usuarios.usuario AS name,
+                    COUNT(UsuariosXPartida.id_usuariosporpartida) AS partidasJugadas,
+                    COALESCE(SUM(UsuariosXPartida.gano), 0) AS victorias
+             FROM Usuarios
+             LEFT JOIN UsuariosXPartida ON UsuariosXPartida.id_usuario = Usuarios.id_usuario
+             WHERE Usuarios.id_usuario = ?
+             GROUP BY Usuarios.id_usuario, Usuarios.usuario`,
+            [id]
+        );
+        if (filas.length === 0) {
+            return res.status(404).json({ error: 'No encontramos ese usuario.' });
+        }
+
+        return res.json({
+            id: filas[0].id_usuario,
+            name: filas[0].name,
+            partidasJugadas: Number(filas[0].partidasJugadas),
+            victorias: Number(filas[0].victorias)
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: 'Error al obtener el perfil.' });
+    }
+});
 // El servidor HTTP recibe solicitudes Express y conexiones Socket.IO en el mismo puerto.
 // Inicia Express y Socket.IO juntos. Con el puerto por defecto, ambos están en :4000.
 server.listen(port, "0.0.0.0", function(){

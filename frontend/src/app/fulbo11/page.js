@@ -11,6 +11,7 @@ import ResultCard from "../../components/ResultCard";
 import AutocompleteInput from "../../components/AutocompleteInput";
 import { BACKEND_URL } from "../../config/backend";
 import { comentarioFutbolero } from "../../utils/comentariosFutboleros";
+import useRegistrarResultado from "../../hooks/useRegistrarResultado";
 
 // URL del servidor Express que entrega la lista de jugadores.
 const URL_API = BACKEND_URL;
@@ -291,7 +292,7 @@ function Fulbo11Game() {
     enviarProgreso,
     marcarPartidaTerminada,
   ]);
-
+useRegistrarResultado("futbol11", terminoLaPartida, true);
   // Sugiere todos los nombres cargados desde la base; país, puesto y repetidos se validan al probar.
   const sugerenciasJugadores = useMemo(() => {
     const nombres = new Map();
