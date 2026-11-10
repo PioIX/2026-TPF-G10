@@ -14,10 +14,12 @@ function validateEmail(email) {
 }
 
 // Validación de interfaz; el servidor también debe validar cualquier dato recibido.
+// Comprueba el largo mínimo que espera el formulario antes de enviar credenciales.
 function validatePassword(password) {
   return password.length >= 6;
 }
 
+// Controla login, registro, validación de campos y navegación al menú al autenticarse.
 export default function LoginPage() {
   const router = useRouter();
 

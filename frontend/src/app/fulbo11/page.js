@@ -316,6 +316,25 @@ useRegistrarResultado("futbol11", terminoLaPartida, true);
       puedeJugarEnPosicion(jugador, posicion)
   );
 
+  // Permite pasar un país difícil sin borrar los jugadores ya colocados.
+  const cambiarPais = () => {
+    const disponibles = obtenerPaisesDisponibles(jugadores, equipo);
+    const otrosPaises = disponibles.filter(
+      (pais) => normalizarTexto(pais) !== normalizarTexto(paisActual)
+    );
+    if (otrosPaises.length === 0) {
+      setMensaje("No hay otro país disponible para los puestos que quedan.");
+      return;
+    }
+
+    const nuevoPais = obtenerPaisAleatorio(otrosPaises);
+    setPaisActual(nuevoPais);
+    setRonda((prev) => prev + 1);
+    setPosicionSeleccionada(null);
+    setEntradaJugador("");
+    setMensaje(`Saltaste ${paisActual}. Ahora toca ${nuevoPais}.`);
+  };
+
   return (
     <>
       {terminoLaPartida && <GoalCelebration />}
@@ -332,6 +351,13 @@ useRegistrarResultado("futbol11", terminoLaPartida, true);
             { label: "Jugadores colocados", valor: cantidadColocados, id: "jugadoresColocados" },
           ]}
         />
+        {/* Ayuda secundaria, junto a los datos de ronda y separada de las acciones de juego. */}
+        <div className="ayudaCambiarPais">
+          <span>¿No conocés jugadores de este país?</span>
+          <button type="button" onClick={cambiarPais} aria-label="Cambiar el país de la ronda">
+            🌎 Cambiar país
+          </button>
+        </div>
 
         <div id="mensajeJuego" className="mensajeJuego">
           {mensaje}
@@ -388,6 +414,7 @@ useRegistrarResultado("futbol11", terminoLaPartida, true);
 
 // El identificador del protocolo es "futbol11" aunque la URL pública sea /fulbo11;
 // el backend valida el identificador del juego, no el nombre de la ruta.
+// Instala el lobby online y carga el minijuego de formación dentro de su contexto.
 export default function Fulbo11Page() {
   return (
     <GameLobby game="futbol11">

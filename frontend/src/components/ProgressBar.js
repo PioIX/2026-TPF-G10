@@ -1,4 +1,4 @@
-// Barra accesible para mostrar el avance de una partida.
+// Barra accesible que representa el porcentaje de avance recibido desde el juego.
 export default function ProgressBar({
   valor,
   total,

@@ -7,6 +7,7 @@ export function estadoLetra(intento, i, secreta) {
   return sobrantes.filter((l) => l === intento[i]).length > yaMarcadas ? "cerca" : "no";
 }
 
+// Pinta las seis filas del tablero y marca cada letra según la evaluación del juego.
 export default function WordleBoard({ filas }) {
   return (
     <div id="tablero" className="tablero">

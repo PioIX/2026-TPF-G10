@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-// Festejo común para los juegos: aparece al ganar y se retira solo después de un instante.
+// Festejo común para los juegos: aparece al ganar y se oculta al finalizar su animación.
 export default function GoalCelebration() {
   const [visible, setVisible] = useState(true);
 

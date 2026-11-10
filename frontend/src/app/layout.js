@@ -13,7 +13,8 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="es">
-      <body>
+      {/* Una extensión puede inyectar atributos en body antes de hidratar el HTML de Next.js. */}
+      <body suppressHydrationWarning>
         <SiteHeader />
         <hr />
         

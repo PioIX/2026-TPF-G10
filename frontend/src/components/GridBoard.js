@@ -2,6 +2,7 @@
 
 import SportsImage from "./SportsImage";
 
+// Muestra el encabezado de una columna con el escudo y el nombre del club.
 function EncabezadoEquipo({ equipo }) {
   // El nombre del equipo se busca en la base de logos de TheSportsDB.
   return (
@@ -12,6 +13,7 @@ function EncabezadoEquipo({ equipo }) {
   );
 }
 
+// Dibuja una celda: una respuesta existente abre el jugador; una vacía permite responderla.
 function CeldaJugador({ jugador, onClick }) {
   if (!jugador) {
     return (
@@ -31,6 +33,7 @@ function CeldaJugador({ jugador, onClick }) {
 }
 
 // La pantalla conserva la lógica de respuestas; el tablero muestra imágenes y delega los clics.
+// Construye el tablero 3×3 con filas de países, columnas de clubes y respuestas reveladas.
 export default function GridBoard({ grilla, celdasReveladas, onCelda }) {
   if (!grilla) return null;
 

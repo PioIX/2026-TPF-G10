@@ -7,6 +7,7 @@ import AuthGuard from "../../components/AuthGuard";
 import GameCard from "../../components/GameCard";
 import GlobalChat from "../../components/GlobalChat";
 
+// Catálogo que alimenta las tarjetas y el selector aleatorio de juegos del menú.
 const juegos = [
   { titulo: "Fulbo 11", imagen: "/fulbo11.png", href: "/fulbo11", detalle: "Completá tu equipo titular", estilo: "fulbo" },
   { titulo: "Wordle", imagen: "/wordle.png", href: "/wordle", detalle: "Descifrá el jugador", estilo: "wordle" },
@@ -15,7 +16,9 @@ const juegos = [
   {titulo: "Link", imagen: "/link.png", href: "/link", detalle: "Descubrí al jugador oculto"}
 ];
 
+// Página protegida con el catálogo, chat global, perfil de navegación y cierre de sesión.
 export default function MenuPage() {
+  // Guarda la navegación, el resultado del sorteo aleatorio y el temporizador que la retrasa.
   const router = useRouter();
   const [juegoSorpresa, setJuegoSorpresa] = useState(null);
   const [sorteando, setSorteando] = useState(false);
@@ -41,6 +44,7 @@ export default function MenuPage() {
     );
   };
 
+  // Borra la identidad guardada localmente y vuelve a la pantalla de autenticación.
   const cerrarSesion = () => {
     localStorage.removeItem("usuarioId");
     localStorage.removeItem("usuarioNombre");

@@ -1,9 +1,10 @@
-// Campo controlado con sugerencias HTML nativas. Se usa dentro de CellSearchPanel y GuessBox.
+// Campo controlado con sugerencias HTML nativas, usado por los formularios de respuesta.
 
 "use client";
 // Input con sugerencias y envío opcional al presionar Enter.
 import { useId } from "react";
 
+// Campo de texto con sugerencias filtradas; permite seleccionar una o escribir libremente.
 export default function AutocompleteInput({
   opciones = [],
   valor,

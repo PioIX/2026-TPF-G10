@@ -7,6 +7,7 @@ import ClubForm from "../../components/ClubForm";
 import "../global.css";
 import { BACKEND_URL } from "../../config/backend";
 
+// Dirección del backend para las consultas y altas administrativas.
 const API_URL = BACKEND_URL;
 
 // Uso: apoyo del alta de jugador en /admin. Busca el ID porque el POST actual responde solo un texto.
@@ -25,6 +26,7 @@ function buscarId(jugadores, nombre, apellido, idEquipo) {
   return null;
 }
 
+// Administra altas de jugadores/clubes y escucha avisos en vivo de cambios del catálogo.
 export default function AdminPage() {
   // Uso: página /admin. Registra jugadores y clubes; useSocket escucha avisos de cambios del servidor.
   const { socket, isConnected } = useSocket(BACKEND_URL);

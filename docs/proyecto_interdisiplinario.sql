@@ -1,3 +1,5 @@
+-- Consulta de lectura: combina jugador, datos, estadísticas, club actual y trayectoria en filas.
+-- Los INNER JOIN requieren que exista el registro relacionado en cada una de esas tablas.
 SELECT
     Jugadores.id_jugador,
     Jugadores.nombre,
@@ -36,6 +38,8 @@ INNER JOIN Trayectoria
     ON Jugadores.id_jugador = Trayectoria.id_jugador
     AND Equipos.id_equipo = Trayectoria.id_equipo;
     
+-- Consulta de lectura: obtiene los datos descriptivos de todos los clubes.
+-- Lista los clubes con sus atributos principales para revisar la carga y los datos institucionales.
 SELECT
     Equipos.id_equipo,
     Equipos.nombre_equipo,
@@ -50,6 +54,8 @@ SELECT
     Equipos.cantidad_socios
 FROM Equipos;
 
+-- Consulta de lectura: cuenta cuántos jugadores tiene cada club, incluidos los que tienen cero.
+-- Lista cada club y cuenta sus jugadores; LEFT JOIN conserva equipos sin jugadores asociados.
 SELECT
     Equipos.id_equipo,
     Equipos.nombre_equipo,
@@ -120,15 +126,19 @@ GROUP BY
 -- ATENCIÓN: este archivo borra y vuelve a cargar las tablas de ejemplo de abajo.
 -- ============================================================
 
+-- Desactiva temporalmente las claves foráneas para poder vaciar tablas relacionadas en orden inverso.
 SET FOREIGN_KEY_CHECKS = 0;
+-- Fija la codificación de la sesión para conservar correctamente nombres y caracteres acentuados.
 SET NAMES utf8mb4;
 
+-- Borra los datos de ejemplo conservando la estructura; el orden respeta las relaciones entre tablas.
 TRUNCATE TABLE Trayectoria;
 TRUNCATE TABLE Estadisticas;
 TRUNCATE TABLE Datos;
 TRUNCATE TABLE Jugadores;
 TRUNCATE TABLE Equipos;
 
+-- Vuelve a activar la validación referencial antes de insertar los nuevos registros.
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- Equipos que sirven como claves foráneas para los jugadores y trayectorias.

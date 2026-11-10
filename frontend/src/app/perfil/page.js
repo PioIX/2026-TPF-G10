@@ -5,6 +5,7 @@ import AuthGuard from "../../components/AuthGuard";
 import Button from "../../components/Button";
 import { BACKEND_URL } from "../../config/backend";
 
+// Carga las estadísticas del usuario autenticado y presenta estados de carga y error.
 function PerfilContenido() {
   const [perfil, setPerfil] = useState(null);   // datos que llegan del backend
   const [error, setError] = useState("");
@@ -40,6 +41,7 @@ function PerfilContenido() {
   );
 }
 
+// Protege la ruta y solo monta el contenido del perfil después de comprobar la sesión local.
 export default function PerfilPage() {
   return (
     <AuthGuard>

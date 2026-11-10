@@ -4,14 +4,15 @@ import { useState } from "react";
 import Image from "next/image";
 import useSportsDbImage from "../hooks/useSportsDbImage";
 
-// Imagen reutilizable para todos los juegos: si TheSportsDB no tiene el dato,
-// el espacio conserva un marcador legible y nunca rompe la tarjeta o la cancha.
+// Imagen reutilizable para todos los juegos. Prueba cada URL recibida del backend en orden;
+// si todas fallan o faltan en el catálogo, deja un marcador legible en el mismo espacio.
+// Presenta una foto o escudo y prueba otras URLs si la imagen principal no carga.
 export default function SportsImage({ tipo, nombre, alt = "", size = 56, className = "" }) {
-  // El hook resuelve alias player/team, comparte consultas y actualiza al cambiar el nombre.
-  const imagen = useSportsDbImage(tipo, nombre);
-  // Un enlace que dejó de funcionar se trata igual que una imagen ausente en la API.
-  // Guarda la URL que falló; otra búsqueda puede mostrar normalmente otra URL.
-  const [urlFallida, setUrlFallida] = useState("");
+  // El hook normaliza player/team y comparte la lista de posibles imágenes entre pantallas.
+  const imagenes = useSportsDbImage(tipo, nombre);
+  // Conserva las URLs fallidas para avanzar a otra alternativa, en vez de abandonar al primer error.
+  const [urlsFallidas, setUrlsFallidas] = useState([]);
+  const imagen = imagenes.find((url) => !urlsFallidas.includes(url));
 
   return (
     <span
@@ -19,14 +20,14 @@ export default function SportsImage({ tipo, nombre, alt = "", size = 56, classNa
       style={{ width: size, height: size }}
       aria-hidden={alt ? undefined : "true"}
     >
-      {imagen && imagen !== urlFallida ? (
+      {imagen ? (
         <Image
           src={imagen}
           alt={alt}
           width={size}
           height={size}
           unoptimized
-          onError={() => setUrlFallida(imagen)}
+          onError={() => setUrlsFallidas((anteriores) => [...anteriores, imagen])}
           style={{ width: "100%", height: "100%", objectFit: "contain" }}
         />
       ) : (

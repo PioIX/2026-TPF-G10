@@ -1,4 +1,4 @@
-// Botón compartido. Con href usa Link de Next; sin href conserva el comportamiento HTML.
+// Botón compartido: con href navega usando Link de Next; sin href ejecuta la acción HTML.
 import Link from "next/link";
 
 export default function Button({ children, href, variant = "primary", className = "", ...props }) {

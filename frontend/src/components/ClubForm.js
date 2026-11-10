@@ -4,6 +4,7 @@ import Button from "./Button";
 
 // Formulario de alta de clubes; usa los mismos campos y manejo de envío que el de jugadores.
 export default function ClubForm({ onGuardar, mensaje = "" }) {
+  // Delegar el alta al padre permite que este formulario no conozca la URL ni la respuesta del servidor.
   const guardar = async (valores, formulario) => {
     const guardado = await onGuardar(valores, formulario);
     if (guardado) formulario.reset();

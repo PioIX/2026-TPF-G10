@@ -4,6 +4,7 @@ import AutocompleteInput from "./AutocompleteInput";
 import Button from "./Button";
 import Message from "./Message";
 
+// Panel para escribir y confirmar el jugador que corresponde a la celda seleccionada del Grid.
 export default function CellSearchPanel({
   fila,
   columna,
@@ -15,6 +16,7 @@ export default function CellSearchPanel({
 }) {
   const [txt, setTxt] = useState("");
 
+  // Envía la respuesta al juego y limpia el campo tras la confirmación.
   const probar = () => {
     if (txt.trim() && !deshabilitado) onProbar(txt.trim());
   };

@@ -1,6 +1,7 @@
 "use client";
 
 // Define el contador principal y su límite para cada minijuego.
+// Traduce cada juego a su contador y límite para que la tarjeta rival use un formato común.
 const DETALLES_PROGRESO = {
   wordle: { campo: "intentosUsados", maximo: 6, unidad: "intentos" },
   adivinaeljugador: { campo: "preguntasUsadas", maximo: 10, unidad: "preguntas o intentos" },
@@ -11,6 +12,7 @@ const DETALLES_PROGRESO = {
 
 // GameLobby le pasa el último objeto recibido por opponentProgress. Es una foto del estado más
 // reciente, no un historial de eventos. Este componente no abre sockets; solo representa el payload.
+// Resume el último progreso recibido del rival y permite abrir o cerrar su vista ampliada.
 export default function OpponentProgress({ game, player, expanded = false, onClose, onExpand }) {
   const definicion = DETALLES_PROGRESO[game];
   const progreso = player && player.progress;

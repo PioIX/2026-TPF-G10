@@ -2,7 +2,9 @@
 import AutocompleteInput from "./AutocompleteInput";
 import Button from "./Button";
 
+// Entrada reutilizable para elegir una respuesta y confirmarla con teclado o botón.
 export default function GuessBox({ opciones, valor, onCambio, onAdivinar, deshabilitado }) {
+  // Usa la misma acción de confirmación cuando se pulsa el botón o la tecla Enter.
   const enviar = () => {
     if (valor?.trim() && !deshabilitado) onAdivinar(valor.trim());
   };

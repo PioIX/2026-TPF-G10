@@ -13,8 +13,9 @@ export default function AuthGuard({ children }) {
 
   useEffect(() => {
     // localStorage es una API del navegador, por eso se lee dentro de useEffect y no durante SSR.
-    const usuarioId = localStorage.getItem("usuarioId");
-    if (usuarioId) {
+    const usuarioId = Number(localStorage.getItem("usuarioId"));
+    // Solo considera sesión válida el ID numérico que devuelve el backend al iniciar sesión.
+    if (Number.isSafeInteger(usuarioId) && usuarioId > 0) {
       // El chequeo ocurre luego del montaje para evitar leer localStorage en SSR.
       const temporizador = window.setTimeout(() => setListo(true), 0);
       return () => window.clearTimeout(temporizador);

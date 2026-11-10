@@ -8,7 +8,9 @@ import { BACKEND_URL } from "../../config/backend";
 import { comentarioFutbolero } from "../../utils/comentariosFutboleros";
 import SportsImage from "../../components/SportsImage";
 
+// Dirección base de las consultas HTTP de este juego.
 const API_URL = BACKEND_URL;
+// Máximo de compañeros que se pueden revelar y de intentos para adivinar.
 const PISTAS_TOTALES = 5;
 const MAX_INTENTOS = 6; 
 
@@ -29,6 +31,7 @@ function TarjetaJugadorLink({ nombre, visible, objetivo = false }) {
   );
 }
 
+// Homogeneiza nombres de personas y clubes antes de comparar respuestas.
 function limpiarTexto(texto) {
   return String(texto || "")
     .normalize("NFD")
@@ -38,6 +41,7 @@ function limpiarTexto(texto) {
     .trim();
 }
 
+// Comprueba si dos jugadores coincidieron en un mismo club durante años que se solapan.
 function compartieronCanchaTemporalmente(trayectoriaA, trayectoriaB) {
   for (const tA of trayectoriaA) {
     for (const tB of trayectoriaB) {
@@ -59,6 +63,7 @@ function compartieronCanchaTemporalmente(trayectoriaA, trayectoriaB) {
   return false;
 }
 
+// Envuelve el juego con el lobby común de partida individual o sala online.
 export default function LinkPage() {
   return (
     <GameLobby game="link">
@@ -67,15 +72,19 @@ export default function LinkPage() {
   );
 }
 
+// Ejecuta Link: prepara un objetivo, revela compañeros como pistas y valida intentos.
 function LinkGame() {
   const { modo, sala, enviarProgreso, marcarPartidaTerminada } = useGameSession();
 
-  const [jugadoresTotales, setJugadoresTotales] = useState([]);
+  // El estado conserva sugerencias, objetivo secreto, pistas vistas, intentos y resultado actual.
+  // Mantiene los nombres disponibles para el autocompletado de respuestas.
   const [nombresSugerencias, setNombresSugerencias] = useState([]);
   
   const [jugadorObjetivo, setJugadorObjetivo] = useState(null);
   const [pistas, setPistas] = useState([]); 
   const [intentosFallidos, setIntentosFallidos] = useState(0); 
+  // Pistas extra opcionales: revelan compañeros sin gastar intentos de respuesta.
+  const [pistasExtra, setPistasExtra] = useState(0);
   
   const [estadoPartida, setEstadoPartida] = useState("jugando");
   const [inputAdivinar, setInputAdivinar] = useState("");
@@ -119,7 +128,6 @@ function LinkGame() {
     });
 
     const listaJugadores = Array.from(jugadoresMap.values());
-    setJugadoresTotales(listaJugadores);
     setNombresSugerencias(Array.from(nombresSet).sort());
 
     const posiblesObjetivos = [...listaJugadores].sort(() => Math.random() - 0.5);
@@ -143,6 +151,7 @@ function LinkGame() {
       setJugadorObjetivo(objetivoElegido);
       setPistas(companerosElegidos);
       setIntentosFallidos(0);
+      setPistasExtra(0);
       setEstadoPartida("jugando");
     } else {
       setMensaje("No hay suficientes datos con fechas cruzadas en la base.");
@@ -199,9 +208,20 @@ function LinkGame() {
     }
   };
 
+  // Adelanta una pista cuando alguien se traba, sin cambiar el contador de intentos.
+  const mostrarOtraPista = () => {
+    const yaVisibles = Math.min(intentosFallidos + 1 + pistasExtra, PISTAS_TOTALES);
+    if (yaVisibles < PISTAS_TOTALES) setPistasExtra((prev) => prev + 1);
+  };
+
+  const cantidadPistasVisibles = Math.min(
+    intentosFallidos + 1 + pistasExtra,
+    PISTAS_TOTALES
+  );
+
   useEffect(() => {
     const pistasReveladas = pistas
-      .slice(0, Math.min(intentosFallidos + 1, PISTAS_TOTALES))
+      .slice(0, cantidadPistasVisibles)
       .map((pista) => pista.nombre);
     enviarProgreso({
       intentosUsados: intentosFallidos,
@@ -210,7 +230,7 @@ function LinkGame() {
       pistasReveladas,
     });
     if (estadoPartida !== "jugando") marcarPartidaTerminada();
-  }, [intentosFallidos, estadoPartida, pistas, modo, sala?.status, enviarProgreso, marcarPartidaTerminada]);
+  }, [intentosFallidos, cantidadPistasVisibles, estadoPartida, pistas, modo, sala?.status, enviarProgreso, marcarPartidaTerminada]);
 
   return (
     <>
@@ -234,7 +254,7 @@ function LinkGame() {
           {/* Compañeros */}
           <div className="link-contenedor-pistas">
             {pistas.map((pista, index) => {
-              const visible = estadoPartida !== "jugando" || index <= intentosFallidos;
+              const visible = estadoPartida !== "jugando" || index < cantidadPistasVisibles;
 
               return (
                 <div key={index} className="link-pista-wrapper">
@@ -276,6 +296,11 @@ function LinkGame() {
               Adivinar
             </button>
           </div>
+          {estadoPartida === "jugando" && cantidadPistasVisibles < PISTAS_TOTALES && (
+            <button className="botonAyudaJuego" type="button" onClick={mostrarOtraPista}>
+              Mostrar otra pista sin gastar un intento
+            </button>
+          )}
         </div>
       </main>
     </>

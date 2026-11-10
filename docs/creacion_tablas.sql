@@ -1,4 +1,4 @@
--- Tabla: Equipos
+-- Tabla: Equipos. Guarda el catálogo de clubes y sus datos institucionales/deportivos.
 CREATE TABLE Equipos (
     id_equipo INT AUTO_INCREMENT PRIMARY KEY,
     nombre_equipo VARCHAR(100) NOT NULL,
@@ -13,7 +13,7 @@ CREATE TABLE Equipos (
     anio_creacion INT
 ) ENGINE=InnoDB;
 
--- Tabla: Jugadores
+-- Tabla: Jugadores. Guarda identidad, país, competición, dorsales y posición de cada futbolista.
 CREATE TABLE Jugadores (
     id_jugador INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
@@ -33,7 +33,7 @@ CREATE TABLE Jugadores (
         ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB;
 
--- Tabla: Datos (Relación 1 a 1 con Jugadores)
+-- Tabla: Datos (Relación 1 a 1 con Jugadores). Contiene las medidas físicas usadas como pistas.
 CREATE TABLE Datos (
     id_datos INT AUTO_INCREMENT PRIMARY KEY,
     id_jugador INT NOT NULL UNIQUE,
@@ -46,7 +46,7 @@ CREATE TABLE Datos (
         ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB;
 
--- Tabla: Estadisticas (Relación 1 a 1 con Jugadores)
+-- Tabla: Estadisticas (Relación 1 a 1 con Jugadores). Contiene goles, asistencias y títulos.
 CREATE TABLE Estadisticas (
     id_estadistica INT AUTO_INCREMENT PRIMARY KEY,
     id_jugador INT NOT NULL UNIQUE,
@@ -60,7 +60,7 @@ CREATE TABLE Estadisticas (
         ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB;
 
--- Tabla: Trayectoria
+-- Tabla: Trayectoria. Relaciona jugadores con cada club y el período en que estuvieron allí.
 CREATE TABLE Trayectoria (
     id_trayectoria INT AUTO_INCREMENT PRIMARY KEY,
     id_jugador INT NOT NULL,
@@ -76,7 +76,7 @@ CREATE TABLE Trayectoria (
         ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB;
 
--- Tabla: Usuarios
+-- Tabla: Usuarios. Registra las cuentas que pueden entrar al menú y al chat.
 CREATE TABLE Usuarios (
     id_usuario INT AUTO_INCREMENT PRIMARY KEY,
     usuario VARCHAR(100) NOT NULL,
@@ -84,13 +84,13 @@ CREATE TABLE Usuarios (
     email VARCHAR(150) NOT NULL UNIQUE
 ) ENGINE=InnoDB;
 
--- Tabla: Partida
+-- Tabla: Partida. Guarda la instancia general de un juego que se completó.
 CREATE TABLE Partida (
     id_partida INT AUTO_INCREMENT PRIMARY KEY,
     fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
--- Tabla: UsuariosXPartida
+-- Tabla: UsuariosXPartida. Vincula cada usuario con una partida y almacena su resultado.
 CREATE TABLE UsuariosXPartida (
     id_usuariosporpartida INT AUTO_INCREMENT PRIMARY KEY,
     id_usuario INT NOT NULL,

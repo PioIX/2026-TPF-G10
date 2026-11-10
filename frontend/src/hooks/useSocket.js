@@ -13,6 +13,7 @@ const DEFAULT_OPTIONS = {};
  * Se usa en GameLobby, GlobalChat y Administración. Cada uso crea su propia conexión;
  * no hay un único socket global compartido por todas las rutas.
  */
+// Abre y mantiene una conexión Socket.IO en el navegador, notificando el estado de conexión.
 export default function useSocket(
   serverUrl = BACKEND_URL,
   options = DEFAULT_OPTIONS

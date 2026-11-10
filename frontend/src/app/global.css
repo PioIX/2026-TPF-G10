@@ -492,6 +492,42 @@ a.btn:hover {
     text-align: center;
 }
 
+/* Mantiene la ayuda del país centrada y visualmente secundaria dentro del panel de Fútbol 11. */
+.ayudaCambiarPais {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: -5px auto 18px;
+    color: #c5d4df;
+    font-size: 14px;
+}
+
+/* El botón usa el azul de la cancha y un borde dorado discreto para verse como ayuda. */
+.ayudaCambiarPais button {
+    min-height: 40px;
+    padding: 8px 15px;
+    border: 1px solid #e9b72d;
+    border-radius: 10px;
+    background: #17364c;
+    color: #fff4cf;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.ayudaCambiarPais button:hover {
+    background: #224e6b;
+    transform: translateY(-1px);
+}
+
+.ayudaCambiarPais button:focus-visible {
+    outline: 3px solid #ffd23f;
+    outline-offset: 2px;
+}
+
 .mensajeJuego {
     text-align: center;
     color: #ffd23f;
@@ -3161,4 +3197,88 @@ button.menuAccion {
   flex-direction: column;
   align-items: center;
   gap: 0.4rem;
+}
+
+/* La pista de Adivina usa tarjetas neutras de compañeros, sin el aspecto del juego Link. */
+.galeriaCompanerosPista {
+  width: min(100% - 2rem, 760px);
+  margin: 1rem auto;
+  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.galeriaCompanerosPista h3 {
+  margin-bottom: 0.9rem;
+  text-align: center;
+}
+
+/* Distribuye las cinco posibles caras y permite que bajen de línea en móvil. */
+.galeriaCompanerosLista {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.8rem;
+}
+
+.galeriaCompanero {
+  display: flex;
+  width: 112px;
+  min-height: 138px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.45rem;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+/* Mantiene una silueta consistente cuando no hay foto en el catálogo. */
+.galeriaCompanero img,
+.galeriaCompaneroVacio {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.galeriaCompaneroVacio {
+  display: grid;
+  place-items: center;
+  font-size: 2rem;
+}
+
+/* Agrupa las ayudas opcionales para que sean fáciles de encontrar y no se confundan con la acción principal. */
+.ayudaJuego,
+.opcionesAyudaJuego {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  margin: 0.75rem auto;
+  text-align: center;
+}
+
+/* Botón secundario compartido por los cinco juegos; conserva buen tamaño en pantallas táctiles. */
+.botonAyudaJuego {
+  min-height: 42px;
+  padding: 0.55rem 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.botonAyudaJuego:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.botonAyudaJuego:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }

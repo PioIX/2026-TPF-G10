@@ -1,6 +1,6 @@
 "use client";
 
-// Diálogo reutilizable para avisos que requieren una acción de cierre.
+// Diálogo controlado por su padre para mostrar avisos y cerrarlos con una acción.
 export default function Modal({ abierto, titulo, children, onCerrar }) {
   if (!abierto) return null;
 

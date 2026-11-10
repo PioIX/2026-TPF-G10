@@ -33,6 +33,7 @@ const duracionCacheImagenOk = 60 * 60 * 1000;
 const duracionCacheImagenVacia = 60 * 1000;
 
 function normalizarClaveImagen(texto) {
+    // Quita tildes, espacios y signos para comparar nombres de la base con los del proveedor.
     return String(texto || '')
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
@@ -620,7 +621,8 @@ app.get('/jugadores', async function(req,res){
 })
 
 // Busca fotos y escudos desde el backend para mantener la API fuera del navegador y
-// compartir una caché entre partidas; TheSportsDB documenta `123` como clave gratuita.
+// compartir una caché entre partidas. Responde con `imagen` (compatibilidad anterior)
+// y `imagenes` (URL principal más alternativas que el frontend probará si falla una).
 app.get('/imagen', async function(req, res) {
     const tipo = req.query.tipo;
     const nombre = String(req.query.nombre || '').trim();
@@ -631,56 +633,88 @@ app.get('/imagen', async function(req, res) {
     const clave = `${tipo}:${normalizarClaveImagen(nombre)}`;
     const cacheGuardada = cacheImagenesExternas.get(clave);
     if (cacheGuardada && cacheGuardada.expiraEn > Date.now()) {
-        return res.json({ imagen: cacheGuardada.imagen });
+        return res.json({ imagen: cacheGuardada.imagenes[0] || '', imagenes: cacheGuardada.imagenes });
     }
     // Una entrada expirada se elimina para que la nueva respuesta reemplace al dato viejo.
     if (cacheGuardada) cacheImagenesExternas.delete(clave);
     // Si otro navegador ya está buscando el mismo nombre, espera ese único pedido HTTP.
     if (consultasImagenesExternas.has(clave)) {
-        const imagenCompartida = await consultasImagenesExternas.get(clave);
-        return res.json({ imagen: imagenCompartida });
+        const imagenesCompartidas = await consultasImagenesExternas.get(clave);
+        return res.json({ imagen: imagenesCompartidas[0] || '', imagenes: imagenesCompartidas });
     }
 
     // Guarda URL o resultado vacío con duraciones distintas según sea recuperable.
-    const guardarImagenEnCache = (imagen) => {
-        const duracion = imagen ? duracionCacheImagenOk : duracionCacheImagenVacia;
-        cacheImagenesExternas.set(clave, { imagen, expiraEn: Date.now() + duracion });
+    // Mantiene juntas las URLs alternativas y aplica una expiración según haya imágenes.
+    const guardarImagenesEnCache = (imagenes) => {
+        const duracion = imagenes.length ? duracionCacheImagenOk : duracionCacheImagenVacia;
+        cacheImagenesExternas.set(clave, { imagenes, expiraEn: Date.now() + duracion });
     };
 
     const parametro = tipo === 'jugador' ? 'p' : 't';
     const listaResultados = tipo === 'jugador' ? 'player' : 'teams';
     // Prioriza el recorte del jugador y el escudo del club; el logo sirve de respaldo.
+    // Prueba primero la imagen más apropiada y guarda los otros campos como respaldo.
     const camposImagen = tipo === 'jugador'
-        ? ['strCutout', 'strThumb', 'strRender']
-        : ['strBadge', 'strLogo', 'strThumb'];
-    const url = `https://www.thesportsdb.com/api/v1/json/${encodeURIComponent(claveApiTheSportsDb)}/search${tipo === 'jugador' ? 'players' : 'teams'}.php?${parametro}=${encodeURIComponent(nombre)}`;
+        ? ['strCutout', 'strThumb', 'strRender', 'strFanart1', 'strFanart2', 'strFanart3', 'strFanart4']
+        : ['strBadge', 'strLogo', 'strTeamBadge', 'strTeamLogo', 'strThumb'];
+    // Si el proveedor indexa al jugador por apodo (Neymar), prueba también el nombre
+    // corto y el primer nombre además del nombre legal de nuestra base.
+    const consultasNombre = [nombre];
+    if (tipo === 'jugador') {
+        const partesNombre = nombre.split(/\s+/).filter(Boolean);
+        const nombreCorto = partesNombre.length > 1
+            ? `${partesNombre[0]} ${partesNombre[partesNombre.length - 1]}`
+            : '';
+        if (nombreCorto && normalizarClaveImagen(nombreCorto) !== normalizarClaveImagen(nombre)) {
+            consultasNombre.push(nombreCorto);
+        }
+        if (partesNombre[0] && partesNombre[0].length >= 5) consultasNombre.push(partesNombre[0]);
+    }
+    const nombresConsultados = [...new Set(consultasNombre.map((valor) => valor.trim()).filter(Boolean))];
 
     const controlador = new AbortController();
     const timeout = setTimeout(() => controlador.abort(), 8000);
     // Registra la búsqueda antes del fetch para que solicitudes simultáneas compartan la promesa.
     const consultaCompartida = (async () => {
       try {
-        const respuestaExterna = await fetch(url, { signal: controlador.signal });
-        if (!respuestaExterna.ok) return '';
-
-        const datos = await respuestaExterna.json();
-        const resultados = Array.isArray(datos?.[listaResultados]) ? datos[listaResultados] : [];
         const nombreNormalizado = normalizarClaveImagen(nombre);
-        // Se exige coincidencia exacta con nombre principal o alternativo para no
-        // mostrar por error la foto de otro jugador con un nombre parecido.
+        // Evita resultados parecidos por accidente; admite el apodo de un jugador
+        // cuando es una palabra distintiva incluida en el nombre legal local.
         const camposNombre = tipo === 'jugador'
             ? ['strPlayer', 'strPlayerAlternate']
             : ['strTeam', 'strTeamShort', 'strTeamAlternate'];
-        const coincidencia = resultados.find((item) =>
-            camposNombre.some((campo) => String(item?.[campo] || '')
-                .split(/[,;|]/)
-                .some((alternativo) => normalizarClaveImagen(alternativo) === nombreNormalizado))
-        );
-        return coincidencia
-            ? camposImagen.map((campo) => coincidencia[campo]).find(Boolean) || ''
-            : '';
+        const tokensEntrada = nombre.toLowerCase().match(/[a-z0-9]+/g) || [];
+        for (const nombreConsulta of nombresConsultados) {
+            const url = `https://www.thesportsdb.com/api/v1/json/${encodeURIComponent(claveApiTheSportsDb)}/search${tipo === 'jugador' ? 'players' : 'teams'}.php?${parametro}=${encodeURIComponent(nombreConsulta)}`;
+            const respuestaExterna = await fetch(url, { signal: controlador.signal });
+            // Si el proveedor limita o rechaza la llamada, no gastes más consultas del plan gratuito.
+            if (!respuestaExterna.ok) break;
+
+            const datos = await respuestaExterna.json();
+            const resultados = Array.isArray(datos?.[listaResultados]) ? datos[listaResultados] : [];
+            const nombreConsultaNormalizado = normalizarClaveImagen(nombreConsulta);
+            const coincidencia = resultados.find((item) =>
+                camposNombre.some((campo) => String(item?.[campo] || '')
+                    .split(/[,;|]/)
+                    .some((alternativo) => {
+                        const nombreApi = normalizarClaveImagen(alternativo);
+                        const coincideExacto = nombreApi === nombreNormalizado || nombreApi === nombreConsultaNormalizado;
+                        const tokensApi = String(alternativo || '').toLowerCase().match(/[a-z0-9]+/g) || [];
+                        const coincideApodo = tipo === 'jugador' && tokensApi.length === 1
+                            && tokensApi[0].length >= 5 && tokensEntrada.includes(tokensApi[0]);
+                        return coincideExacto || coincideApodo;
+                    }))
+            );
+            const imagenes = coincidencia
+                ? [...new Set(camposImagen
+                    .map((campo) => coincidencia[campo])
+                    .filter((imagen) => typeof imagen === 'string' && /^https?:\/\//i.test(imagen)))]
+                : [];
+            if (imagenes.length) return imagenes;
+        }
+        return [];
       } catch (error) {
-        return '';
+        return [];
       } finally {
         clearTimeout(timeout);
         consultasImagenesExternas.delete(clave);
@@ -688,11 +722,11 @@ app.get('/imagen', async function(req, res) {
     })();
     consultasImagenesExternas.set(clave, consultaCompartida);
     try {
-        const imagen = await consultaCompartida;
-        guardarImagenEnCache(imagen);
-        return res.json({ imagen });
+        const imagenes = await consultaCompartida;
+        guardarImagenesEnCache(imagenes);
+        return res.json({ imagen: imagenes[0] || '', imagenes });
     } catch (error) {
-        guardarImagenEnCache('');
+        guardarImagenesEnCache([]);
         return res.json({ imagen: '' });
     } finally {
         clearTimeout(timeout);

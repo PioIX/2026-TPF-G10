@@ -10,14 +10,16 @@ import DifficultyBadge from "../../components/DifficultyBadge";
 import QuestionPanel from "../../components/QuestionPanel";
 import GuessBox from "../../components/GuessBox";
 import ClueBox from "../../components/ClueBox";
-import LinkGallery from "../../components/LinkGallery";
+import CompanerosGallery from "../../components/CompanerosGallery";
 import ResultCard from "../../components/ResultCard";
 import { BACKEND_URL } from "../../config/backend";
-import obtenerImagenDeportiva from "../../utils/imagenes";
+import { obtenerImagenesDeportivas } from "../../utils/imagenes";
 import { comentarioFutbolero } from "../../utils/comentariosFutboleros";
 import useRegistrarResultado from "../../hooks/useRegistrarResultado";
 
+// Dirección HTTP del backend que entrega el conjunto de jugadores del desafío.
 const API_URL = BACKEND_URL;
+// Los códigos numéricos que se ofrecen en las preguntas para identificar la posición.
 const OPCIONES_POSICION = Array.from({ length: 11 }, (_, indice) =>
   String(indice + 1)
 );
@@ -141,8 +143,12 @@ function AdivinaElJugadorGame() {
 
   const [inputTexto, setInputTexto] = useState("");
   const [inputAdivinar, setInputAdivinar] = useState("");
-  const [fotoJugador, setFotoJugador] = useState("");
+  // Guarda todas las fotos candidatas para que la silueta pueda probar un respaldo.
+  const [fotosJugador, setFotosJugador] = useState([]);
   const [companerosConImagen, setCompanerosConImagen] = useState([]);
+  // Las opciones múltiples son una ayuda de un solo uso y no se muestran hasta pedirlas.
+  const [opcionesAyuda, setOpcionesAyuda] = useState([]);
+  const [opcionesAyudaUsada, setOpcionesAyudaUsada] = useState(false);
 
   // Consulta el backend, agrupa las filas repetidas del JOIN y sortea el desafío local.
   const cargarJugadores = useCallback(async () => {
@@ -161,7 +167,9 @@ function AdivinaElJugadorGame() {
         const index = Math.floor(Math.random() * listaJugadores.length);
         setJugadorSecreto(listaJugadores[index]);
         setPistaActiva(false);
-        setFotoJugador("");
+        setOpcionesAyuda([]);
+        setOpcionesAyudaUsada(false);
+        setFotosJugador([]);
         setMensaje("Selecciona categoría y haz una pregunta.");
       }
     } catch (error) {
@@ -178,15 +186,23 @@ function AdivinaElJugadorGame() {
   // Carga la foto del jugador secreto para mostrar su silueta durante la partida.
   useEffect(() => {
     const nombre = jugadorSecreto?.nombre;
+    let activo = true;
     if (!nombre) {
-      setFotoJugador("");
-      return;
+      // Limpia la foto fuera del cuerpo sincrónico del efecto para evitar un render en cascada.
+      Promise.resolve().then(() => {
+        if (activo) setFotosJugador([]);
+      });
+      return () => {
+        activo = false;
+      };
     }
 
-    let activo = true;
-    setFotoJugador("");
-    obtenerImagenDeportiva("jugador", nombre).then((imagen) => {
-      if (activo) setFotoJugador(imagen);
+    // Vacía primero la foto anterior y luego carga la correspondiente al nuevo jugador.
+    Promise.resolve().then(() => {
+      if (activo) setFotosJugador([]);
+    });
+    obtenerImagenesDeportivas("jugador", nombre).then((imagenes) => {
+      if (activo) setFotosJugador(imagenes);
     });
 
     return () => {
@@ -196,9 +212,15 @@ function AdivinaElJugadorGame() {
 
   // Al pedir una pista, busca fotos de jugadores que compartieron club con el secreto.
   useEffect(() => {
+    let activo = true;
     if (!pistaActiva || !jugadorSecreto) {
-      setCompanerosConImagen([]);
-      return undefined;
+      // Al reiniciar, borra la galería luego del render para que no quede la pista anterior.
+      Promise.resolve().then(() => {
+        if (activo) setCompanerosConImagen([]);
+      });
+      return () => {
+        activo = false;
+      };
     }
 
     const clubesDelSecreto = new Set((jugadorSecreto.clubes || []).map(limpiarTexto));
@@ -210,10 +232,18 @@ function AdivinaElJugadorGame() {
       .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"))
       .slice(0, 5);
 
-    let activo = true;
+    // Muestra la pista por sus nombres de inmediato; las fotos se completan en segundo plano.
+    Promise.resolve().then(() => {
+      if (activo) {
+        setCompanerosConImagen(
+          companeros.map((jugador) => ({ nombre: jugador.nombre, imagenes: [] }))
+        );
+      }
+    });
+
     Promise.all(companeros.map(async (jugador) => ({
       nombre: jugador.nombre,
-      imagen: await obtenerImagenDeportiva("jugador", jugador.nombre),
+      imagenes: await obtenerImagenesDeportivas("jugador", jugador.nombre),
     }))).then((lista) => {
       if (activo) setCompanerosConImagen(lista);
     });
@@ -388,9 +418,9 @@ function AdivinaElJugadorGame() {
 
   // El botón de bandera compara el nombre normalizado. Un acierto termina el juego y revela la foto;
   // un error consume un intento y se agrega al historial.
-  const intentarAdivinar = () => {
+  const intentarAdivinar = (respuestaElegida = inputAdivinar) => {
     if (!jugadorSecreto) return;
-    const texto = inputAdivinar.trim();
+    const texto = respuestaElegida.trim();
 
     if (!opcionValida("nombres", texto)) {
       setMensaje("Selecciona un nombre válido de la lista.");
@@ -412,6 +442,26 @@ function AdivinaElJugadorGame() {
       setMensaje(`No es ${texto}. Sigue intentando.`);
       setRespuestas((prev) => [`❌ Fallaste: ${texto}`, ...prev]);
     }
+  };
+
+  // Ofrece tres nombres: el secreto y dos jugadores al azar de la lista disponible.
+  const pedirOpcionesAyuda = () => {
+    if (!jugadorSecreto || opcionesAyudaUsada) return;
+    const incorrectos = sugerencias.nombres
+      .filter((nombre) => limpiarTexto(nombre) !== limpiarTexto(jugadorSecreto.nombre))
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 2);
+    setOpcionesAyuda(
+      [jugadorSecreto.nombre, ...incorrectos].sort(() => Math.random() - 0.5)
+    );
+    setOpcionesAyudaUsada(true);
+  };
+
+  // Elegir una opción reutiliza la misma validación y consume un intento como cualquier respuesta.
+  const elegirOpcionAyuda = (nombre) => {
+    setInputAdivinar(nombre);
+    setOpcionesAyuda([]);
+    intentarAdivinar(nombre);
   };
 
   // Activa la pista completa una vez que se presiona el botón de cámara.
@@ -440,6 +490,8 @@ function AdivinaElJugadorGame() {
     setPistaActiva(false);
     setInputTexto("");
     setInputAdivinar("");
+    setOpcionesAyuda([]);
+    setOpcionesAyudaUsada(false);
     setMensaje("Selecciona una categoría y haz tu primera pregunta.");
     cargarJugadores();
   };
@@ -484,7 +536,7 @@ function AdivinaElJugadorGame() {
           <div id="contenedor-jugador">
             <PlayerSilhouette
               id="silueta"
-              imagen={fotoJugador}
+              imagenes={fotosJugador}
               revelado={adivino}
               size={100}
             />
@@ -532,6 +584,23 @@ function AdivinaElJugadorGame() {
           }
         />
 
+        {/* Ayuda opcional para quien no conozca muchos nombres de futbolistas. */}
+        {!opcionesAyudaUsada && !terminoLaPartida && (
+          <button className="botonAyudaJuego" type="button" onClick={pedirOpcionesAyuda}>
+            Necesito opciones para adivinar
+          </button>
+        )}
+        {opcionesAyuda.length > 0 && !terminoLaPartida && (
+          <div className="opcionesAyudaJuego" aria-label="Opciones para adivinar">
+            <p>Elegir una opción cuenta como intento:</p>
+            {opcionesAyuda.map((nombre) => (
+              <button className="botonAyudaJuego" type="button" key={nombre} onClick={() => elegirOpcionAyuda(nombre)}>
+                {nombre}
+              </button>
+            ))}
+          </div>
+        )}
+
         <ClueBox
           pista={jugadorSecreto
             ? `País: ${jugadorSecreto.pais || "?"} • Club actual: ${jugadorSecreto.clubActual || "?"} • Posición: ${jugadorSecreto.posicion || "?"} • Edad: ${jugadorSecreto.edad || "?"} años • Altura: ${jugadorSecreto.altura || "?"} cm`
@@ -542,11 +611,7 @@ function AdivinaElJugadorGame() {
         />
 
         {pistaActiva && companerosConImagen.length > 0 && (
-          <LinkGallery
-            companeros={companerosConImagen}
-            revelado={terminoLaPartida}
-            jugadorMisterioso={jugadorSecreto?.nombre}
-          />
+          <CompanerosGallery companeros={companerosConImagen} />
         )}
 
         {terminoLaPartida && (
@@ -563,6 +628,7 @@ function AdivinaElJugadorGame() {
   );
 }
 
+// Instala el lobby online alrededor del minijuego y le da acceso a su contexto de sala.
 export default function AdivinaElJugadorPage() {
   return (
     <GameLobby game="adivinaeljugador">

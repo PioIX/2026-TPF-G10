@@ -1,8 +1,10 @@
 "use client";
 
+// Distribución de teclas que se dibujará como teclado virtual.
 const FILAS = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"];
 
 // usadas: { A: "ok" | "cerca" | "no" } para pintar las teclas
+// Teclado virtual de Wordle: cada tecla llama al manejador del juego y adopta su color conocido.
 export default function Keyboard({ onTecla, usadas = {} }) {
   // Cada tecla delega su acción a onTecla; el padre conserva el estado y los colores ya descubiertos.
   return (
