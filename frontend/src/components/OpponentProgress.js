@@ -6,6 +6,7 @@ const DETALLES_PROGRESO = {
   adivinaeljugador: { campo: "preguntasUsadas", maximo: 10, unidad: "preguntas o intentos" },
   futbol11: { campo: "jugadoresColocados", maximo: 11, unidad: "posiciones" },
   grid: { campo: "celdasCompletadas", maximo: 9, unidad: "celdas" },
+  link: { campo: "intentosUsados", maximo: 6, unidad: "intentos" },
 };
 
 // GameLobby le pasa el último objeto recibido por opponentProgress. Es una foto del estado más
@@ -24,6 +25,7 @@ export default function OpponentProgress({ game, player, expanded = false, onClo
   if (progreso && progreso.terminado) {
     if (game === "wordle") estado = progreso.gano ? "Terminó: acertó" : "Terminó los intentos";
     else if (game === "adivinaeljugador") estado = progreso.adivino ? "Terminó: adivinó" : "Terminó sin adivinar";
+    else if (game === "link") estado = progreso.adivino ? "Terminó: encontró al objetivo" : "Terminó sin encontrarlo";
     else estado = "Partida terminada";
   } else if (progreso) {
     estado = `${cantidad} de ${definicion.maximo} ${definicion.unidad}`;
@@ -87,6 +89,15 @@ export default function OpponentProgress({ game, player, expanded = false, onClo
           {Array.isArray(progreso.respuestas) && progreso.respuestas.length > 0 ? (
             <ul>{progreso.respuestas.map((respuesta, indice) => <li key={indice}>{respuesta}</li>)}</ul>
           ) : <p>Todavía no hizo preguntas.</p>}
+        </div>
+      )}
+
+      {progreso && game === "link" && (
+        <div className="historialRival">
+          <p>Compañeros revelados:</p>
+          {Array.isArray(progreso.pistasReveladas) && progreso.pistasReveladas.length > 0
+            ? <ul>{progreso.pistasReveladas.map((nombre, indice) => <li key={indice}>{nombre}</li>)}</ul>
+            : <p>Todavía no hay pistas reveladas.</p>}
         </div>
       )}
 

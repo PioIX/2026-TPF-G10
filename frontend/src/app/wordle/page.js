@@ -10,6 +10,7 @@ import ResultCard from "../../components/ResultCard";
 import { BACKEND_URL } from "../../config/backend";
 import { comentarioFutbolero } from "../../utils/comentariosFutboleros";
 import useRegistrarResultado from "../../hooks/useRegistrarResultado";
+import SportsImage from "../../components/SportsImage";
 
 const API_URL = BACKEND_URL;
 const MAX_INTENTOS = 6;
@@ -43,6 +44,8 @@ function WordleGame() {
 
   // La matriz del tablero guarda cada letra y su color; los dos índices señalan la fila y columna activas.
   const [palabraSecreta, setPalabraSecreta] = useState("");
+  // Conserva el nombre completo únicamente para buscar la imagen asociada al apellido secreto.
+  const [nombreJugadorSecreto, setNombreJugadorSecreto] = useState("");
   const [filas, setFilas] = useState([]); // Matriz [fila][col] con { letra, color }
   const [intentoActual, setIntentoActual] = useState(0);
   const [letraActual, setLetraActual] = useState(0);
@@ -70,6 +73,7 @@ function WordleGame() {
       const secreta = limpiarTexto(jugador.apellido || "");
 
       setPalabraSecreta(secreta);
+      setNombreJugadorSecreto(`${jugador.nombre || ""} ${jugador.apellido || ""}`.trim());
       setIntentoActual(0);
       setLetraActual(0);
       setJuegoTerminado(false);
@@ -265,6 +269,16 @@ function WordleGame() {
     <>
       {gano && <GoalCelebration />}
       <main className="wordle-main">
+        {/* La foto se revela junto con el resultado y no cambia la mecánica de adivinar. */}
+        {juegoTerminado && (
+          <SportsImage
+            tipo="player"
+            nombre={nombreJugadorSecreto}
+            alt={nombreJugadorSecreto}
+            size={112}
+            className="imagenResultadoJuego"
+          />
+        )}
         <div id="mensaje">{juegoTerminado ? "" : mensaje}</div>
         <WordleBoard filas={filas} />
         <Keyboard onTecla={manejarTecla} usadas={usadas} />

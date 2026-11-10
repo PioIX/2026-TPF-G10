@@ -32,6 +32,7 @@ const NOMBRES_JUEGO = {
   adivinaeljugador: "Adivina el jugador",
   futbol11: "Fútbol 11",
   grid: "Grid",
+  link: "Fútbol11 Link",
 };
 
 // `game` debe coincidir con el ID validado por el backend; `children` es el minijuego de la ruta.

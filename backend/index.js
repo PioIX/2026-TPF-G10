@@ -22,6 +22,15 @@ const { realizarQuery } = require('./modulos/mysql');
 const app = express();
 const port = process.env.PORT || 4000;
 const cacheImagenesExternas = new Map();
+// Reutiliza también las consultas que siguen esperando respuesta, no solo los resultados guardados.
+const consultasImagenesExternas = new Map();
+// TheSportsDB permite la clave pública `123`; si el proyecto tiene una clave propia,
+// se configura en el backend mediante THESPORTSDB_API_KEY sin exponerla al navegador.
+const claveApiTheSportsDb = process.env.THESPORTSDB_API_KEY || '123';
+// Los aciertos se guardan una hora; los vacíos solo un minuto para permitir reintentos
+// si TheSportsDB responde temporalmente con error o activa su límite de consultas.
+const duracionCacheImagenOk = 60 * 60 * 1000;
+const duracionCacheImagenVacia = 60 * 1000;
 
 function normalizarClaveImagen(texto) {
     return String(texto || '')
@@ -84,7 +93,8 @@ const juegosDisponibles = new Set([
     'wordle',
     'adivinaeljugador',
     'futbol11',
-    'grid'
+    'grid',
+    'link'
 ]);
 const alfabetoCodigos = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const maximoJugadoresPorSala = 2;
@@ -275,6 +285,22 @@ function limpiarProgreso(juego, progreso) {
                     limpio.celdasReveladas[clave] = valor.slice(0, 64);
                 }
             });
+        }
+        return limpio;
+    }
+
+    // Link: comparte intentos y compañeros ya revelados, nunca el jugador objetivo.
+    if (juego === 'link' && estaEnRango(progreso.intentosUsados, 0, 6) && typeof progreso.terminado === 'boolean') {
+        const limpio = {
+            intentosUsados: progreso.intentosUsados,
+            terminado: progreso.terminado,
+            adivino: progreso.terminado ? Boolean(progreso.adivino) : false
+        };
+        if (Array.isArray(progreso.pistasReveladas)) {
+            limpio.pistasReveladas = progreso.pistasReveladas
+                .filter((nombre) => typeof nombre === 'string')
+                .slice(0, 5)
+                .map((nombre) => nombre.slice(0, 64));
         }
         return limpio;
     }
@@ -593,7 +619,8 @@ app.get('/jugadores', async function(req,res){
     res.send(respuesta);
 })
 
-// Busca fotos y escudos desde el backend para evitar depender del acceso del navegador a TheSportsDB.
+// Busca fotos y escudos desde el backend para mantener la API fuera del navegador y
+// compartir una caché entre partidas; TheSportsDB documenta `123` como clave gratuita.
 app.get('/imagen', async function(req, res) {
     const tipo = req.query.tipo;
     const nombre = String(req.query.nombre || '').trim();
@@ -602,41 +629,70 @@ app.get('/imagen', async function(req, res) {
     }
 
     const clave = `${tipo}:${normalizarClaveImagen(nombre)}`;
-    if (cacheImagenesExternas.has(clave)) {
-        return res.json({ imagen: cacheImagenesExternas.get(clave) });
+    const cacheGuardada = cacheImagenesExternas.get(clave);
+    if (cacheGuardada && cacheGuardada.expiraEn > Date.now()) {
+        return res.json({ imagen: cacheGuardada.imagen });
     }
+    // Una entrada expirada se elimina para que la nueva respuesta reemplace al dato viejo.
+    if (cacheGuardada) cacheImagenesExternas.delete(clave);
+    // Si otro navegador ya está buscando el mismo nombre, espera ese único pedido HTTP.
+    if (consultasImagenesExternas.has(clave)) {
+        const imagenCompartida = await consultasImagenesExternas.get(clave);
+        return res.json({ imagen: imagenCompartida });
+    }
+
+    // Guarda URL o resultado vacío con duraciones distintas según sea recuperable.
+    const guardarImagenEnCache = (imagen) => {
+        const duracion = imagen ? duracionCacheImagenOk : duracionCacheImagenVacia;
+        cacheImagenesExternas.set(clave, { imagen, expiraEn: Date.now() + duracion });
+    };
 
     const parametro = tipo === 'jugador' ? 'p' : 't';
     const listaResultados = tipo === 'jugador' ? 'player' : 'teams';
-    const campoNombre = tipo === 'jugador' ? 'strPlayer' : 'strTeam';
+    // Prioriza el recorte del jugador y el escudo del club; el logo sirve de respaldo.
     const camposImagen = tipo === 'jugador'
-        ? ['strCutout', 'strThumb']
-        : ['strBadge', 'strThumb'];
-    const url = `https://www.thesportsdb.com/api/v1/json/3/search${tipo === 'jugador' ? 'players' : 'teams'}.php?${parametro}=${encodeURIComponent(nombre)}`;
+        ? ['strCutout', 'strThumb', 'strRender']
+        : ['strBadge', 'strLogo', 'strThumb'];
+    const url = `https://www.thesportsdb.com/api/v1/json/${encodeURIComponent(claveApiTheSportsDb)}/search${tipo === 'jugador' ? 'players' : 'teams'}.php?${parametro}=${encodeURIComponent(nombre)}`;
 
     const controlador = new AbortController();
     const timeout = setTimeout(() => controlador.abort(), 8000);
-    try {
+    // Registra la búsqueda antes del fetch para que solicitudes simultáneas compartan la promesa.
+    const consultaCompartida = (async () => {
+      try {
         const respuestaExterna = await fetch(url, { signal: controlador.signal });
-        if (!respuestaExterna.ok) {
-            cacheImagenesExternas.set(clave, '');
-            return res.json({ imagen: '' });
-        }
+        if (!respuestaExterna.ok) return '';
 
         const datos = await respuestaExterna.json();
         const resultados = Array.isArray(datos?.[listaResultados]) ? datos[listaResultados] : [];
         const nombreNormalizado = normalizarClaveImagen(nombre);
+        // Se exige coincidencia exacta con nombre principal o alternativo para no
+        // mostrar por error la foto de otro jugador con un nombre parecido.
+        const camposNombre = tipo === 'jugador'
+            ? ['strPlayer', 'strPlayerAlternate']
+            : ['strTeam', 'strTeamShort', 'strTeamAlternate'];
         const coincidencia = resultados.find((item) =>
-            normalizarClaveImagen(item?.[campoNombre]) === nombreNormalizado
-        ) || (resultados.length === 1 ? resultados[0] : null);
-        const imagen = coincidencia
+            camposNombre.some((campo) => String(item?.[campo] || '')
+                .split(/[,;|]/)
+                .some((alternativo) => normalizarClaveImagen(alternativo) === nombreNormalizado))
+        );
+        return coincidencia
             ? camposImagen.map((campo) => coincidencia[campo]).find(Boolean) || ''
             : '';
-
-        cacheImagenesExternas.set(clave, imagen);
+      } catch (error) {
+        return '';
+      } finally {
+        clearTimeout(timeout);
+        consultasImagenesExternas.delete(clave);
+      }
+    })();
+    consultasImagenesExternas.set(clave, consultaCompartida);
+    try {
+        const imagen = await consultaCompartida;
+        guardarImagenEnCache(imagen);
         return res.json({ imagen });
     } catch (error) {
-        cacheImagenesExternas.set(clave, '');
+        guardarImagenEnCache('');
         return res.json({ imagen: '' });
     } finally {
         clearTimeout(timeout);

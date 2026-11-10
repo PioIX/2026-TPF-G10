@@ -3125,3 +3125,40 @@ button.menuAccion {
     height: 100%;
     object-fit: cover;
 }
+/* Contenedor común para fotos y escudos, también cuando la API no devuelve imagen. */
+.imagenDeportiva {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  vertical-align: middle;
+}
+
+/* Marcador visual que mantiene el espacio ocupado si falta la imagen. */
+.imagenDeportivaVacia {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  font-size: 1.35rem;
+  opacity: 0.75;
+}
+
+/* Centra la foto revelada al finalizar juegos como Wordle. */
+.imagenResultadoJuego {
+  display: flex;
+  margin: 0 auto 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+}
+
+/* Apila imagen y nombre dentro de cada tarjeta del árbol de Link. */
+.link-jugador-objetivo,
+.link-tarjeta-pista {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
