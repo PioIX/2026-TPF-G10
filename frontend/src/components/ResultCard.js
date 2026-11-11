@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Button from "./Button";
-import { LOGROS } from "../utils/logros";
+import { LOGROS, obtenerClaveLogros } from "../utils/logros";
 
 // Resultado compartido al terminar una partida, con acciones para volver a jugar o al menú.
 export default function ResultCard({ gano, titulo, detalle, onReiniciar, className = "", juego = "partida" }) {
@@ -13,7 +13,10 @@ export default function ResultCard({ gano, titulo, detalle, onReiniciar, classNa
   useEffect(() => {
     if (resultadoContado.current) return;
     resultadoContado.current = true;
-    const clave = "fulboLogros";
+    // Usa el ID de la cuenta para que los resultados no se mezclen entre perfiles.
+    const idUsuario = window.localStorage.getItem("usuarioId");
+    if (!idUsuario) return;
+    const clave = obtenerClaveLogros(idUsuario);
     const guardado = JSON.parse(window.localStorage.getItem(clave) || "{}");
     const partidas = Number(guardado.partidas || 0) + 1;
     const victorias = Number(guardado.victorias || 0) + (gano ? 1 : 0);
@@ -27,9 +30,13 @@ export default function ResultCard({ gano, titulo, detalle, onReiniciar, classNa
     const condiciones = {
       "primera-partida": partidas >= 1,
       "primera-victoria": victorias >= 1,
+      "cinco-partidas": partidas >= 5,
+      "diez-partidas": partidas >= 10,
       "cinco-victorias": victorias >= 5,
+      "diez-victorias": victorias >= 10,
       "tres-juegos": juegosGanados.length >= 3,
       "racha-tres": rachaVictorias >= 3,
+      "racha-cinco": rachaVictorias >= 5,
       coleccionista: juegosJugados.length >= 5,
     };
     const nuevos = LOGROS.filter((logro) => condiciones[logro.id] && !yaDesbloqueados.includes(logro.id));
