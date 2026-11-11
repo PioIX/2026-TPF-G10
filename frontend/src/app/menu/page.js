@@ -15,7 +15,7 @@ const juegos = [
   { titulo: "Grid", imagen: "/grid.png", href: "/grid", detalle: "Encontrá jugadores para cada cruce", estilo: "grid" },
   { titulo: "Adivina el jugador", imagen: "/adivinaeljugador.png", href: "/adivinaeljugador", detalle: "Adivina al jugador oculto", estilo: "adivina" },
   { titulo: "Link", imagen: "/link.png", href: "/link", detalle: "Descubrí al jugador oculto", estilo: "link" },
-  { titulo: "¿Quién tiene más?", imagen: "/grid.png", href: "/quienmas", detalle: "Compará goles, asistencias y títulos", estilo: "quienmas" },
+  { titulo: "¿Quién tiene más?", imagen: "/quientienemas.png", href: "/quienmas", detalle: "Compará goles, asistencias y títulos", estilo: "quienmas" },
 ];
 
 // El desafío diario cambia de juego según la fecha, para que todas las personas vean la misma propuesta ese día.
