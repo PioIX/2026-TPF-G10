@@ -11,3 +11,8 @@ export const LOGROS = [
   { id: "racha-cinco", nombre: "Leyenda del torneo", descripcion: "Ganaste cinco partidas seguidas." },
   { id: "coleccionista", nombre: "Coleccionista", descripcion: "Probaste cinco juegos diferentes." },
 ];
+
+// Cada cuenta guarda su progreso con una clave distinta en este navegador.
+export function obtenerClaveLogros(idUsuario) {
+  return `fulboLogros:${idUsuario}`;
+}

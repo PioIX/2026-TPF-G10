@@ -1,15 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LOGROS } from "../utils/logros";
+import { LOGROS, obtenerClaveLogros } from "../utils/logros";
 
 // Panel del menú: muestra toda la lista de logros y marca cuáles ya desbloqueó el jugador.
 export default function LogrosPanel() {
   const [desbloqueados, setDesbloqueados] = useState([]);
 
-  // Lee los IDs guardados por ResultCard al terminar partidas en este navegador.
+  // Lee solo los logros del usuario conectado para no mostrar los de otra cuenta.
   useEffect(() => {
-    const datos = JSON.parse(window.localStorage.getItem("fulboLogros") || "{}");
+    const idUsuario = window.localStorage.getItem("usuarioId");
+    if (!idUsuario) {
+      setDesbloqueados([]);
+      return;
+    }
+
+    // Ignora la antigua clave compartida: no podemos saber a qué cuenta pertenecía.
+    const clave = obtenerClaveLogros(idUsuario);
+    const datos = JSON.parse(window.localStorage.getItem(clave) || "{}");
     setDesbloqueados(Array.isArray(datos.logros) ? datos.logros : []);
   }, []);
 

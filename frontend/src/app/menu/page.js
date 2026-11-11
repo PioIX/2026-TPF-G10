@@ -14,7 +14,7 @@ const juegos = [
   { titulo: "Wordle", imagen: "/wordle.png", href: "/wordle", detalle: "Descifrá el jugador", estilo: "wordle" },
   { titulo: "Grid", imagen: "/grid.png", href: "/grid", detalle: "Encontrá jugadores para cada cruce", estilo: "grid" },
   { titulo: "Adivina el jugador", imagen: "/adivinaeljugador.png", href: "/adivinaeljugador", detalle: "Adivina al jugador oculto", estilo: "adivina" },
-  {titulo: "Link", imagen: "/link.png", href: "/link", detalle: "Descubrí al jugador oculto"},
+  { titulo: "Link", imagen: "/link.png", href: "/link", detalle: "Descubrí al jugador oculto", estilo: "link" },
   { titulo: "¿Quién tiene más?", imagen: "/grid.png", href: "/quienmas", detalle: "Compará goles, asistencias y títulos", estilo: "quienmas" },
 ];
 
