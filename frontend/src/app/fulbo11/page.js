@@ -401,6 +401,7 @@ useRegistrarResultado("futbol11", terminoLaPartida, true);
       />
       {terminoLaPartida && (
         <ResultCard
+          juego="futbol11"
           gano
           titulo="¡Formación completa!"
           detalle="Completaste las once posiciones."

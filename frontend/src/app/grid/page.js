@@ -460,6 +460,7 @@ useRegistrarResultado("grid", terminoLaPartida, true, celdasCompletadas);
         )}
         {terminoLaPartida && (
           <ResultCard
+            juego="grid"
             gano
             titulo="¡Grid completo!"
             detalle="Resolviste los nueve cruces."

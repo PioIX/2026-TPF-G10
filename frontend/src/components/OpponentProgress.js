@@ -8,6 +8,7 @@ const DETALLES_PROGRESO = {
   futbol11: { campo: "jugadoresColocados", maximo: 11, unidad: "posiciones" },
   grid: { campo: "celdasCompletadas", maximo: 9, unidad: "celdas" },
   link: { campo: "intentosUsados", maximo: 6, unidad: "intentos" },
+  quienmas: { campo: "comparaciones", maximo: 5, unidad: "comparaciones" },
 };
 
 // GameLobby le pasa el último objeto recibido por opponentProgress. Es una foto del estado más
@@ -28,6 +29,7 @@ export default function OpponentProgress({ game, player, expanded = false, onClo
     if (game === "wordle") estado = progreso.gano ? "Terminó: acertó" : "Terminó los intentos";
     else if (game === "adivinaeljugador") estado = progreso.adivino ? "Terminó: adivinó" : "Terminó sin adivinar";
     else if (game === "link") estado = progreso.adivino ? "Terminó: encontró al objetivo" : "Terminó sin encontrarlo";
+    else if (game === "quienmas") estado = `Terminó: ${progreso.puntaje} de 5 aciertos`;
     else estado = "Partida terminada";
   } else if (progreso) {
     estado = `${cantidad} de ${definicion.maximo} ${definicion.unidad}`;
@@ -100,6 +102,14 @@ export default function OpponentProgress({ game, player, expanded = false, onClo
           {Array.isArray(progreso.pistasReveladas) && progreso.pistasReveladas.length > 0
             ? <ul>{progreso.pistasReveladas.map((nombre, indice) => <li key={indice}>{nombre}</li>)}</ul>
             : <p>Todavía no hay pistas reveladas.</p>}
+        </div>
+      )}
+
+      {/* En Quién tiene más se muestra cuántas comparaciones respondió el rival y su puntaje. */}
+      {progreso && game === "quienmas" && (
+        <div className="historialRival">
+          <p>Comparaciones respondidas: {progreso.comparaciones} de 5</p>
+          <p>Aciertos: {progreso.puntaje}</p>
         </div>
       )}
 

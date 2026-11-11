@@ -1,27 +1,29 @@
-// Protección visual reutilizable: espera al navegador y redirige si no hay usuario en localStorage.
-// localStorage pertenece al navegador; el backend sigue validando las acciones protegidas.
-// Se aplica al menú para evitar mostrar el chat global antes del inicio de sesión.
+// Protección de rutas privadas: no muestra el contenido y redirige al login cuando no hay sesión local.
 "use client";
-// Comprueba la sesión local y redirige al login si no hay usuario.
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-// Envolver una ruta con este componente evita mostrarla antes de revisar el estado local.
+// Al envolver una página privada, este componente vuelve a revisar el acceso al cambiar la sesión.
 export default function AuthGuard({ children }) {
   const router = useRouter();
   const [listo, setListo] = useState(false);
 
   useEffect(() => {
-    // localStorage es una API del navegador, por eso se lee dentro de useEffect y no durante SSR.
-    const usuarioId = Number(localStorage.getItem("usuarioId"));
-    // Solo considera sesión válida el ID numérico que devuelve el backend al iniciar sesión.
-    if (Number.isSafeInteger(usuarioId) && usuarioId > 0) {
-      // El chequeo ocurre luego del montaje para evitar leer localStorage en SSR.
-      const temporizador = window.setTimeout(() => setListo(true), 0);
-      return () => window.clearTimeout(temporizador);
-    }
+    // Verifica el ID en el navegador y oculta la ruta si el usuario cerró sesión en esta pestaña o en otra.
+    const revisarSesion = () => {
+      const usuarioId = Number(window.localStorage.getItem("usuarioId"));
+      const sesionValida = Number.isSafeInteger(usuarioId) && usuarioId > 0;
+      setListo(sesionValida);
+      if (!sesionValida) router.replace("/login");
+    };
 
-    router.replace("/login");
+    revisarSesion();
+    window.addEventListener("storage", revisarSesion);
+    window.addEventListener("sesionActualizada", revisarSesion);
+    return () => {
+      window.removeEventListener("storage", revisarSesion);
+      window.removeEventListener("sesionActualizada", revisarSesion);
+    };
   }, [router]);
 
   return listo ? children : null;

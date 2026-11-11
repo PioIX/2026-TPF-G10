@@ -44,6 +44,7 @@ export default function LoginPage() {
   const guardarUsuarioLocal = (usuario) => {
     localStorage.setItem("usuarioId", usuario.id);
     localStorage.setItem("usuarioNombre", usuario.name);
+    window.dispatchEvent(new Event("sesionActualizada"));
   };
 
   // Cambia el formulario visible y borra el mensaje de la operación anterior.

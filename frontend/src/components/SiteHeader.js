@@ -11,12 +11,17 @@ const RUTAS_DE_JUEGO = [
   "/fulbo11",
   "/adivinaeljugador",
   "/link",
+  "/quienmas",
 ];
 // Avisa a React cuando cambia el localStorage desde otra pestaña.
 // Escucha cambios de sesión entre pestañas y permite actualizar el encabezado al cerrar sesión.
 function suscribirSesion(avisar) {
   window.addEventListener("storage", avisar);
-  return () => window.removeEventListener("storage", avisar);
+  window.addEventListener("sesionActualizada", avisar);
+  return () => {
+    window.removeEventListener("storage", avisar);
+    window.removeEventListener("sesionActualizada", avisar);
+  };
 }
 // En el navegador: solo hay sesión si quedó un ID numérico válido del backend.
 // Consulta localStorage únicamente en el navegador para saber si hay una cuenta guardada.

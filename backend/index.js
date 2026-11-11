@@ -95,7 +95,8 @@ const juegosDisponibles = new Set([
     'adivinaeljugador',
     'futbol11',
     'grid',
-    'link'
+    'link',
+    'quienmas'
 ]);
 const alfabetoCodigos = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const maximoJugadoresPorSala = 2;
@@ -154,6 +155,7 @@ function retirarDeSala(socket, motivo) {
     // La sala identifica a cada integrante por la conexión Socket.IO abierta en ese navegador.
     const indice = sala.jugadores.findIndex((jugador) => jugador.socketId === socket.id);
     const jugador = indice === -1 ? null : sala.jugadores.splice(indice, 1)[0];
+    sala.revancha?.delete(socket.id); // Una salida invalida cualquier solicitud de revancha de esa conexión.
     socket.leave(sala.codigo); // Lo quita del grupo Socket.IO; también lo quitamos de sala.jugadores arriba.
 
     if (sala.jugadores.length === 0) {
@@ -189,6 +191,8 @@ function retirarDeSala(socket, motivo) {
  * - adivinaeljugador: preguntas/fin/resultado, pista y respuestas filtradas (no el nombre acertado).
  * - futbol11: cantidad/fin, formación visible y país actual.
  * - grid: cantidad/puntaje/fin, encabezados y celdas ya reveladas.
+ * - link: intentos y pistas de compañeros reveladas; no incluye al jugador objetivo.
+ * - quienmas: comparaciones/puntaje/fin; no incluye los valores comparados.
  *
  * Esto valida estructura y límites para la interfaz; no vuelve autoritativo al backend:
  * el servidor no ejecuta las reglas ni comprueba si una respuesta del cliente es verdadera.
@@ -306,6 +310,16 @@ function limpiarProgreso(juego, progreso) {
         return limpio;
     }
 
+    // Quién tiene más: comparte preguntas resueltas y puntos, no los valores de cada jugador.
+    if (juego === 'quienmas' && estaEnRango(progreso.comparaciones, 0, 5) && estaEnRango(progreso.puntaje, 0, 5) && typeof progreso.terminado === 'boolean') {
+        return {
+            comparaciones: progreso.comparaciones,
+            puntaje: progreso.puntaje,
+            terminado: progreso.terminado,
+            gano: progreso.terminado ? Boolean(progreso.gano) : false
+        };
+    }
+
     return null;
 }
 
@@ -352,6 +366,7 @@ io.on('connection', (socket) => {
           codigo,
           juego: data.game,
           estado: 'esperando',
+          revancha: new Set(), // Guarda qué conexiones pidieron revancha en esta partida.
           jugadores: [{
               posicion: 1,
               socketId: socket.id,
@@ -400,6 +415,7 @@ io.on('connection', (socket) => {
           anfitrion: false
       });
       sala.estado = 'jugando';
+      sala.revancha.clear(); // Una sala recién iniciada no conserva solicitudes anteriores.
       socket.data.room = codigo; // El backend mantiene esta relación; el cliente no manda room en sendProgress.
       socket.join(codigo); // El invitado entra al grupo antes de emitir roomMatched.
       emitirEstadoSala(sala);
@@ -413,6 +429,21 @@ io.on('connection', (socket) => {
       const room = socket.data.room || null;
       retirarDeSala(socket, 'salida');
       return confirmar({ ok: true, room }); // Solo informa a quien pidió salir; roomPlayerLeft avisa al rival.
+  });
+
+  // Evento requestRematch: reinicia el minijuego únicamente cuando ambos jugadores lo solicitan.
+  socket.on('requestRematch', () => {
+      const sala = salas.get(socket.data.room);
+      if (!sala || sala.estado !== 'jugando' || !sala.jugadores.some((jugador) => jugador.socketId === socket.id)) return;
+
+      sala.revancha.add(socket.id);
+      if (sala.revancha.size === sala.jugadores.length) {
+          sala.revancha.clear();
+          io.to(sala.codigo).emit('roomRematch'); // Ambos clientes incrementan la clave y remontan el juego.
+          return;
+      }
+
+      socket.to(sala.codigo).emit('roomRematchStatus', { esperando: true }); // El rival ve la solicitud pendiente.
   });
 
   // Evento entrante: sendProgress { progress }.

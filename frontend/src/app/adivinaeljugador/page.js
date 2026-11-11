@@ -616,6 +616,7 @@ function AdivinaElJugadorGame() {
 
         {terminoLaPartida && (
           <ResultCard
+            juego="adivinaeljugador"
             gano={adivino}
             titulo={adivino ? "¡Jugador encontrado!" : "Se terminaron las preguntas"}
             detalle={`El jugador era ${jugadorSecreto?.nombre || "desconocido"}.`}

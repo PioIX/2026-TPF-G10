@@ -7,6 +7,8 @@ import GoalCelebration from "../../components/GoalCelebration";
 import { BACKEND_URL } from "../../config/backend";
 import { comentarioFutbolero } from "../../utils/comentariosFutboleros";
 import SportsImage from "../../components/SportsImage";
+import ResultCard from "../../components/ResultCard";
+import useRegistrarResultado from "../../hooks/useRegistrarResultado";
 
 // Dirección base de las consultas HTTP de este juego.
 const API_URL = BACKEND_URL;
@@ -89,6 +91,9 @@ function LinkGame() {
   const [estadoPartida, setEstadoPartida] = useState("jugando");
   const [inputAdivinar, setInputAdivinar] = useState("");
   const [mensaje, setMensaje] = useState(`Adiviná el objetivo. Tenés ${MAX_INTENTOS} intentos totales.`);
+
+  // Registra el resultado de Link y habilita el mismo sistema de logros que los demás juegos.
+  useRegistrarResultado("link", estadoPartida !== "jugando", estadoPartida === "ganado", MAX_INTENTOS - intentosFallidos);
 
   const prepararPartida = useCallback((datos) => {
     const jugadoresMap = new Map();
@@ -300,6 +305,16 @@ function LinkGame() {
             <button className="botonAyudaJuego" type="button" onClick={mostrarOtraPista}>
               Mostrar otra pista sin gastar un intento
             </button>
+          )}
+          {estadoPartida !== "jugando" && (
+            <ResultCard
+              juego="link"
+              gano={estadoPartida === "ganado"}
+              titulo={estadoPartida === "ganado" ? "¡Objetivo encontrado!" : "Se terminaron los intentos"}
+              detalle={mensaje}
+              onReiniciar={cargarJugadores}
+              className="resultadoPartida"
+            />
           )}
         </div>
       </main>

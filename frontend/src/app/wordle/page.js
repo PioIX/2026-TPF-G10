@@ -304,6 +304,7 @@ function WordleGame() {
         <Keyboard onTecla={manejarTecla} usadas={usadas} />
         {juegoTerminado && (
           <ResultCard
+            juego="wordle"
             gano={gano}
             titulo={gano ? "¡Ganaste!" : "Se terminaron los intentos"}
             detalle={mensaje}
