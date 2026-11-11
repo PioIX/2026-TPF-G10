@@ -954,6 +954,62 @@ app.post('/partidas', async function(req, res) {
 });
 
 // Perfil de un usuario: GET /perfil?id=3 -> { id, name, partidasJugadas, victorias }.
+// Los logros se calculan desde el historial existente, por lo que no requieren otra tabla.
+app.get('/logros', async function(req, res) {
+    try {
+        const id = Number(req.query.id);
+        if (!Number.isSafeInteger(id) || id < 1) {
+            return res.status(400).json({ error: 'El ID de usuario no es válido.' });
+        }
+
+        const resultados = await realizarQuery(
+            `SELECT Partida.juego, UsuariosXPartida.gano
+             FROM UsuariosXPartida
+             INNER JOIN Partida ON Partida.id_partida = UsuariosXPartida.id_partida
+             WHERE UsuariosXPartida.id_usuario = ?
+             ORDER BY Partida.id_partida`,
+            [id]
+        );
+        if (resultados.length === 0) {
+            const usuarios = await realizarQuery('SELECT id_usuario FROM Usuarios WHERE id_usuario = ?', [id]);
+            if (usuarios.length === 0) return res.status(404).json({ error: 'No encontramos ese usuario.' });
+        }
+
+        const juegosJugados = new Set();
+        const juegosGanados = new Set();
+        let victorias = 0;
+        let racha = 0;
+        const logros = new Set();
+        resultados.forEach((resultado, indice) => {
+            const gano = Number(resultado.gano) === 1;
+            juegosJugados.add(resultado.juego);
+            if (gano) {
+                victorias += 1;
+                racha += 1;
+                juegosGanados.add(resultado.juego);
+            } else {
+                racha = 0;
+            }
+            const partidas = indice + 1;
+            if (partidas >= 1) logros.add('primera-partida');
+            if (victorias >= 1) logros.add('primera-victoria');
+            if (partidas >= 5) logros.add('cinco-partidas');
+            if (partidas >= 10) logros.add('diez-partidas');
+            if (victorias >= 5) logros.add('cinco-victorias');
+            if (victorias >= 10) logros.add('diez-victorias');
+            if (juegosGanados.size >= 3) logros.add('tres-juegos');
+            if (racha >= 3) logros.add('racha-tres');
+            if (racha >= 5) logros.add('racha-cinco');
+            if (juegosJugados.size >= 5) logros.add('coleccionista');
+        });
+
+        return res.json({ logros: [...logros] });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: 'Error al obtener los logros.' });
+    }
+});
+
 app.get('/perfil', async function(req, res) {
     try {
         const id = Number(req.query.id);

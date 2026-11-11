@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LOGROS, obtenerClaveLogros } from "../utils/logros";
+import { LOGROS } from "../utils/logros";
+import { BACKEND_URL } from "../config/backend";
 
 // Panel del menú: muestra toda la lista de logros y marca cuáles ya desbloqueó el jugador.
 export default function LogrosPanel() {
@@ -15,10 +16,17 @@ export default function LogrosPanel() {
       return;
     }
 
-    // Ignora la antigua clave compartida: no podemos saber a qué cuenta pertenecía.
-    const clave = obtenerClaveLogros(idUsuario);
-    const datos = JSON.parse(window.localStorage.getItem(clave) || "{}");
-    setDesbloqueados(Array.isArray(datos.logros) ? datos.logros : []);
+    const controlador = new AbortController();
+    fetch(`${BACKEND_URL}/logros?id=${encodeURIComponent(idUsuario)}`, { signal: controlador.signal })
+      .then(async (respuesta) => {
+        const datos = await respuesta.json();
+        if (!respuesta.ok) throw new Error(datos.error || "No se pudieron cargar los logros.");
+        setDesbloqueados(Array.isArray(datos.logros) ? datos.logros : []);
+      })
+      .catch((error) => {
+        if (error.name !== "AbortError") console.error("No se pudieron cargar los logros:", error);
+      });
+    return () => controlador.abort();
   }, []);
 
   const cantidadDesbloqueados = LOGROS.filter((logro) => desbloqueados.includes(logro.id)).length;
