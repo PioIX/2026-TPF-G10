@@ -13,6 +13,7 @@ export default function Pitch({
 }) {
   return (
     <div className="cancha">
+      {/* El primer map crea las cuatro líneas; el segundo distribuye en cada línea los puestos que le pertenecen. */}
       {["delanteros", "mediocampistas", "defensas", "arquero"].map((grupo) => (
         <div key={grupo} className={`fila ${grupo}`} id={grupo}>
           {posiciones.map((posicion, indice) => {

@@ -18,6 +18,7 @@ export default function CellSearchPanel({
 
   // Envía la respuesta al juego y limpia el campo tras la confirmación.
   const probar = () => {
+    // onProbar es la función que recibió del padre GridPage, donde está la validación real.
     if (txt.trim() && !deshabilitado) onProbar(txt.trim());
   };
 

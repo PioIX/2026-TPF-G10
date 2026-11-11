@@ -1,4 +1,7 @@
 /* src/app/globals.css */
+/* Hoja compartida por todas las rutas. Las clases de cada minijuego están agrupadas
+   por secciones; si una misma clase se redefine más abajo, la cascada de CSS decide
+   cuál regla gana según especificidad y orden. */
 /* Variables compartidas por los estilos de cada ruta: fondos, texto y color de acción. */
 :root {
     --color-fondo-claro: #2e7d32;

@@ -96,6 +96,8 @@ function mezclarArray(array, aleatorio) {
 // Crea un índice jugador -> clubes. Set guarda clubes únicos; es una colección nativa de JS.
 function crearEquiposJugador(trayectorias) {
   const equiposJugador = {};
+  // Cada fila del arreglo es una relación Jugador-Equipo. forEach visita una fila;
+  // cada Set evita repetir un club si la trayectoria vino duplicada desde la base.
   trayectorias.forEach(({ id_jugador, id_equipo }) => {
     if (!equiposJugador[id_jugador]) equiposJugador[id_jugador] = new Set();
     equiposJugador[id_jugador].add(id_equipo);
@@ -106,6 +108,8 @@ function crearEquiposJugador(trayectorias) {
 // Crea un índice país-club -> jugadores; así se consulta una celda sin volver a recorrer toda la lista.
 function crearConexiones(jugadores, equiposJugador) {
   const conexiones = {};
+  // Recorre cada jugador y agrega una ficha simplificada a la lista de cada cruce país-club.
+  // Ejemplo: "argentina_4" reúne argentinos que pasaron por el club con ID 4.
   jugadores.forEach((j) => {
     const equipos = equiposJugador[j.id_jugador];
     if (!equipos) return;
@@ -127,6 +131,8 @@ function crearConexiones(jugadores, equiposJugador) {
 // Unifica países ignorando mayúsculas o tildes y elige una escritura estable para ambos clientes.
 function obtenerPaises(jugadores) {
   const paisesPorClave = new Map();
+  // Map asocia el nombre normalizado (clave) a una versión legible del país (valor).
+  // Variantes como "Argentina" y "ARGENTINA" quedan representadas por un único valor.
   jugadores.forEach((j) => {
     const normalizado = normalizarTexto(j.pais);
     if (!j.pais || !normalizado) return;
@@ -137,6 +143,7 @@ function obtenerPaises(jugadores) {
       paisesPorClave.set(normalizado, nombre);
     }
   });
+  // values() extrae las formas elegidas; map las adapta al objeto { nombre } que espera la grilla.
   return Array.from(paisesPorClave.values()).map((nombre) => ({ nombre }));
 }
 
@@ -148,6 +155,7 @@ function obtenerJugadoresCelda(pais, equipo, conexiones) {
 // Crea el objeto de respuestas válidas para las nueve celdas.
 function crearDatosGrilla(paises, equipos, conexiones) {
   const jugadoresPorCelda = {};
+  // Los bucles visitan cada combinación fila-columna: 3 x 3 = 9 claves r0_c0 ... r2_c2.
   for (let f = 0; f < 3; f++) {
     for (let c = 0; c < 3; c++) {
       jugadoresPorCelda[`r${f}_c${c}`] = obtenerJugadoresCelda(
@@ -197,12 +205,14 @@ function buscarGrilla(paises, equipos, conexiones, semilla) {
               (pais) => obtenerJugadoresCelda(pais, equipo, conexiones)
             ),
           }))
+          // filter conserva solo clubes con suficientes respuestas en todas las filas elegidas.
           .filter(({ jugadoresPorFila }) =>
             jugadoresPorFila.every((lista) => lista.length >= minimoRespuestas)
           )
           .map((conexion) => ({
             equipo: conexion.equipo,
             minimo: Math.min(...conexion.jugadoresPorFila.map((lista) => lista.length)),
+            // reduce suma cuántas respuestas válidas tiene este club entre las filas elegidas.
             total: conexion.jugadoresPorFila.reduce((suma, lista) => suma + lista.length, 0),
           }))
           .sort((a, b) => b.minimo - a.minimo || b.total - a.total);
@@ -222,6 +232,7 @@ function buscarGrilla(paises, equipos, conexiones, semilla) {
         while (filasFinales.length < 3) filasFinales.push(filasFinales[0]);
         while (columnasFinales.length < 3) columnasFinales.push(columnasElegidas[0]);
 
+        // flatMap convierte el conteo de cada fila en una sola lista de 9 cantidades.
         const cantidades = filasFinales.flatMap((pais) =>
           columnasFinales.map(
             (equipo) => obtenerJugadoresCelda(pais, equipo, conexiones).length
@@ -284,6 +295,7 @@ function GridGame() {
       setGrilla(null);
 
       const res = await fetch(`${BACKEND}/grid`);
+      // /grid devuelve un objeto { equipos, jugadores, trayectorias }, no un arreglo de jugadores.
       const datos = await res.json();
 
       const equipos = Array.isArray(datos.equipos) ? datos.equipos : [];
@@ -310,6 +322,7 @@ function GridGame() {
         Array.from(nombresJugadores.values()).sort((a, b) => a.localeCompare(b, "es"))
       );
 
+      // Primero se arma el índice jugador->clubes; luego se cruza con país para cada respuesta.
       const conexiones = crearConexiones(
         jugadores,
         crearEquiposJugador(trayectorias)
@@ -369,6 +382,7 @@ function GridGame() {
       setRespuestaFeed(`${comentarioFutbolero("acierto")} Correcto.`);
 
       // Guardamos primero el apellido para mostrarlo inmediatamente
+      // Actualización inmutable: copia el objeto anterior y añade la respuesta de una celda.
       setCeldasReveladas((prev) => ({
         ...prev,
         [clave]: { nombre: encontrado.nombre, apellido: encontrado.apellido },
@@ -403,6 +417,7 @@ function GridGame() {
       terminado: terminoLaPartida,
       filas: grilla ? grilla.filas.map((fila) => fila.nombre) : [],
       columnas: grilla ? grilla.columnas.map((columna) => columna.nombre) : [],
+      // El snapshot online usa claves como r0_c0; fromEntries convierte pares en un objeto JSON.
       celdasReveladas: Object.fromEntries(
         Object.keys(celdasReveladas).map((clave) => [clave, "✓"])
       ),

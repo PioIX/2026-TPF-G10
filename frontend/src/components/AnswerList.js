@@ -11,6 +11,7 @@ export default function AnswerList({
   return (
     <div id={id} className={className}>
       {respuestas.length === 0 && <p className="vacio">Todavía no hiciste ninguna pregunta.</p>}
+      {/* slice(0, 10) toma como máximo diez elementos; map dibuja un bloque por respuesta. */}
       {respuestas.slice(0, 10).map((t, i) => (
         <div key={i} className={`respuesta ${t.startsWith("🏁") ? "marcada" : ""}`}>{t}</div>
       ))}

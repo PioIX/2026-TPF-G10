@@ -1,4 +1,7 @@
-// src/app/layout.jsx
+// Marco común de toda la aplicación. El árbol de navegación principal es:
+// / (portada) -> /login -> /menu -> uno de los seis juegos o /perfil.
+// /menu y /perfil usan AuthGuard; cada ruta de juego usa GameLobby para elegir
+// modo solo/online y montar la lógica específica del minijuego. /admin es la página de carga.
 import './global.css';
 import SiteHeader from '../components/SiteHeader';
 import Footer from '../components/Footer';

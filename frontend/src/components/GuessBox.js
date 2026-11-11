@@ -6,6 +6,7 @@ import Button from "./Button";
 export default function GuessBox({ opciones, valor, onCambio, onAdivinar, deshabilitado }) {
   // Usa la misma acción de confirmación cuando se pulsa el botón o la tecla Enter.
   const enviar = () => {
+    // trim quita espacios en los extremos; el padre recibe el valor limpio para validarlo.
     if (valor?.trim() && !deshabilitado) onAdivinar(valor.trim());
   };
 

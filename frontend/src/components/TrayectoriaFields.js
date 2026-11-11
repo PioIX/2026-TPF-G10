@@ -7,6 +7,7 @@ export default function TrayectoriaFields({ value = [], onChange }) {
   const filas = value;
 
   const actualizarFila = (index, campo, valor) => {
+    // map crea un arreglo nuevo: cambia la fila elegida y copia intactas las demás.
     onChange?.(filas.map((fila, i) => (i === index ? { ...fila, [campo]: valor } : fila)));
   };
 
@@ -34,6 +35,7 @@ export default function TrayectoriaFields({ value = [], onChange }) {
               value={fila.anio_traspaso}
               onChange={(e) => actualizarFila(index, "anio_traspaso", e.target.value)}
             />
+            {/* filter crea una lista sin la trayectoria seleccionada para quitar. */}
             {filas.length > 1 && (
               <Button
                 type="button"
@@ -48,6 +50,7 @@ export default function TrayectoriaFields({ value = [], onChange }) {
           </div>
         ))}
       </div>
+      {/* Spread copia las filas actuales y agrega al final una fila nueva vacía. */}
       <Button
         type="button"
         variant="ghost"

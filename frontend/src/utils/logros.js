@@ -12,7 +12,8 @@ export const LOGROS = [
   { id: "coleccionista", nombre: "Coleccionista", descripcion: "Probaste cinco juegos diferentes." },
 ];
 
-// Cada cuenta guarda su progreso con una clave distinta en este navegador.
+// ResultCard usa esta clave solo para mostrar avisos locales al terminar; el progreso del panel
+// permanente se reconstruye en el backend desde Partida y UsuariosXPartida vía GET /logros.
 export function obtenerClaveLogros(idUsuario) {
   return `fulboLogros:${idUsuario}`;
 }

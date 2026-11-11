@@ -30,6 +30,8 @@ export default function Form({ onSubmit, children, className = "form", ...rest }
       {...rest}
       onSubmit={(e) => {
         e.preventDefault();
+        // FormData lee los campos por su atributo name; fromEntries los convierte en { nombre: valor }.
+        // El segundo argumento permite que el padre llame reset() tras guardar con éxito.
         onSubmit?.(Object.fromEntries(new FormData(e.currentTarget)), e.currentTarget);
       }}
     >

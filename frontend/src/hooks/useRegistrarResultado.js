@@ -17,10 +17,14 @@ export default function useRegistrarResultado(juego, terminado, gano, puntaje = 
     const idUsuario = Number(window.localStorage.getItem("usuarioId"));
     if (!idUsuario) return;
 
+    // El POST crea una fila en Partida y su vínculo/resultado en UsuariosXPartida.
+    // juego identifica el minijuego; gano y puntaje describen el resultado de esta cuenta.
     fetch(`${BACKEND_URL}/partidas`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id_usuario: idUsuario, juego, gano: Boolean(gano), puntaje }),
-    }).catch((error) => console.error("No se pudo guardar el resultado de la partida:", error));
+    })
+      // Este catch detecta fallos de conexión; fetch no rechaza automáticamente por HTTP 4xx/5xx.
+      .catch((error) => console.error("No se pudo guardar el resultado de la partida:", error));
   }, [terminado, gano, juego, puntaje]);
 }

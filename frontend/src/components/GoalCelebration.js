@@ -7,6 +7,7 @@ export default function GoalCelebration() {
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
+    // El temporizador solo controla el festejo visual; no cambia el resultado del juego.
     const timer = window.setTimeout(() => setVisible(false), 1750);
     return () => window.clearTimeout(timer);
   }, []);

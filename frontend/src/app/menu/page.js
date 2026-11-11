@@ -96,7 +96,7 @@ export default function MenuPage() {
         </div>
       </section>
 
-      {/* LogrosPanel siempre aparece en el menú; ResultCard actualiza lo desbloqueado al terminar cada juego. */}
+      {/* LogrosPanel consulta al backend; este vuelve a calcular el progreso desde el historial de partidas en MySQL. */}
       <LogrosPanel />
 
       {/* Presenta el desafío del día: un juego destacado compartido por fecha y guardado como jugado en este navegador. */}

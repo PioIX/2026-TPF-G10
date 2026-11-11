@@ -44,6 +44,7 @@ export default function GridBoard({ grilla, celdasReveladas, onCelda }) {
         <br />
         GRID
       </div>
+      {/* map construye los encabezados de club; cada país se cruza con las mismas columnas. */}
       {grilla.columnas.map((equipo, indice) => (
         <EncabezadoEquipo key={`${equipo.id}-${indice}`} equipo={equipo} />
       ))}

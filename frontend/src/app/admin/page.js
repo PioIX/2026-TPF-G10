@@ -27,6 +27,7 @@ function buscarId(jugadores, nombre, apellido, idEquipo) {
 }
 
 // Administra altas de jugadores/clubes y escucha avisos en vivo de cambios del catálogo.
+// Esta ruta no está envuelta por AuthGuard: el código actual no restringe el acceso a /admin.
 export default function AdminPage() {
   // Uso: página /admin. Registra jugadores y clubes; useSocket escucha avisos de cambios del servidor.
   const { socket, isConnected } = useSocket(BACKEND_URL);
@@ -61,6 +62,8 @@ export default function AdminPage() {
   const handleSubmitJugador = async ({ trayectorias, ...jugadorForm }) => {
     setMsgJugador("Creando...");
 
+    // `jugadorForm` son los campos simples de FormData; trayectorias se separó
+    // porque cada club histórico termina en su propia fila de Trayectoria.
     const jugadorPayload = {
       nombre: jugadorForm.nombre,
       apellido: jugadorForm.apellido,
@@ -74,6 +77,7 @@ export default function AdminPage() {
     };
 
     try {
+      // Primer POST: crea la fila principal de Jugadores para obtener su id_jugador.
       const res1 = await fetch(`${API_URL}/jugadores`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -86,6 +90,8 @@ export default function AdminPage() {
         return false;
       }
 
+      // El endpoint responde texto, no el ID insertado; se relee el listado y buscarId
+      // localiza el registro por nombre, apellido y equipo para obtener la clave foránea.
       const jugadores = await (await fetch(`${API_URL}/jugadores`)).json();
       const idJugador = buscarId(
         jugadores,
@@ -99,6 +105,7 @@ export default function AdminPage() {
         return false;
       }
 
+      // Datos y Estadisticas son tablas 1:1, por eso ambos payloads reutilizan el mismo ID.
       const datosPayload = {
         id_jugador: idJugador,
         edad: Number(jugadorForm.edad) || 0,
@@ -116,6 +123,7 @@ export default function AdminPage() {
         titulos_individuales: Number(jugadorForm.titulos_individuales) || 0,
       };
 
+      // map transforma cada fila editable del formulario en el cuerpo de un POST de trayectoria.
       const trayectoriasPayloads = trayectorias.map((t) => ({
         id_jugador: idJugador,
         id_equipo: Number(jugadorForm.id_equipo) || 1,
@@ -148,6 +156,7 @@ export default function AdminPage() {
       ];
 
       const respuestas = await Promise.all(promesas);
+      // Cada respuesta HTTP se convierte a texto para mostrar errores o confirmaciones en el formulario.
       const textos = await Promise.all(respuestas.map((r) => r.text()));
 
       if (respuestas.some((r) => !r.ok)) {

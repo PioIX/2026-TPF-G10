@@ -1,3 +1,9 @@
+-- Esquema relacional del proyecto. Las claves enlazan Equipos con Jugadores,
+-- los datos/estadísticas con cada jugador, y Usuarios con sus partidas.
+-- Importante para la versión actual del backend: POST /partidas y GET /logros
+-- también esperan Partida.juego y UsuariosXPartida.gano; esas columnas todavía
+-- no están declaradas en este archivo de creación y la base usada debe incluirlas.
+
 -- Tabla: Equipos. Guarda el catálogo de clubes y sus datos institucionales/deportivos.
 CREATE TABLE Equipos (
     id_equipo INT AUTO_INCREMENT PRIMARY KEY,
@@ -84,13 +90,15 @@ CREATE TABLE Usuarios (
     email VARCHAR(150) NOT NULL UNIQUE
 ) ENGINE=InnoDB;
 
--- Tabla: Partida. Guarda la instancia general de un juego que se completó.
+-- Tabla: Partida. Guarda el juego y fecha de cada partida terminada.
+-- El backend actual usa además la columna juego (por ejemplo, "wordle" o "grid").
 CREATE TABLE Partida (
     id_partida INT AUTO_INCREMENT PRIMARY KEY,
     fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
--- Tabla: UsuariosXPartida. Vincula cada usuario con una partida y almacena su resultado.
+-- Tabla puente: vincula una cuenta con cada partida, su puntaje y si fue victoria.
+-- GET /perfil cuenta estas filas; GET /logros vuelve a leerlas para calcular logros y rachas.
 CREATE TABLE UsuariosXPartida (
     id_usuariosporpartida INT AUTO_INCREMENT PRIMARY KEY,
     id_usuario INT NOT NULL,

@@ -16,6 +16,8 @@ export default function LogrosPanel() {
       return;
     }
 
+    // El identificador es un query param; el backend devuelve { logros: [id, ...] }.
+    // El AbortController evita actualizar el componente si el menú se desmonta durante la consulta.
     const controlador = new AbortController();
     fetch(`${BACKEND_URL}/logros?id=${encodeURIComponent(idUsuario)}`, { signal: controlador.signal })
       .then(async (respuesta) => {
@@ -29,6 +31,7 @@ export default function LogrosPanel() {
     return () => controlador.abort();
   }, []);
 
+  // filter cuenta qué elementos del catálogo tienen su ID en la respuesta del backend.
   const cantidadDesbloqueados = LOGROS.filter((logro) => desbloqueados.includes(logro.id)).length;
   const progreso = Math.round((cantidadDesbloqueados / LOGROS.length) * 100);
 
@@ -49,6 +52,7 @@ export default function LogrosPanel() {
           <span style={{ width: `${progreso}%` }} />
         </div>
         <p className="logrosAyuda">Desbloqueá logros jugando y ganando partidas.</p>
+        {/* Se dibuja el catálogo completo; cada ID ausente de /logros queda como pendiente. */}
         <ul className="logrosLista">
           {LOGROS.map((logro) => {
             const desbloqueado = desbloqueados.includes(logro.id);

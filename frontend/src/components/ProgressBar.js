@@ -8,6 +8,7 @@ export default function ProgressBar({
   textClassName = "textoProgreso",
   textId,
 }) {
+  // Se protege la división cuando el total es cero y se redondea para el ancho visual.
   const porcentaje = total > 0 ? Math.round((valor / total) * 100) : 0;
 
   return (

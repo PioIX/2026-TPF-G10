@@ -109,6 +109,7 @@ function WordleGame() {
       if (letraActual >= palabraSecreta.length) return;
 
       setFilas((prevFilas) => {
+        // Copia la matriz externa y cada fila interna para no mutar el estado React anterior.
         const copia = prevFilas.map((fila) => [...fila]);
         if (copia[intentoActual][letraActual].letra === "_") {
           copia[intentoActual][letraActual] = {
@@ -144,6 +145,7 @@ function WordleGame() {
     if (juegoTerminado || !palabraSecreta || filas.length === 0) return;
 
     const filaActual = filas[intentoActual];
+    // map extrae la letra de cada celda; join forma la palabra y replace quita casilleros vacíos.
     const intento = filaActual
       .map((celda) => celda.letra)
       .join("")
@@ -156,6 +158,7 @@ function WordleGame() {
 
     // Coloreamos las letras de la fila actual
     setFilas((prevFilas) => {
+      // Conserva las demás filas y reemplaza solo la fila que se acaba de evaluar.
       const copia = prevFilas.map((fila) => [...fila]);
       copia[intentoActual] = copia[intentoActual].map((celda, i) => ({
         ...celda,

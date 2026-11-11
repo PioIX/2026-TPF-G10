@@ -12,6 +12,7 @@ export default function SportsImage({ tipo, nombre, alt = "", size = 56, classNa
   const imagenes = useSportsDbImage(tipo, nombre);
   // Conserva las URLs fallidas para avanzar a otra alternativa, en vez de abandonar al primer error.
   const [urlsFallidas, setUrlsFallidas] = useState([]);
+  // find elige la primera URL que no figure en el arreglo de fallidas.
   const imagen = imagenes.find((url) => !urlsFallidas.includes(url));
 
   return (

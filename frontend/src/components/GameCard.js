@@ -10,6 +10,7 @@ export default function GameCard({
   estilo,
   sorteada = false,
 }) {
+  // MenuPage pasa cada objeto del arreglo `juegos` como props a esta tarjeta.
   return (
     <Link
       className={`juegoTarjeta juegoTarjeta-${estilo || "default"} ${sorteada ? "juegoTarjetaSorteada" : ""}`}

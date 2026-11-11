@@ -17,6 +17,8 @@ const DETALLES_PROGRESO = {
 export default function OpponentProgress({ game, player, expanded = false, onClose, onExpand }) {
   const definicion = DETALLES_PROGRESO[game];
   const progreso = player && player.progress;
+  // El mismo componente sirve para todos los juegos porque DETALLES_PROGRESO indica
+  // qué propiedad leer y cuál es el máximo esperado para convertirla a porcentaje.
   const cantidad = definicion && progreso ? progreso[definicion.campo] : 0;
   const porcentaje = definicion
     ? Math.min(100, Math.round((cantidad / definicion.maximo) * 100))
@@ -130,6 +132,7 @@ export default function OpponentProgress({ game, player, expanded = false, onClo
             <strong>País / equipo</strong>
             {progreso.columnas.map((columna, indice) => <strong key={indice}>{columna}</strong>)}
           </div>
+          {/* Cada fila recibida se cruza con tres columnas para dibujar los nueve estados de celda. */}
           {progreso.filas.map((pais, indiceFila) => (
             <div className="filaGrillaRival" key={indiceFila}>
               <strong>{pais}</strong>

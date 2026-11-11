@@ -1,4 +1,5 @@
-// Protección de rutas privadas: no muestra el contenido y redirige al login cuando no hay sesión local.
+// Protección visual de rutas: oculta el contenido y redirige al login si no hay ID local.
+// No reemplaza validaciones en el servidor; cada endpoint que maneja datos debe comprobar su acceso.
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";

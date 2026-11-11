@@ -7,6 +7,7 @@ import Image from "next/image";
 // Prueba las URLs de un compañero y muestra un balón si no hay ninguna imagen utilizable.
 function FotoCompanero({ imagenes, nombre }) {
   const [urlsFallidas, setUrlsFallidas] = useState([]);
+  // find devuelve la primera URL todavía no fallida; si no hay, se usa el balón de respaldo.
   const imagen = imagenes.find((url) => !urlsFallidas.includes(url));
 
   if (!imagen) {

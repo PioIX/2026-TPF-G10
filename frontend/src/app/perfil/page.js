@@ -5,11 +5,15 @@ import AuthGuard from "../../components/AuthGuard";
 import Button from "../../components/Button";
 import { BACKEND_URL } from "../../config/backend";
 
+// Consulta /perfil al backend; las partidas y victorias salen de UsuariosXPartida,
+// enlazada con Usuarios. Este componente presenta esos totales y calcula su porcentaje.
 function PerfilContenido() {
   const [perfil, setPerfil] = useState(null);
   const [error, setError] = useState("");
   const [cargando, setCargando] = useState(true);
 
+  // El ID que se guardó tras el login identifica qué fila del perfil se solicita.
+  // AbortController cancela el fetch si se abandona la página antes de recibir respuesta.
   useEffect(() => {
     const id = window.localStorage.getItem("usuarioId");
     const controlador = new AbortController();

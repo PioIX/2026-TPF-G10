@@ -568,6 +568,9 @@ app.get('/', function(req, res){
 });
 
 // Pedidos GET
+// Los juegos consumen estos endpoints con fetch. Las respuestas de /jugadores, /datos,
+// /estadisticas y /trayectoria juntan las tablas deportivas; /grid prepara un paquete pequeño
+// específico para su tablero. Las rutas de autenticación/perfil leen Usuarios y sus resultados.
 // Devuelve información pública de usuarios, sin enviar contraseñas al navegador.
 app.get('/usuarios', async function(req,res){
     // El parámetro `id` filtra por la columna id_usuario definida en creacion_tablas.sql.
@@ -975,11 +978,15 @@ app.get('/logros', async function(req, res) {
             if (usuarios.length === 0) return res.status(404).json({ error: 'No encontramos ese usuario.' });
         }
 
+        // Se reconstruye el progreso desde el historial ordenado: así también se puede
+        // comprobar una racha consecutiva sin almacenar un contador duplicado en Usuarios.
         const juegosJugados = new Set();
         const juegosGanados = new Set();
         let victorias = 0;
         let racha = 0;
         const logros = new Set();
+        // El catálogo y sus IDs están en frontend/src/utils/logros.js; estas condiciones
+        // deben mantener los mismos IDs para que LogrosPanel marque cada insignia correcta.
         resultados.forEach((resultado, indice) => {
             const gano = Number(resultado.gano) === 1;
             juegosJugados.add(resultado.juego);

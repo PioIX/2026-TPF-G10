@@ -2,6 +2,7 @@
 
 // Diálogo controlado por su padre para mostrar avisos y cerrarlos con una acción.
 export default function Modal({ abierto, titulo, children, onCerrar }) {
+  // El padre decide cuándo existe el diálogo; devolver null lo quita del árbol de la página.
   if (!abierto) return null;
 
   return (

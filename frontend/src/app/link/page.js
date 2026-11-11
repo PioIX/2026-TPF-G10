@@ -99,6 +99,8 @@ function LinkGame() {
     const jugadoresMap = new Map();
     const nombresSet = new Set();
 
+    // Igual que en Adivina, el JOIN repite futbolistas por sus clubes; Map los agrupa por ID.
+    // En cada fila se añade al jugador el club y los años que luego sirven para buscar compañeros.
     datos.forEach((fila) => {
       const id = fila.id_jugador;
       if (!id) return;
@@ -132,6 +134,7 @@ function LinkGame() {
       }
     });
 
+    // Se convierten las colecciones Map/Set a arreglos porque el resto del juego usa filter/sort.
     const listaJugadores = Array.from(jugadoresMap.values());
     setNombresSugerencias(Array.from(nombresSet).sort());
 
@@ -140,6 +143,7 @@ function LinkGame() {
     let companerosElegidos = [];
 
     for (const candidato of posiblesObjetivos) {
+      // filter produce los posibles compañeros del candidato; se excluye al candidato mismo.
       const companeros = listaJugadores.filter(otro => {
         if (otro.id === candidato.id) return false;
         return compartieronCanchaTemporalmente(candidato.trayectoria, otro.trayectoria);
@@ -147,6 +151,7 @@ function LinkGame() {
 
       if (companeros.length >= PISTAS_TOTALES) {
         objetivoElegido = candidato;
+        // Orden aleatorio y slice toma solo las cinco primeras fichas para usarlas como pistas.
         companerosElegidos = companeros.sort(() => Math.random() - 0.5).slice(0, PISTAS_TOTALES);
         break;
       }
@@ -225,6 +230,8 @@ function LinkGame() {
   );
 
   useEffect(() => {
+    // slice limita la lista a las pistas visibles y map la reduce a nombres públicos.
+    // El servidor recibe este progreso permitido, no el jugador objetivo secreto.
     const pistasReveladas = pistas
       .slice(0, cantidadPistasVisibles)
       .map((pista) => pista.nombre);

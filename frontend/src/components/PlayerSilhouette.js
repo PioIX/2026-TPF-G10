@@ -13,6 +13,7 @@ export default function PlayerSilhouette({
   size = 180,
 }) {
   // Junta la URL antigua y las alternativas nuevas para mantener compatible el componente.
+  // filter(Boolean) elimina URLs vacías y Set impide probar dos veces la misma dirección.
   const candidatas = [...new Set([imagen, ...imagenes].filter(Boolean))];
   // Si falla una imagen, guarda su URL y prueba la próxima alternativa del mismo jugador.
   const [urlsFallidas, setUrlsFallidas] = useState([]);

@@ -9,6 +9,7 @@ export default function Keyboard({ onTecla, usadas = {} }) {
   // Cada tecla delega su acción a onTecla; el padre conserva el estado y los colores ya descubiertos.
   return (
     <div id="teclado">
+      {/* Cada string de FILAS se convierte en botones; en la última fila se agregan confirmar y borrar. */}
       {FILAS.map((fila, i) => (
         <div className="fila-teclado" key={i}>
           {i === 2 && (

@@ -19,6 +19,7 @@ const CATEGORIAS = [
 // Junta nombre y estadísticas usando el ID del jugador como vínculo entre las tablas.
 function unirJugadoresConEstadisticas(filasJugadores, filasEstadisticas) {
   const nombres = new Map();
+  // El primer endpoint puede repetir jugadores por trayectoria. El Map indexa una sola ficha por ID.
   filasJugadores.forEach((fila) => {
     if (fila.id_jugador && !nombres.has(Number(fila.id_jugador))) {
       nombres.set(Number(fila.id_jugador), {
@@ -28,6 +29,7 @@ function unirJugadoresConEstadisticas(filasJugadores, filasEstadisticas) {
     }
   });
 
+  // map recorre estadísticas y agrega nombre/ID desde el Map; filter descarta filas sin jugador.
   return filasEstadisticas
     .map((fila) => ({ ...fila, id: Number(fila.id_jugador), ...nombres.get(Number(fila.id_jugador)) }))
     .filter((jugador) => jugador.nombre);
@@ -36,6 +38,7 @@ function unirJugadoresConEstadisticas(filasJugadores, filasEstadisticas) {
 // Prepara cinco duelos sencillos y evita comparar jugadores que tengan el mismo número.
 function crearDuelos(jugadores) {
   const duelos = [];
+  // Se intenta crear una comparación por ronda; cada jugador se elige por índice aleatorio del arreglo.
   for (let ronda = 0; ronda < 5; ronda += 1) {
     let duelo = null;
     for (let intento = 0; intento < 80 && !duelo; intento += 1) {
@@ -118,6 +121,7 @@ function QuienMasGame() {
     setMensajeRespuesta(jugadorElegido === respuestaCorrecta
       ? `Pregunta anterior: ¡correcto! ${jugadorCorrecto.nombre} tiene más ${duelo.categoria.nombre} (${valorCorrecto} contra ${valorOtro}).`
       : `Pregunta anterior: no era esa. ${jugadorCorrecto.nombre} tiene más ${duelo.categoria.nombre} (${valorCorrecto} contra ${valorOtro}).`);
+    // El puntaje solo suma uno si el ID elegido coincide con el ID de mayor estadística.
     const nuevoPuntaje = puntaje + (jugadorElegido === respuestaCorrecta ? 1 : 0);
     const nuevaRonda = ronda + 1;
     setPuntaje(nuevoPuntaje);

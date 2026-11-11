@@ -24,6 +24,7 @@ export default function QuestionPanel({
   categoria, onCategoria, periodo, onPeriodo, comparador, onComparador,
   valor, onValor, texto, onTexto, opciones, onPreguntar, restantes, deshabilitado,
 }) {
+  // El componente emite elecciones por callbacks; AdivinaElJugadorPage conserva y evalúa el estado.
   const numerica = categoria === "edad" || categoria === "altura";
   const minimo = categoria === "edad" ? 16 : 150;
   const maximo = categoria === "edad" ? 45 : 210;

@@ -9,7 +9,9 @@ export default function ResultCard({ gano, titulo, detalle, onReiniciar, classNa
   const [logros, setLogros] = useState([]);
   const resultadoContado = useRef(false);
 
-  // Cuenta partidas terminadas en este navegador y anuncia un logro solo la primera vez que se desbloquea.
+  // Esta cuenta local solo sirve para anunciar logros en la tarjeta de resultado.
+  // El panel permanente del menú calcula los logros desde el historial MySQL vía GET /logros;
+  // por eso el progreso local de este navegador no es la fuente de verdad del perfil.
   useEffect(() => {
     if (resultadoContado.current) return;
     resultadoContado.current = true;
@@ -23,6 +25,7 @@ export default function ResultCard({ gano, titulo, detalle, onReiniciar, classNa
     const yaDesbloqueados = Array.isArray(guardado.logros) ? guardado.logros : [];
     const juegosJugadosPrevios = Array.isArray(guardado.juegosJugados) ? guardado.juegosJugados : [];
     const juegosGanadosPrevios = Array.isArray(guardado.juegosGanados) ? guardado.juegosGanados : [];
+    // Set evita contar dos veces un tipo de juego aunque se hayan jugado muchas partidas del mismo.
     const juegosJugados = [...new Set([...juegosJugadosPrevios, juego])];
     const juegosGanados = [...new Set([...juegosGanadosPrevios, ...(gano ? [juego] : [])])];
     const rachaVictorias = gano ? Number(guardado.rachaVictorias || 0) + 1 : 0;
@@ -39,6 +42,7 @@ export default function ResultCard({ gano, titulo, detalle, onReiniciar, classNa
       "racha-cinco": rachaVictorias >= 5,
       coleccionista: juegosJugados.length >= 5,
     };
+    // filter deja solo los logros cuyas condiciones se cumplen y que aún no estaban guardados.
     const nuevos = LOGROS.filter((logro) => condiciones[logro.id] && !yaDesbloqueados.includes(logro.id));
     const desbloqueados = [...yaDesbloqueados, ...nuevos.map((logro) => logro.id)];
     window.localStorage.setItem(clave, JSON.stringify({ partidas, victorias, logros: desbloqueados, juegosJugados, juegosGanados, rachaVictorias }));

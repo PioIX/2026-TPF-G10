@@ -213,6 +213,8 @@ function Fulbo11Game() {
     }
 
     // 3. Busca coincidencias exactas por nombre. La lista sugerida no autoriza una respuesta por sí sola.
+    // filter no devuelve un solo resultado: devuelve un arreglo con todos los nombres coincidentes,
+    // porque puede haber homónimos. Más abajo se elige el que corresponde al país de esta ronda.
     const coincidencias = jugadores.filter(
       (j) => normalizarTexto(j.nombre) === normalizarTexto(texto)
     );
@@ -304,6 +306,8 @@ useRegistrarResultado("futbol11", terminoLaPartida, true);
     return Array.from(nombres.values()).sort((a, b) => a.localeCompare(b, "es"));
   }, [jugadores]);
 
+  // filter(Boolean) quita posiciones vacías; map transforma jugadores ocupantes en IDs.
+  // El Set permite consultar rápidamente si una respuesta ya fue colocada.
   const idsUsados = useMemo(
     () => new Set(equipo.filter(Boolean).map((jugador) => jugador.id)),
     [equipo]

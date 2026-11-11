@@ -16,6 +16,8 @@ export default function AuthForm({
   onPasswordChange,
   isLoading = false, // <-- 1. Agregamos la prop
 }) {
+  // Los valores y callbacks vienen de LoginPage: este componente presenta campos,
+  // pero no consulta al servidor ni mantiene una segunda copia del formulario.
   const registro = modo === "registro";
 
   return (

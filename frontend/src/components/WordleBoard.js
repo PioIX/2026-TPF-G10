@@ -11,6 +11,7 @@ export function estadoLetra(intento, i, secreta) {
 export default function WordleBoard({ filas }) {
   return (
     <div id="tablero" className="tablero">
+      {/* El primer map dibuja filas y el segundo dibuja cada celda de esa fila. */}
       {filas.map((fila, indiceFila) => (
         <div className="fila" key={indiceFila}>
           {fila.map((celda, indiceColumna) => (

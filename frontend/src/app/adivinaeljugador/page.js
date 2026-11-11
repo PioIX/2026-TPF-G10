@@ -49,6 +49,8 @@ function construirJugadores(datos) {
   const jugadoresMap = new Map();
   const sugerenciasTemp = { club: [], pais: [], liga: [], nombres: [] };
 
+  // /jugadores puede devolver varias filas del mismo futbolista (una por club histórico).
+  // forEach las procesa y el Map guarda un único objeto por ID, mientras agrega cada club a su trayectoria.
   datos.forEach((fila) => {
     const id = fila.id_jugador;
     if (!id) return;
@@ -86,6 +88,7 @@ function construirJugadores(datos) {
     }
   });
 
+  // Set elimina sugerencias repetidas; Array.from vuelve a convertirlas a arreglos ordenables.
   const sugerenciasLimpias = {
     club: Array.from(new Set(sugerenciasTemp.club)).sort(),
     pais: Array.from(new Set(sugerenciasTemp.pais)).sort(),
@@ -94,6 +97,7 @@ function construirJugadores(datos) {
     nombres: Array.from(new Set(sugerenciasTemp.nombres)).sort(),
   };
 
+  // values() recupera los objetos únicos; map completa clubes actuales/históricos en cada uno.
   const listaJugadores = Array.from(jugadoresMap.values()).map((jugador) => {
     jugador.trayectoria.sort(
       (a, b) => a.ingreso - b.ingreso || a.traspaso - b.traspaso
@@ -224,6 +228,8 @@ function AdivinaElJugadorGame() {
     }
 
     const clubesDelSecreto = new Set((jugadorSecreto.clubes || []).map(limpiarTexto));
+    // filter deja jugadores distintos del secreto que compartieron al menos un club.
+    // sort fija un orden legible y slice limita la ayuda a cinco compañeros.
     const companeros = jugadores
       .filter((jugador) => (
         jugador.id !== jugadorSecreto.id &&
@@ -264,6 +270,7 @@ function AdivinaElJugadorGame() {
   const opcionValida = (cat, texto) => {
     if (!texto) return false;
     const opciones = sugerencias[cat] || [];
+    // some termina al encontrar la primera coincidencia y devuelve un booleano.
     return opciones.some(
       (opcion) => limpiarTexto(opcion) === limpiarTexto(texto)
     );
@@ -310,6 +317,7 @@ function AdivinaElJugadorGame() {
     const cat = categoria;
     const textoInput = inputTexto.trim();
 
+    // Estas categorías comparan texto/listas; edad y altura continúan abajo con un operador numérico.
     if (["club", "pais", "posicion", "liga"].includes(cat)) {
       if (!opcionValida(cat, textoInput)) {
         return { valido: false, respuesta: `Selecciona un/a ${cat} válido/a.` };
@@ -327,6 +335,7 @@ function AdivinaElJugadorGame() {
                 : `No, actualmente no juega en ${textoInput}.`,
           };
         } else {
+          // map normaliza los clubes pasados y includes pregunta si el elegido aparece en ese arreglo.
           return {
             valido: true,
             respuesta: secreto.clubesPasados
@@ -356,6 +365,7 @@ function AdivinaElJugadorGame() {
       }
 
       if (cat === "posicion") {
+        // match extrae todos los números de una posición como "10-7" y los entrega en un arreglo.
         const posicionesDelJugador =
           String(secreto.posicion || "").match(/\d+/g) || [];
         const juegaEnLaPosicion = posicionesDelJugador.includes(
@@ -407,6 +417,7 @@ function AdivinaElJugadorGame() {
       setMensaje(pregunta.respuesta);
     } else {
       const nroPregunta = 11 - preguntasRestantes;
+      // El estado es una lista de mensajes: ante cada respuesta se antepone el nuevo elemento.
       setRespuestas((prev) => [
         `Pregunta ${nroPregunta}: ${pregunta.respuesta}`,
         ...prev,
@@ -440,6 +451,7 @@ function AdivinaElJugadorGame() {
     } else {
       setPreguntasRestantes((prev) => Math.max(0, prev - 1));
       setMensaje(`No es ${texto}. Sigue intentando.`);
+      // Spread (...) copia los mensajes anteriores para mantener el historial sin mutarlo.
       setRespuestas((prev) => [`❌ Fallaste: ${texto}`, ...prev]);
     }
   };

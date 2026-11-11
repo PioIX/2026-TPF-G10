@@ -20,6 +20,7 @@ export default function AutocompleteInput({
   const listId = useId();
   return (
     <>
+      {/* Cada tecla informa el texto nuevo al estado del juego padre. */}
       <input
         id={inputId}
         className={className}
@@ -32,6 +33,7 @@ export default function AutocompleteInput({
         onKeyDown={(e) => e.key === "Enter" && onEnter?.()}
       />
       <datalist id={listId}>
+        {/* Las sugerencias solo ayudan a escribir: la página del juego valida la respuesta. */}
         {opciones.map((o) => <option key={o} value={o} />)}
       </datalist>
     </>
