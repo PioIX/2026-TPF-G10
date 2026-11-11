@@ -10,7 +10,7 @@ import LogrosPanel from "../../components/LogrosPanel";
 
 // Catálogo que alimenta las tarjetas y el selector aleatorio de juegos del menú.
 const juegos = [
-  { titulo: "Fulbo 11", imagen: "/fulbo11.png", href: "/fulbo11", detalle: "Completá tu equipo titular", estilo: "fulbo" },
+  { titulo: "Fulbo 11", imagen: "", href: "/fulbo11", detalle: "Completá tu equipo titular", estilo: "fulbo" },
   { titulo: "Wordle", imagen: "/wordle.png", href: "/wordle", detalle: "Descifrá el jugador", estilo: "wordle" },
   { titulo: "Grid", imagen: "/grid.png", href: "/grid", detalle: "Encontrá jugadores para cada cruce", estilo: "grid" },
   { titulo: "Adivina el jugador", imagen: "/adivinaeljugador.png", href: "/adivinaeljugador", detalle: "Adivina al jugador oculto", estilo: "adivina" },
