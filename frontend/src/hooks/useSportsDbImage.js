@@ -1,23 +1,27 @@
 import { useEffect, useState } from "react";
-import obtenerImagenDeportiva from "../utils/imagenes";
+import { obtenerImagenesDeportivas } from "../utils/imagenes";
 
-// Hook reutilizable para consultar fotos y escudos a través del backend.
+// Hook reutilizable que devuelve las URLs candidatas de TheSportsDB en orden de preferencia.
+// Consulta la lista de imágenes y evita mostrar durante un render resultados de otra persona/equipo.
 export default function useSportsDbImage(tipo, nombre) {
-  const [imagen, setImagen] = useState("");
+  // Guarda junto a la respuesta el nombre que la generó para no mostrar una foto vieja
+  // durante el render en que cambia el jugador o el equipo consultado.
+  const [resultado, setResultado] = useState({ clave: "", imagenes: [] });
+  const clave = `${tipo}:${nombre || ""}`;
 
   useEffect(() => {
     let activo = true;
-    setImagen("");
     const tipoImagen = tipo === "player" ? "jugador" : "equipo";
 
-    obtenerImagenDeportiva(tipoImagen, nombre).then((resultado) => {
-      if (activo) setImagen(resultado);
+    obtenerImagenesDeportivas(tipoImagen, nombre).then((resultados) => {
+      if (activo) setResultado({ clave, imagenes: resultados });
     });
 
     return () => {
       activo = false;
     };
-  }, [tipo, nombre]);
+  }, [tipo, nombre, clave]);
 
-  return imagen;
+  // Mientras llega la consulta nueva devuelve vacío, no la foto de la identidad anterior.
+  return resultado.clave === clave ? resultado.imagenes : [];
 }

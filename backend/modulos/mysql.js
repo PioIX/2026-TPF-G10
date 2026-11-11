@@ -1,4 +1,5 @@
 ﻿//Sección MySQL del código
+// Cliente de MySQL con promesas, para poder esperar conexión y consultas con async/await.
 const mySql = require("mysql2/promise");
 
 /**

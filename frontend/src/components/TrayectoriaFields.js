@@ -2,7 +2,7 @@
 import { Field } from "./Form";
 import Button from "./Button";
 
-// Editor repetible de trayectoria. Recibe el valor para que distintos formularios puedan reutilizarlo.
+// Editor repetible de clubes y años de trayectoria, reutilizado por formularios administrativos.
 export default function TrayectoriaFields({ value = [], onChange }) {
   const filas = value;
 

@@ -3,7 +3,7 @@
 import Form, { Field } from "./Form";
 import Button from "./Button";
 
-// Formulario controlado de acceso y registro para la ruta de autenticación.
+// Formulario controlado de acceso y registro; comparte campos y acciones entre ambos modos.
 export default function AuthForm({
   modo = "login",
   onSubmit,

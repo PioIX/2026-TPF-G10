@@ -492,6 +492,42 @@ a.btn:hover {
     text-align: center;
 }
 
+/* Mantiene la ayuda del país centrada y visualmente secundaria dentro del panel de Fútbol 11. */
+.ayudaCambiarPais {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: -5px auto 18px;
+    color: #c5d4df;
+    font-size: 14px;
+}
+
+/* El botón usa el azul de la cancha y un borde dorado discreto para verse como ayuda. */
+.ayudaCambiarPais button {
+    min-height: 40px;
+    padding: 8px 15px;
+    border: 1px solid #e9b72d;
+    border-radius: 10px;
+    background: #17364c;
+    color: #fff4cf;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.ayudaCambiarPais button:hover {
+    background: #224e6b;
+    transform: translateY(-1px);
+}
+
+.ayudaCambiarPais button:focus-visible {
+    outline: 3px solid #ffd23f;
+    outline-offset: 2px;
+}
+
 .mensajeJuego {
     text-align: center;
     color: #ffd23f;
@@ -1802,6 +1838,11 @@ hr {
 
 .juegoTarjeta-adivina {
     --acento-juego: #ffd84f;
+}
+
+/* Usa acentos propios para que las dos tarjetas nuevas se distingan en el menú. */
+.juegoTarjeta-quienmas {
+  --acento-juego: #ff8b66;
 }
 
 .juegoTarjeta:hover {
@@ -3124,4 +3165,590 @@ button.menuAccion {
     width: 100%;
     height: 100%;
     object-fit: cover;
+}
+/* Contenedor común para fotos y escudos, también cuando la API no devuelve imagen. */
+.imagenDeportiva {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  vertical-align: middle;
+}
+
+/* Marcador visual que mantiene el espacio ocupado si falta la imagen. */
+.imagenDeportivaVacia {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  font-size: 1.35rem;
+  opacity: 0.75;
+}
+
+/* Centra la foto revelada al finalizar juegos como Wordle. */
+.imagenResultadoJuego {
+  display: flex;
+  margin: 0 auto 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+}
+
+/* Apila imagen y nombre dentro de cada tarjeta del árbol de Link. */
+.link-jugador-objetivo,
+.link-tarjeta-pista {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* La pista de Adivina usa tarjetas neutras de compañeros, sin el aspecto del juego Link. */
+.galeriaCompanerosPista {
+  width: min(100% - 2rem, 760px);
+  margin: 1rem auto;
+  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.galeriaCompanerosPista h3 {
+  margin-bottom: 0.9rem;
+  text-align: center;
+}
+
+/* Distribuye las cinco posibles caras y permite que bajen de línea en móvil. */
+.galeriaCompanerosLista {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.8rem;
+}
+
+.galeriaCompanero {
+  display: flex;
+  width: 112px;
+  min-height: 138px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.45rem;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+/* Mantiene una silueta consistente cuando no hay foto en el catálogo. */
+.galeriaCompanero img,
+.galeriaCompaneroVacio {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.galeriaCompaneroVacio {
+  display: grid;
+  place-items: center;
+  font-size: 2rem;
+}
+
+/* Marca Link con una paleta turquesa y violeta para distinguirlo del verde de los otros juegos. */
+.link-titulo {
+  width: min(920px, 94%);
+  margin: 0 auto 1rem;
+  color: #65e6d0;
+  text-align: center;
+  letter-spacing: .08em;
+  text-shadow: 0 0 24px rgba(101, 230, 208, .28);
+}
+
+/* Enmarca el árbol de compañeros como una pantalla propia del minijuego Link. */
+.link-arbol-contenedor {
+  width: min(920px, 94%);
+  margin: 0 auto 1.2rem;
+  padding: 1.4rem;
+  border: 1px solid rgba(101, 230, 208, .3);
+  border-radius: 22px;
+  background: radial-gradient(ellipse at top, rgba(28, 93, 96, .55), rgba(18, 28, 54, .94) 72%);
+  box-shadow: 0 18px 46px rgba(4, 10, 27, .3);
+}
+
+/* Resalta al jugador que hay que descubrir con un borde luminoso distinto del color principal del sitio. */
+.link-jugador-objetivo {
+  position: relative;
+  z-index: 1;
+  width: min(190px, 100%);
+  min-height: 150px;
+  margin: 0 auto;
+  justify-content: center;
+  padding: 1rem;
+  border: 2px solid #bc9cff;
+  border-radius: 18px;
+  background: rgba(43, 34, 79, .88);
+  box-shadow: 0 0 24px rgba(188, 156, 255, .18);
+  text-align: center;
+  font-weight: 800;
+}
+
+/* Da a las tarjetas de compañeros un tono azul oscuro y un tamaño parejo. */
+.link-tarjeta-pista {
+  width: 132px;
+  min-height: 142px;
+  justify-content: center;
+  padding: .75rem;
+  border: 1px solid rgba(101, 230, 208, .5);
+  border-radius: 16px;
+  background: rgba(14, 53, 67, .88);
+  text-align: center;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+/* Conserva el espacio de las cinco pistas y distribuye las tarjetas en filas si hace falta. */
+.link-contenedor-pistas {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: .8rem;
+  margin-top: 1.2rem;
+}
+
+/* Dibuja el vínculo visual entre el objetivo y los compañeros que sirven de pista. */
+.link-linea-horizontal,
+.link-linea-vertical {
+  margin: 0 auto;
+  background: linear-gradient(90deg, transparent, #65e6d0, transparent);
+  opacity: .7;
+}
+
+/* La línea horizontal conecta el centro del árbol con la lista de pistas. */
+.link-linea-horizontal {
+  width: min(560px, 80%);
+  height: 2px;
+  margin-top: 1rem;
+}
+
+/* La línea vertical baja desde el objetivo al centro de la conexión horizontal. */
+.link-linea-vertical {
+  width: 2px;
+  height: 22px;
+  background: #65e6d0;
+}
+
+/* Agrupa el mensaje y el formulario de respuesta en un panel de contraste. */
+.link-caja-preguntas {
+  width: min(760px, 94%);
+  margin: 0 auto 2rem;
+  padding: 1rem;
+  border: 1px solid rgba(188, 156, 255, .28);
+  border-radius: 18px;
+  background: rgba(17, 24, 48, .78);
+  text-align: center;
+}
+
+/* Alinea el campo de respuesta y el botón de adivinar como una sola acción. */
+.link-caja-adivinar {
+  display: flex;
+  justify-content: center;
+  gap: .65rem;
+  margin: .8rem auto;
+}
+
+/* Enfatiza las pistas reveladas con una breve aparición sin animar las que siguen ocultas. */
+.link-pista-visible,
+.link-objetivo-revelado {
+  animation: linkRevelar .42s cubic-bezier(.2, .75, .3, 1) both;
+}
+
+/* Hace que el contenido principal entre suavemente al navegar entre pantallas del juego. */
+main {
+  animation: entradaDePantalla .38s ease-out both;
+}
+
+/* Define el movimiento corto de entrada para dar continuidad visual al cambio de ruta. */
+@keyframes entradaDePantalla {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Anima una pista al revelarse y remarca el dato nuevo sin mover las otras tarjetas. */
+@keyframes linkRevelar {
+  from { opacity: .45; transform: translateY(8px) scale(.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Respeta la preferencia del sistema cuando la persona pide reducir el movimiento. */
+@media (prefers-reduced-motion: reduce) {
+  main,
+  .quienMasJugador,
+  .link-pista-visible,
+  .link-objetivo-revelado {
+    animation: none;
+  }
+}
+
+/* Agrupa las ayudas opcionales para que sean fáciles de encontrar y no se confundan con la acción principal. */
+.ayudaJuego,
+.opcionesAyudaJuego {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  margin: 0.75rem auto;
+  text-align: center;
+}
+
+/* Botón secundario compartido por los cinco juegos; conserva buen tamaño en pantallas táctiles. */
+.botonAyudaJuego {
+  min-height: 42px;
+  padding: 0.55rem 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.botonAyudaJuego:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.botonAyudaJuego:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+/* Destaca el reto diario y mantiene el botón alineado con las acciones del menú. */
+.desafioDiario {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 1.25rem 0;
+  padding: 1.2rem 1.4rem;
+  border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: 18px;
+  background: linear-gradient(115deg, rgba(14, 91, 57, .88), rgba(16, 46, 38, .94));
+}
+
+/* Usa el mismo lenguaje visual en el botón diario, el tutorial y la revancha. */
+.desafioDiarioBoton,
+.botonTutorial,
+.accionesRevancha button {
+  border: 0;
+  border-radius: 10px;
+  padding: .7rem 1rem;
+  color: #10251d;
+  background: #c8f169;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Separa las instrucciones del selector para que se puedan leer antes de empezar. */
+.tutorialJuego {
+  margin: 1.2rem 0;
+  padding: 1rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .07);
+  text-align: left;
+}
+
+/* Muestra los detalles del tutorial con menos énfasis que el objetivo principal. */
+.tutorialJuego p,
+.tutorialDetalle {
+  margin: .5rem 0;
+  line-height: 1.5;
+}
+
+/* Alinea el aviso de revancha con el panel de la partida y diferencia el botón pendiente. */
+.accionesRevancha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 1rem auto;
+  padding: .8rem 1rem;
+  max-width: 900px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .08);
+}
+
+/* Reduce la saturación del botón cuando ya se envió la solicitud de revancha. */
+.accionesRevancha button:disabled {
+  opacity: .6;
+  cursor: wait;
+}
+
+/* Presenta el nuevo juego de comparación con dos opciones claras y un contador visible. */
+.quienMasPagina {
+  width: min(900px, 94%);
+  margin: 1rem auto 2rem;
+  text-align: center;
+}
+
+/* Resalta la pregunta y separa visualmente las dos respuestas disponibles. */
+.quienMasPagina h2 {
+  margin-bottom: .35rem;
+  color: #c8f169;
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+}
+
+/* Limita el ancho de la explicación para que el objetivo del juego se lea de un vistazo. */
+.quienMasIntro {
+  color: rgba(255, 255, 255, .78);
+}
+
+/* Junta el número de pregunta y los aciertos en dos etiquetas cortas. */
+.quienMasMarcador {
+  display: flex;
+  justify-content: center;
+  gap: .6rem;
+  margin: 1rem 0;
+}
+
+/* Da el mismo peso visual al avance y al puntaje. */
+.quienMasMarcador span {
+  padding: .45rem .8rem;
+  border: 1px solid rgba(200, 241, 105, .28);
+  border-radius: 999px;
+  color: #ecf8d7;
+  background: rgba(12, 43, 29, .72);
+  font-weight: 700;
+}
+
+/* Muestra la categoría en una banda central antes de presentar los dos jugadores. */
+.quienMasCategoria {
+  display: inline-block;
+  margin: .2rem auto .7rem;
+  padding: .55rem 1rem;
+  border-radius: 12px;
+  color: #10251d;
+  background: #c8f169;
+  font-size: 1.1rem;
+  font-weight: 900;
+}
+
+/* Muestra las tarjetas de ambos futbolistas en paralelo; cada botón responde una comparación. */
+.quienMasDuelo {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+  margin: 1rem auto;
+}
+
+/* Da a cada futbolista una tarjeta amplia y un hover para que la respuesta sea fácil de identificar. */
+.quienMasJugador {
+  display: grid;
+  justify-items: center;
+  gap: .55rem;
+  width: min(320px, 100%);
+  min-height: 300px;
+  place-content: center;
+  padding: 1.25rem;
+  border: 1px solid rgba(200, 241, 105, .34);
+  border-radius: 22px;
+  color: var(--color-texto);
+  background: linear-gradient(155deg, rgba(19, 68, 43, .98), rgba(10, 34, 29, .98));
+  box-shadow: 0 16px 34px rgba(0, 0, 0, .2);
+  font: inherit;
+  cursor: pointer;
+  animation: quienMasEntrada .34s ease-out both;
+  transition: transform .18s ease, background .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+
+/* Cambia el acento de la segunda tarjeta para que las dos opciones se distingan sin competir. */
+.quienMasJugador:nth-child(2) {
+  border-color: rgba(101, 230, 208, .42);
+  background: linear-gradient(155deg, rgba(19, 58, 72, .98), rgba(14, 34, 49, .98));
+  animation-delay: 70ms;
+}
+
+/* Enmarca la imagen deportiva para que funcione como retrato aunque sea un recorte transparente. */
+.quienMasRetrato {
+  display: grid;
+  place-items: center;
+  margin-bottom: .2rem;
+  overflow: hidden;
+  border: 2px solid rgba(200, 241, 105, .72);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 25%, rgba(200, 241, 105, .24), rgba(4, 22, 25, .92));
+  box-shadow: 0 0 24px rgba(200, 241, 105, .12);
+}
+
+/* El retrato de la segunda opción repite su color de acento. */
+.quienMasJugador:nth-child(2) .quienMasRetrato {
+  border-color: rgba(101, 230, 208, .8);
+  box-shadow: 0 0 24px rgba(101, 230, 208, .14);
+}
+
+/* Destaca el nombre sobre la información secundaria del club. */
+.quienMasJugador strong {
+  max-width: 100%;
+  font-size: 1.2rem;
+  overflow-wrap: anywhere;
+}
+
+/* Presenta el club actual como dato adicional sin revelar la estadística comparada. */
+.quienMasClub {
+  color: rgba(255, 255, 255, .68);
+  font-size: .9rem;
+}
+
+/* Identifica la acción de elegir sin poner texto largo dentro de la tarjeta. */
+.quienMasElegir {
+  margin-top: .35rem;
+  color: #d7f7a1;
+  font-size: .82rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+/* Levanta suavemente la opción cuando el jugador pasa el puntero. */
+.quienMasJugador:hover {
+  transform: translateY(-5px) scale(1.015);
+  border-color: #c8f169;
+  background: linear-gradient(155deg, rgba(28, 92, 57, .98), rgba(13, 47, 39, .98));
+  box-shadow: 0 20px 42px rgba(0, 0, 0, .3), 0 0 26px rgba(200, 241, 105, .1);
+}
+
+/* Mantiene el acento turquesa de la segunda opción también cuando se pasa el puntero. */
+.quienMasJugador:nth-child(2):hover {
+  border-color: #65e6d0;
+  background: linear-gradient(155deg, rgba(28, 83, 96, .98), rgba(13, 42, 58, .98));
+  box-shadow: 0 20px 42px rgba(0, 0, 0, .3), 0 0 26px rgba(101, 230, 208, .12);
+}
+
+/* Anima las opciones al aparecer una comparación nueva. */
+@keyframes quienMasEntrada {
+  from { opacity: 0; transform: translateY(10px) scale(.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Explica si la respuesta anterior fue correcta y muestra los dos valores comparados. */
+.quienMasMensaje {
+  min-height: 1.5rem;
+  margin: .6rem 0;
+  color: #c8f169;
+  font-weight: 700;
+}
+
+/* Da visibilidad a los reconocimientos nuevos dentro del resumen de partida. */
+.logrosDesbloqueados {
+  margin: .9rem 0;
+  padding: .75rem 1rem;
+  border-radius: 12px;
+  color: #f4ffd8;
+  background: rgba(115, 153, 38, .2);
+}
+
+/* Panel permanente del menú para consultar los logros ganados y los que todavía faltan. */
+.logrosPanel {
+  width: min(100%, 1120px);
+  margin: 0 auto 1.3rem;
+  padding: 1rem;
+  border: 1px solid rgba(255, 190, 102, .28);
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(49, 36, 25, .76), rgba(22, 36, 32, .9));
+}
+
+/* Coloca el título y el contador de logros en los extremos del panel. */
+.logrosPanelCabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: .8rem;
+}
+
+/* Destaca cuántos logros ya se desbloquearon. */
+.logrosPanelCabecera > strong {
+  padding: .5rem .8rem;
+  border-radius: 999px;
+  color: #2a1b0f;
+  background: #ffbe66;
+}
+
+/* Distribuye los logros en dos columnas para facilitar la lectura. */
+.logrosLista {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .6rem;
+  list-style: none;
+}
+
+/* Cada logro muestra su icono, nombre, requisito y estado actual. */
+.logroItem {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: .65rem;
+  min-width: 0;
+  padding: .7rem;
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, .18);
+  opacity: .68;
+}
+
+/* Resalta con color y mayor opacidad los logros que ya están desbloqueados. */
+.logroItemDesbloqueado {
+  border-color: rgba(255, 190, 102, .45);
+  background: rgba(255, 190, 102, .1);
+  opacity: 1;
+}
+
+/* Mantiene el icono centrado dentro de su propia insignia. */
+.logroIcono {
+  display: grid;
+  width: 2.2rem;
+  height: 2.2rem;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .08);
+}
+
+/* Apila el nombre y la condición para que el texto no compita con el estado. */
+.logroItem > span:nth-child(2) {
+  display: grid;
+  gap: .15rem;
+}
+
+/* Suaviza el texto que explica cómo obtener el logro. */
+.logroItem small {
+  color: rgba(255, 255, 255, .7);
+}
+
+/* Indica de forma textual si el logro está ganado o pendiente. */
+.logroEstado {
+  color: #ffcf91;
+  font-size: .78rem;
+  font-weight: 700;
+}
+
+/* Evita que las acciones se desborden en pantallas angostas. */
+@media (max-width: 600px) {
+  .desafioDiario,
+  .accionesRevancha {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .logrosLista {
+    grid-template-columns: 1fr;
+  }
+
+  .logroItem {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .logroEstado {
+    grid-column: 2;
+  }
 }

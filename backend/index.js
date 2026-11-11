@@ -22,8 +22,18 @@ const { realizarQuery } = require('./modulos/mysql');
 const app = express();
 const port = process.env.PORT || 4000;
 const cacheImagenesExternas = new Map();
+// Reutiliza también las consultas que siguen esperando respuesta, no solo los resultados guardados.
+const consultasImagenesExternas = new Map();
+// TheSportsDB permite la clave pública `123`; si el proyecto tiene una clave propia,
+// se configura en el backend mediante THESPORTSDB_API_KEY sin exponerla al navegador.
+const claveApiTheSportsDb = process.env.THESPORTSDB_API_KEY || '123';
+// Los aciertos se guardan una hora; los vacíos solo un minuto para permitir reintentos
+// si TheSportsDB responde temporalmente con error o activa su límite de consultas.
+const duracionCacheImagenOk = 60 * 60 * 1000;
+const duracionCacheImagenVacia = 60 * 1000;
 
 function normalizarClaveImagen(texto) {
+    // Quita tildes, espacios y signos para comparar nombres de la base con los del proveedor.
     return String(texto || '')
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
@@ -84,7 +94,9 @@ const juegosDisponibles = new Set([
     'wordle',
     'adivinaeljugador',
     'futbol11',
-    'grid'
+    'grid',
+    'link',
+    'quienmas'
 ]);
 const alfabetoCodigos = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const maximoJugadoresPorSala = 2;
@@ -143,6 +155,7 @@ function retirarDeSala(socket, motivo) {
     // La sala identifica a cada integrante por la conexión Socket.IO abierta en ese navegador.
     const indice = sala.jugadores.findIndex((jugador) => jugador.socketId === socket.id);
     const jugador = indice === -1 ? null : sala.jugadores.splice(indice, 1)[0];
+    sala.revancha?.delete(socket.id); // Una salida invalida cualquier solicitud de revancha de esa conexión.
     socket.leave(sala.codigo); // Lo quita del grupo Socket.IO; también lo quitamos de sala.jugadores arriba.
 
     if (sala.jugadores.length === 0) {
@@ -178,6 +191,8 @@ function retirarDeSala(socket, motivo) {
  * - adivinaeljugador: preguntas/fin/resultado, pista y respuestas filtradas (no el nombre acertado).
  * - futbol11: cantidad/fin, formación visible y país actual.
  * - grid: cantidad/puntaje/fin, encabezados y celdas ya reveladas.
+ * - link: intentos y pistas de compañeros reveladas; no incluye al jugador objetivo.
+ * - quienmas: comparaciones/puntaje/fin; no incluye los valores comparados.
  *
  * Esto valida estructura y límites para la interfaz; no vuelve autoritativo al backend:
  * el servidor no ejecuta las reglas ni comprueba si una respuesta del cliente es verdadera.
@@ -279,6 +294,32 @@ function limpiarProgreso(juego, progreso) {
         return limpio;
     }
 
+    // Link: comparte intentos y compañeros ya revelados, nunca el jugador objetivo.
+    if (juego === 'link' && estaEnRango(progreso.intentosUsados, 0, 6) && typeof progreso.terminado === 'boolean') {
+        const limpio = {
+            intentosUsados: progreso.intentosUsados,
+            terminado: progreso.terminado,
+            adivino: progreso.terminado ? Boolean(progreso.adivino) : false
+        };
+        if (Array.isArray(progreso.pistasReveladas)) {
+            limpio.pistasReveladas = progreso.pistasReveladas
+                .filter((nombre) => typeof nombre === 'string')
+                .slice(0, 5)
+                .map((nombre) => nombre.slice(0, 64));
+        }
+        return limpio;
+    }
+
+    // Quién tiene más: comparte preguntas resueltas y puntos, no los valores de cada jugador.
+    if (juego === 'quienmas' && estaEnRango(progreso.comparaciones, 0, 5) && estaEnRango(progreso.puntaje, 0, 5) && typeof progreso.terminado === 'boolean') {
+        return {
+            comparaciones: progreso.comparaciones,
+            puntaje: progreso.puntaje,
+            terminado: progreso.terminado,
+            gano: progreso.terminado ? Boolean(progreso.gano) : false
+        };
+    }
+
     return null;
 }
 
@@ -325,6 +366,7 @@ io.on('connection', (socket) => {
           codigo,
           juego: data.game,
           estado: 'esperando',
+          revancha: new Set(), // Guarda qué conexiones pidieron revancha en esta partida.
           jugadores: [{
               posicion: 1,
               socketId: socket.id,
@@ -373,6 +415,7 @@ io.on('connection', (socket) => {
           anfitrion: false
       });
       sala.estado = 'jugando';
+      sala.revancha.clear(); // Una sala recién iniciada no conserva solicitudes anteriores.
       socket.data.room = codigo; // El backend mantiene esta relación; el cliente no manda room en sendProgress.
       socket.join(codigo); // El invitado entra al grupo antes de emitir roomMatched.
       emitirEstadoSala(sala);
@@ -386,6 +429,21 @@ io.on('connection', (socket) => {
       const room = socket.data.room || null;
       retirarDeSala(socket, 'salida');
       return confirmar({ ok: true, room }); // Solo informa a quien pidió salir; roomPlayerLeft avisa al rival.
+  });
+
+  // Evento requestRematch: reinicia el minijuego únicamente cuando ambos jugadores lo solicitan.
+  socket.on('requestRematch', () => {
+      const sala = salas.get(socket.data.room);
+      if (!sala || sala.estado !== 'jugando' || !sala.jugadores.some((jugador) => jugador.socketId === socket.id)) return;
+
+      sala.revancha.add(socket.id);
+      if (sala.revancha.size === sala.jugadores.length) {
+          sala.revancha.clear();
+          io.to(sala.codigo).emit('roomRematch'); // Ambos clientes incrementan la clave y remontan el juego.
+          return;
+      }
+
+      socket.to(sala.codigo).emit('roomRematchStatus', { esperando: true }); // El rival ve la solicitud pendiente.
   });
 
   // Evento entrante: sendProgress { progress }.
@@ -593,7 +651,9 @@ app.get('/jugadores', async function(req,res){
     res.send(respuesta);
 })
 
-// Busca fotos y escudos desde el backend para evitar depender del acceso del navegador a TheSportsDB.
+// Busca fotos y escudos desde el backend para mantener la API fuera del navegador y
+// compartir una caché entre partidas. Responde con `imagen` (compatibilidad anterior)
+// y `imagenes` (URL principal más alternativas que el frontend probará si falla una).
 app.get('/imagen', async function(req, res) {
     const tipo = req.query.tipo;
     const nombre = String(req.query.nombre || '').trim();
@@ -602,41 +662,102 @@ app.get('/imagen', async function(req, res) {
     }
 
     const clave = `${tipo}:${normalizarClaveImagen(nombre)}`;
-    if (cacheImagenesExternas.has(clave)) {
-        return res.json({ imagen: cacheImagenesExternas.get(clave) });
+    const cacheGuardada = cacheImagenesExternas.get(clave);
+    if (cacheGuardada && cacheGuardada.expiraEn > Date.now()) {
+        return res.json({ imagen: cacheGuardada.imagenes[0] || '', imagenes: cacheGuardada.imagenes });
     }
+    // Una entrada expirada se elimina para que la nueva respuesta reemplace al dato viejo.
+    if (cacheGuardada) cacheImagenesExternas.delete(clave);
+    // Si otro navegador ya está buscando el mismo nombre, espera ese único pedido HTTP.
+    if (consultasImagenesExternas.has(clave)) {
+        const imagenesCompartidas = await consultasImagenesExternas.get(clave);
+        return res.json({ imagen: imagenesCompartidas[0] || '', imagenes: imagenesCompartidas });
+    }
+
+    // Guarda URL o resultado vacío con duraciones distintas según sea recuperable.
+    // Mantiene juntas las URLs alternativas y aplica una expiración según haya imágenes.
+    const guardarImagenesEnCache = (imagenes) => {
+        const duracion = imagenes.length ? duracionCacheImagenOk : duracionCacheImagenVacia;
+        cacheImagenesExternas.set(clave, { imagenes, expiraEn: Date.now() + duracion });
+    };
 
     const parametro = tipo === 'jugador' ? 'p' : 't';
     const listaResultados = tipo === 'jugador' ? 'player' : 'teams';
-    const campoNombre = tipo === 'jugador' ? 'strPlayer' : 'strTeam';
+    // Prioriza el recorte del jugador y el escudo del club; el logo sirve de respaldo.
+    // Prueba primero la imagen más apropiada y guarda los otros campos como respaldo.
     const camposImagen = tipo === 'jugador'
-        ? ['strCutout', 'strThumb']
-        : ['strBadge', 'strThumb'];
-    const url = `https://www.thesportsdb.com/api/v1/json/3/search${tipo === 'jugador' ? 'players' : 'teams'}.php?${parametro}=${encodeURIComponent(nombre)}`;
+        ? ['strCutout', 'strThumb', 'strRender', 'strFanart1', 'strFanart2', 'strFanart3', 'strFanart4']
+        : ['strBadge', 'strLogo', 'strTeamBadge', 'strTeamLogo', 'strThumb'];
+    // Si el proveedor indexa al jugador por apodo (Neymar), prueba también el nombre
+    // corto y el primer nombre además del nombre legal de nuestra base.
+    const consultasNombre = [nombre];
+    if (tipo === 'jugador') {
+        const partesNombre = nombre.split(/\s+/).filter(Boolean);
+        const nombreCorto = partesNombre.length > 1
+            ? `${partesNombre[0]} ${partesNombre[partesNombre.length - 1]}`
+            : '';
+        if (nombreCorto && normalizarClaveImagen(nombreCorto) !== normalizarClaveImagen(nombre)) {
+            consultasNombre.push(nombreCorto);
+        }
+        if (partesNombre[0] && partesNombre[0].length >= 5) consultasNombre.push(partesNombre[0]);
+    }
+    const nombresConsultados = [...new Set(consultasNombre.map((valor) => valor.trim()).filter(Boolean))];
 
     const controlador = new AbortController();
     const timeout = setTimeout(() => controlador.abort(), 8000);
-    try {
-        const respuestaExterna = await fetch(url, { signal: controlador.signal });
-        if (!respuestaExterna.ok) {
-            cacheImagenesExternas.set(clave, '');
-            return res.json({ imagen: '' });
-        }
-
-        const datos = await respuestaExterna.json();
-        const resultados = Array.isArray(datos?.[listaResultados]) ? datos[listaResultados] : [];
+    // Registra la búsqueda antes del fetch para que solicitudes simultáneas compartan la promesa.
+    const consultaCompartida = (async () => {
+      try {
         const nombreNormalizado = normalizarClaveImagen(nombre);
-        const coincidencia = resultados.find((item) =>
-            normalizarClaveImagen(item?.[campoNombre]) === nombreNormalizado
-        ) || (resultados.length === 1 ? resultados[0] : null);
-        const imagen = coincidencia
-            ? camposImagen.map((campo) => coincidencia[campo]).find(Boolean) || ''
-            : '';
+        // Evita resultados parecidos por accidente; admite el apodo de un jugador
+        // cuando es una palabra distintiva incluida en el nombre legal local.
+        const camposNombre = tipo === 'jugador'
+            ? ['strPlayer', 'strPlayerAlternate']
+            : ['strTeam', 'strTeamShort', 'strTeamAlternate'];
+        const tokensEntrada = nombre.toLowerCase().match(/[a-z0-9]+/g) || [];
+        for (const nombreConsulta of nombresConsultados) {
+            const url = `https://www.thesportsdb.com/api/v1/json/${encodeURIComponent(claveApiTheSportsDb)}/search${tipo === 'jugador' ? 'players' : 'teams'}.php?${parametro}=${encodeURIComponent(nombreConsulta)}`;
+            const respuestaExterna = await fetch(url, { signal: controlador.signal });
+            // Si el proveedor limita o rechaza la llamada, no gastes más consultas del plan gratuito.
+            if (!respuestaExterna.ok) break;
 
-        cacheImagenesExternas.set(clave, imagen);
-        return res.json({ imagen });
+            const datos = await respuestaExterna.json();
+            const resultados = Array.isArray(datos?.[listaResultados]) ? datos[listaResultados] : [];
+            const nombreConsultaNormalizado = normalizarClaveImagen(nombreConsulta);
+            const coincidencia = resultados.find((item) =>
+                camposNombre.some((campo) => String(item?.[campo] || '')
+                    .split(/[,;|]/)
+                    .some((alternativo) => {
+                        const nombreApi = normalizarClaveImagen(alternativo);
+                        const coincideExacto = nombreApi === nombreNormalizado || nombreApi === nombreConsultaNormalizado;
+                        const tokensApi = String(alternativo || '').toLowerCase().match(/[a-z0-9]+/g) || [];
+                        const coincideApodo = tipo === 'jugador' && tokensApi.length === 1
+                            && tokensApi[0].length >= 5 && tokensEntrada.includes(tokensApi[0]);
+                        return coincideExacto || coincideApodo;
+                    }))
+            );
+            const imagenes = coincidencia
+                ? [...new Set(camposImagen
+                    .map((campo) => coincidencia[campo])
+                    .filter((imagen) => typeof imagen === 'string' && /^https?:\/\//i.test(imagen)))]
+                : [];
+            if (imagenes.length) return imagenes;
+        }
+        return [];
+      } catch (error) {
+        return [];
+      } finally {
+        clearTimeout(timeout);
+        consultasImagenesExternas.delete(clave);
+      }
+    })();
+    consultasImagenesExternas.set(clave, consultaCompartida);
+    try {
+        const imagenes = await consultaCompartida;
+        guardarImagenesEnCache(imagenes);
+        return res.json({ imagen: imagenes[0] || '', imagenes });
     } catch (error) {
-        cacheImagenesExternas.set(clave, '');
+        guardarImagenesEnCache([]);
         return res.json({ imagen: '' });
     } finally {
         clearTimeout(timeout);

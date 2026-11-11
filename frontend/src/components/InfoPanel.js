@@ -1,4 +1,4 @@
-// Panel de datos de una partida, usado para mostrar el país, la ronda y el plantel.
+// Panel común de datos de partida, como país actual, ronda, plantel o intentos.
 export default function InfoPanel({ items, className = "estadoJuego" }) {
   return (
     <div className={className}>

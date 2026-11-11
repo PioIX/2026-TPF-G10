@@ -1,6 +1,9 @@
 "use client";
 
+import SportsImage from "./SportsImage";
+
 // Dibuja las posiciones y deja que la pantalla decida cuáles están disponibles para el país actual.
+// Dibuja la cancha y sus posiciones; el juego padre decide cuáles se pueden seleccionar.
 export default function Pitch({
   posiciones,
   equipo,
@@ -35,6 +38,10 @@ export default function Pitch({
                 onClick={() => onSeleccionar(indice)}
               >
                 <strong>{posicion.numero} - {posicion.nombre}</strong>
+                {asignado && (
+                  // La foto acompaña el nombre ya validado; no interviene en la elección.
+                  <SportsImage tipo="player" nombre={asignado.nombre} size={48} />
+                )}
                 <span>{asignado ? asignado.nombre : "Vacío"}</span>
               </button>
             );

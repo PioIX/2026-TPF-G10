@@ -1,6 +1,7 @@
 "use client";
 
 // Campo compartido: mantiene una etiqueta accesible y admite inputs controlados o no controlados.
+// Asocia una etiqueta, un control y su error para que el formulario sea claro y accesible.
 export function Field({
   label,
   name,
@@ -21,6 +22,7 @@ export function Field({
 }
 
 // Entrega al callback los valores por nombre y el formulario para que pueda limpiarlo al guardar.
+// Formulario base que aplica las clases comunes y entrega el envío al componente consumidor.
 export default function Form({ onSubmit, children, className = "form", ...rest }) {
   return (
     <form

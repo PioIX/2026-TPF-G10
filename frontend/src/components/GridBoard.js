@@ -1,34 +1,20 @@
 "use client";
 
-import Image from "next/image";
-import useSportsDbImage from "@/hooks/useSportsDbImage";
+import SportsImage from "./SportsImage";
 
+// Muestra el encabezado de una columna con el escudo y el nombre del club.
 function EncabezadoEquipo({ equipo }) {
-  const escudo = useSportsDbImage("team", equipo.nombre);
-
+  // El nombre del equipo se busca en la base de logos de TheSportsDB.
   return (
     <div className="cell logo">
-      {escudo && (
-        <Image
-          src={escudo}
-          alt=""
-          width={40}
-          height={40}
-          unoptimized
-          style={{ objectFit: "contain" }}
-        />
-      )}
+      <SportsImage tipo="team" nombre={equipo.nombre} size={40} />
       <span>{equipo.nombre}</span>
     </div>
   );
 }
 
+// Dibuja una celda: una respuesta existente abre el jugador; una vacía permite responderla.
 function CeldaJugador({ jugador, onClick }) {
-  const foto = useSportsDbImage(
-    "player",
-    jugador ? `${jugador.nombre} ${jugador.apellido}` : ""
-  );
-
   if (!jugador) {
     return (
       <button type="button" className="cell player clickable" onClick={onClick}>
@@ -39,22 +25,15 @@ function CeldaJugador({ jugador, onClick }) {
 
   return (
     <div className="cell player found">
-      {foto && (
-        <Image
-          src={foto}
-          alt=""
-          width={60}
-          height={60}
-          unoptimized
-          style={{ objectFit: "contain" }}
-        />
-      )}
+      {/* La foto se busca después de que la celda ya reveló un jugador válido. */}
+      <SportsImage tipo="player" nombre={`${jugador.nombre} ${jugador.apellido}`} size={60} />
       <strong>{jugador.apellido}</strong>
     </div>
   );
 }
 
 // La pantalla conserva la lógica de respuestas; el tablero muestra imágenes y delega los clics.
+// Construye el tablero 3×3 con filas de países, columnas de clubes y respuestas reveladas.
 export default function GridBoard({ grilla, celdasReveladas, onCelda }) {
   if (!grilla) return null;
 

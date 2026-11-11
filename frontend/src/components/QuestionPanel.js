@@ -3,6 +3,7 @@
 import Button from "./Button";
 import AutocompleteInput from "./AutocompleteInput";
 
+// Preguntas que se pueden hacer al jugador secreto y el campo que necesita cada respuesta.
 const CATEGORIAS = [
   { id: "club", label: "Club" },
   { id: "liga", label: "Liga actual" },
@@ -11,12 +12,14 @@ const CATEGORIAS = [
   { id: "edad", label: "Edad" },
   { id: "altura", label: "Altura" },
 ];
+// Operadores mostrados para preguntas numéricas como edad o altura.
 const COMPARADORES = [
   { id: "mayor", label: "Mayor que" },
   { id: "menor", label: "Menor que" },
   { id: "exactamente", label: "Exactamente" },
 ];
 
+// Permite elegir una categoría, escribir la consulta y enviarla al juego para evaluarla.
 export default function QuestionPanel({
   categoria, onCategoria, periodo, onPeriodo, comparador, onComparador,
   valor, onValor, texto, onTexto, opciones, onPreguntar, restantes, deshabilitado,

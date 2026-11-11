@@ -1,15 +1,19 @@
 "use client";
 
 // Define el contador principal y su límite para cada minijuego.
+// Traduce cada juego a su contador y límite para que la tarjeta rival use un formato común.
 const DETALLES_PROGRESO = {
   wordle: { campo: "intentosUsados", maximo: 6, unidad: "intentos" },
   adivinaeljugador: { campo: "preguntasUsadas", maximo: 10, unidad: "preguntas o intentos" },
   futbol11: { campo: "jugadoresColocados", maximo: 11, unidad: "posiciones" },
   grid: { campo: "celdasCompletadas", maximo: 9, unidad: "celdas" },
+  link: { campo: "intentosUsados", maximo: 6, unidad: "intentos" },
+  quienmas: { campo: "comparaciones", maximo: 5, unidad: "comparaciones" },
 };
 
 // GameLobby le pasa el último objeto recibido por opponentProgress. Es una foto del estado más
 // reciente, no un historial de eventos. Este componente no abre sockets; solo representa el payload.
+// Resume el último progreso recibido del rival y permite abrir o cerrar su vista ampliada.
 export default function OpponentProgress({ game, player, expanded = false, onClose, onExpand }) {
   const definicion = DETALLES_PROGRESO[game];
   const progreso = player && player.progress;
@@ -24,6 +28,8 @@ export default function OpponentProgress({ game, player, expanded = false, onClo
   if (progreso && progreso.terminado) {
     if (game === "wordle") estado = progreso.gano ? "Terminó: acertó" : "Terminó los intentos";
     else if (game === "adivinaeljugador") estado = progreso.adivino ? "Terminó: adivinó" : "Terminó sin adivinar";
+    else if (game === "link") estado = progreso.adivino ? "Terminó: encontró al objetivo" : "Terminó sin encontrarlo";
+    else if (game === "quienmas") estado = `Terminó: ${progreso.puntaje} de 5 aciertos`;
     else estado = "Partida terminada";
   } else if (progreso) {
     estado = `${cantidad} de ${definicion.maximo} ${definicion.unidad}`;
@@ -87,6 +93,23 @@ export default function OpponentProgress({ game, player, expanded = false, onClo
           {Array.isArray(progreso.respuestas) && progreso.respuestas.length > 0 ? (
             <ul>{progreso.respuestas.map((respuesta, indice) => <li key={indice}>{respuesta}</li>)}</ul>
           ) : <p>Todavía no hizo preguntas.</p>}
+        </div>
+      )}
+
+      {progreso && game === "link" && (
+        <div className="historialRival">
+          <p>Compañeros revelados:</p>
+          {Array.isArray(progreso.pistasReveladas) && progreso.pistasReveladas.length > 0
+            ? <ul>{progreso.pistasReveladas.map((nombre, indice) => <li key={indice}>{nombre}</li>)}</ul>
+            : <p>Todavía no hay pistas reveladas.</p>}
+        </div>
+      )}
+
+      {/* En Quién tiene más se muestra cuántas comparaciones respondió el rival y su puntaje. */}
+      {progreso && game === "quienmas" && (
+        <div className="historialRival">
+          <p>Comparaciones respondidas: {progreso.comparaciones} de 5</p>
+          <p>Aciertos: {progreso.puntaje}</p>
         </div>
       )}
 

@@ -32,6 +32,18 @@ const NOMBRES_JUEGO = {
   adivinaeljugador: "Adivina el jugador",
   futbol11: "Fútbol 11",
   grid: "Grid",
+  link: "Fútbol11 Link",
+  quienmas: "¿Quién tiene más?",
+};
+
+// Explica el objetivo y los controles básicos de cada juego antes de entrar a la partida.
+const TUTORIALES = {
+  wordle: "Adiviná el apellido en seis intentos. Los colores muestran qué letras coinciden.",
+  adivinaeljugador: "Hacé preguntas y usá las pistas para descubrir qué jugador está oculto.",
+  futbol11: "Completá las once posiciones con futbolistas que cumplan la consigna del país.",
+  grid: "Completá cada cruce con un jugador que cumpla la fila y la columna.",
+  link: "Usá los compañeros revelados como pistas para encontrar al jugador objetivo.",
+  quienmas: "Mirá la estadística y elegí cuál de los dos jugadores tiene el número más alto.",
 };
 
 // `game` debe coincidir con el ID validado por el backend; `children` es el minijuego de la ruta.
@@ -45,6 +57,9 @@ export default function GameLobby({ game, children }) {
   const [aviso, setAviso] = useState("");
   const [progresoRival, setProgresoRival] = useState(null);
   const [partidaPropiaTerminada, setPartidaPropiaTerminada] = useState(false);
+  const [mostrarTutorial, setMostrarTutorial] = useState(false);
+  const [numeroPartida, setNumeroPartida] = useState(0);
+  const [revanchaSolicitada, setRevanchaSolicitada] = useState(false);
   // Los listeners registrados abajo pueden sobrevivir muchos renders y conservar una `sala`
   // vieja en su closure. Esta ref se actualiza aparte para comparar eventos con el código vigente
   // sin destruir y registrar de nuevo todos los listeners cada vez que cambia la sala.
@@ -118,6 +133,16 @@ export default function GameLobby({ game, children }) {
       if (datos && datos.progress) setProgresoRival(datos);
     };
 
+    // Indica si el rival también pidió revancha; roomRematch inicia una nueva partida para ambos.
+    const actualizarRevancha = (datos) => setAviso(datos?.esperando ? "Tu rival pidió revancha. Esperando tu decisión..." : "Esperando que tu rival pida revancha.");
+    const iniciarRevancha = () => {
+      setNumeroPartida((numero) => numero + 1);
+      setProgresoRival(null);
+      setPartidaPropiaTerminada(false);
+      setRevanchaSolicitada(false);
+      setAviso("");
+    };
+
     // Payload de roomPlayerLeft: { position, reason }.
     // El servidor deja la sala esperando a una nueva persona.
     const avisarSalidaRival = (datos) => {
@@ -163,6 +188,8 @@ export default function GameLobby({ game, children }) {
     socket.on("roomUpdated", actualizarSala); // Backend: io.to(código).emit; refleja estado de sala.
     socket.on("roomMatched", iniciarPartidaCompartida); // Broadcast al anfitrión y al invitado.
     socket.on("opponentProgress", actualizarProgresoRival); // Backend: socket.to(sala), solo rival.
+    socket.on("roomRematchStatus", actualizarRevancha); // Muestra si el rival ya aceptó jugar otra.
+    socket.on("roomRematch", iniciarRevancha); // Ambos lobbies reinician el minijuego coordinadamente.
     socket.on("roomPlayerLeft", avisarSalidaRival); // Lo recibe quien sigue dentro de la sala.
     socket.on("roomClosed", cerrarSala); // Handler preparado; hoy el último participante se limpia localmente.
     socket.on("disconnect", manejarDesconexion); // Evento local del transporte, no del backend de juego.
@@ -174,6 +201,8 @@ export default function GameLobby({ game, children }) {
       socket.off("roomUpdated", actualizarSala);
       socket.off("roomMatched", iniciarPartidaCompartida);
       socket.off("opponentProgress", actualizarProgresoRival);
+      socket.off("roomRematchStatus", actualizarRevancha);
+      socket.off("roomRematch", iniciarRevancha);
       socket.off("roomPlayerLeft", avisarSalidaRival);
       socket.off("roomClosed", cerrarSala);
       socket.off("disconnect", manejarDesconexion);
@@ -293,6 +322,14 @@ export default function GameLobby({ game, children }) {
     setFase("elegir");
   };
 
+  // Pide revancha al servidor; la partida reinicia cuando los dos jugadores la solicitan.
+  const pedirRevancha = () => {
+    if (!socket || !sala || revanchaSolicitada) return;
+    setRevanchaSolicitada(true);
+    setAviso("Esperando que tu rival pida revancha...");
+    socket.emit("requestRematch");
+  };
+
   // Usa la Clipboard API del navegador para copiar el código; el fallback muestra el código seleccionable.
   const copiarCodigo = async () => {
     if (!sala || !navigator.clipboard) return;
@@ -356,6 +393,14 @@ export default function GameLobby({ game, children }) {
             <>
               <h2>¿Cómo querés jugar?</h2>
               <p>En una sala, cada persona recibe su propio desafío aleatorio.</p>
+              <section className="tutorialJuego" aria-label="Cómo jugar">
+                <strong>Cómo jugar</strong>
+                <p>{TUTORIALES[game] || "Seguí las consignas en pantalla para completar el desafío."}</p>
+                {mostrarTutorial && <p className="tutorialDetalle">Podés pedir las pistas disponibles durante la partida. Al terminar, usá los botones para volver a intentarlo o regresar al menú.</p>}
+                <button type="button" className="botonTutorial" onClick={() => setMostrarTutorial((mostrar) => !mostrar)}>
+                  {mostrarTutorial ? "Mostrar menos" : "Ver instrucciones"}
+                </button>
+              </section>
               <div className="lobbyAcciones">
                 <button type="button" onClick={jugarSolo}>Jugar solo</button>
                 <button type="button" onClick={crearSala} disabled={!isConnected}>
@@ -403,7 +448,13 @@ export default function GameLobby({ game, children }) {
           </div>
         )}
         {aviso && <p className="avisoSocket" role="status">{aviso}</p>}
-        {children}
+        <div key={numeroPartida}>{children}</div>
+        {modo === "online" && partidaPropiaTerminada && (
+          <div className="accionesRevancha" role="status">
+            <p>{revanchaSolicitada ? "Solicitud enviada. La partida reinicia cuando tu rival también la pida." : "¿Otra partida con el mismo rival?"}</p>
+            <button type="button" onClick={pedirRevancha} disabled={revanchaSolicitada}>Pedir revancha</button>
+          </div>
+        )}
         {modo === "online" && (
           <OpponentProgress
             game={game}

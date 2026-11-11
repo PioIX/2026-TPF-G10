@@ -11,6 +11,7 @@ import { BACKEND_URL } from "../../config/backend";
 import { comentarioFutbolero } from "../../utils/comentariosFutboleros";
 import useRegistrarResultado from "../../hooks/useRegistrarResultado";
 
+// Endpoint base y mínimo de respuestas por cruce que se intenta lograr al sortear el tablero.
 const BACKEND = BACKEND_URL;
 const MINIMO_JUGADORES = 3;
 
@@ -269,6 +270,8 @@ function GridGame() {
   const [celdaActiva, setCeldaActiva] = useState(null); // { fila, col }
   const [celdasReveladas, setCeldasReveladas] = useState({}); // { r0_c0: { nombre, apellido } }
   const [respuestaFeed, setRespuestaFeed] = useState("");
+  // Una pista por celda activa ayuda a arrancar sin revelar una respuesta completa.
+  const [pistaCelda, setPistaCelda] = useState("");
   const codigoSala = sala?.room;
 
   // Carga tablas base, arma el índice país-club, genera el tablero y pide los escudos seleccionados.
@@ -345,6 +348,7 @@ function GridGame() {
     if (celdasReveladas[clave]) return; // Si ya fue adivinada, no hacer nada
     setCeldaActiva({ fila, col });
     setRespuestaFeed("");
+    setPistaCelda("");
   };
 
   // El botón "Probar" o Enter llegan acá. El nombre sugerido no basta: debe estar en las respuestas
@@ -379,6 +383,13 @@ function GridGame() {
     : null;
   const jugadoresCeldaActiva =
     (claveActiva && grilla?.jugadores[claveActiva]) || [];
+  // Elige al azar una respuesta válida y revela solo su inicial.
+  const revelarPistaCelda = () => {
+    if (!jugadoresCeldaActiva.length || pistaCelda) return;
+    const jugador = jugadoresCeldaActiva[Math.floor(Math.random() * jugadoresCeldaActiva.length)];
+    const nombre = `${jugador.nombre || ""} ${jugador.apellido || ""}`.trim();
+    setPistaCelda(`Una respuesta posible empieza con «${nombre.charAt(0).toUpperCase()}».`);
+  };
   const celdasCompletadas = Object.keys(celdasReveladas).length;
   const terminoLaPartida = Boolean(grilla && celdasCompletadas === 9);
 
@@ -436,8 +447,20 @@ useRegistrarResultado("grid", terminoLaPartida, true, celdasCompletadas);
             deshabilitado={Boolean(celdasReveladas[claveActiva]) || terminoLaPartida}
           />
         )}
+        {celdaActiva && !celdasReveladas[claveActiva] && !error && !terminoLaPartida && (
+          <div className="ayudaJuego">
+            {pistaCelda ? (
+              <p role="status">{pistaCelda}</p>
+            ) : (
+              <button className="botonAyudaJuego" type="button" onClick={revelarPistaCelda}>
+                Darme una pista
+              </button>
+            )}
+          </div>
+        )}
         {terminoLaPartida && (
           <ResultCard
+            juego="grid"
             gano
             titulo="¡Grid completo!"
             detalle="Resolviste los nueve cruces."
@@ -450,6 +473,7 @@ useRegistrarResultado("grid", terminoLaPartida, true, celdasCompletadas);
   );
 }
 
+// Instala el lobby común antes de mostrar el tablero del Grid.
 export default function GridPage() {
   return (
     <GameLobby game="grid">

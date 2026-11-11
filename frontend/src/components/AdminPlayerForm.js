@@ -4,12 +4,14 @@ import Form, { Field } from "./Form";
 import Button from "./Button";
 import TrayectoriaFields from "./TrayectoriaFields";
 
+// Genera una fila inicial en blanco para que el alta pueda cargar al menos un paso de carrera.
 const TRAYECTORIA_VACIA = () => [{ anio_ingreso: "", anio_traspaso: "" }];
 
 // Formulario reutilizable para los datos que se guardan en las tablas del jugador.
 export default function AdminPlayerForm({ onGuardar, mensaje = "" }) {
   const [trayectorias, setTrayectorias] = useState(TRAYECTORIA_VACIA);
 
+  // Envía los datos y la trayectoria al padre; solo limpia el formulario si el guardado resultó bien.
   const guardar = async (valores, formulario) => {
     const guardado = await onGuardar({ ...valores, trayectorias }, formulario);
     if (guardado) {

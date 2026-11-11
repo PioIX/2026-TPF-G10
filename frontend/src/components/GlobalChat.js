@@ -19,6 +19,7 @@ import useSocket from "../hooks/useSocket";
  * No usamos `pingAll`: el chat tiene una sala lógica exclusiva llamada `chat:global`.
  * Es global entre quienes se unan, aunque visualmente el panel esté en el menú.
  */
+// Conecta el panel de chat al socket, carga el historial y presenta mensajes en tiempo real.
 export default function GlobalChat() {
   const { socket, isConnected } = useSocket();
   const [mensajes, setMensajes] = useState([]);

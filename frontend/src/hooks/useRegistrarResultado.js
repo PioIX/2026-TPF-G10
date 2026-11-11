@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { BACKEND_URL } from "../config/backend";
 
 // Guarda el resultado de una partida una sola vez cuando termina.
+// Registra en el backend una única fila de resultado cuando el juego cambia a terminado.
 export default function useRegistrarResultado(juego, terminado, gano, puntaje = 0) {
   const yaRegistrado = useRef(false);
 

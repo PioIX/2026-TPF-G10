@@ -10,7 +10,9 @@ import ResultCard from "../../components/ResultCard";
 import { BACKEND_URL } from "../../config/backend";
 import { comentarioFutbolero } from "../../utils/comentariosFutboleros";
 import useRegistrarResultado from "../../hooks/useRegistrarResultado";
+import SportsImage from "../../components/SportsImage";
 
+// Dirección de la API de jugadores que se usa para sortear el apellido secreto.
 const API_URL = BACKEND_URL;
 const MAX_INTENTOS = 6;
 
@@ -43,10 +45,14 @@ function WordleGame() {
 
   // La matriz del tablero guarda cada letra y su color; los dos índices señalan la fila y columna activas.
   const [palabraSecreta, setPalabraSecreta] = useState("");
+  // Conserva el nombre completo únicamente para buscar la imagen asociada al apellido secreto.
+  const [nombreJugadorSecreto, setNombreJugadorSecreto] = useState("");
   const [filas, setFilas] = useState([]); // Matriz [fila][col] con { letra, color }
   const [intentoActual, setIntentoActual] = useState(0);
   const [letraActual, setLetraActual] = useState(0);
   const [juegoTerminado, setJuegoTerminado] = useState(false);
+  // Guarda una única pista opcional para esta palabra; no modifica el tablero ni un intento.
+  const [letraPista, setLetraPista] = useState("");
   const [mensaje, setMensaje] = useState("Cargando juego...");
 
   // Pide jugadores al backend, descarta apellidos que no entren en el tablero y sortea uno.
@@ -70,9 +76,11 @@ function WordleGame() {
       const secreta = limpiarTexto(jugador.apellido || "");
 
       setPalabraSecreta(secreta);
+      setNombreJugadorSecreto(`${jugador.nombre || ""} ${jugador.apellido || ""}`.trim());
       setIntentoActual(0);
       setLetraActual(0);
       setJuegoTerminado(false);
+      setLetraPista("");
       setMensaje("Adivina el apellido");
 
       // Creamos las 6 filas vacías con "_"
@@ -239,6 +247,13 @@ function WordleGame() {
     }, {});
   }, [filas]);
 
+  // Revela una letra de la respuesta sin indicar su posición ni consumir un intento.
+  const revelarPista = () => {
+    if (letraPista || !palabraSecreta) return;
+    const indice = Math.floor(Math.random() * palabraSecreta.length);
+    setLetraPista(palabraSecreta[indice]);
+  };
+
   // Puente entre la lógica local y el lobby: al cambiar el tablero/resultado crea este payload:
   // { intentosUsados, terminado, gano, tablero }. No incluye `palabraSecreta`.
   // El efecto también corre al entrar a la sesión; GameLobby ignora el envío si aún no está online.
@@ -265,11 +280,31 @@ function WordleGame() {
     <>
       {gano && <GoalCelebration />}
       <main className="wordle-main">
+        {/* La foto se revela junto con el resultado y no cambia la mecánica de adivinar. */}
+        {juegoTerminado && (
+          <SportsImage
+            tipo="player"
+            nombre={nombreJugadorSecreto}
+            alt={nombreJugadorSecreto}
+            size={112}
+            className="imagenResultadoJuego"
+          />
+        )}
         <div id="mensaje">{juegoTerminado ? "" : mensaje}</div>
         <WordleBoard filas={filas} />
+        <div className="ayudaJuego">
+          {letraPista ? (
+            <p>Una pista: el apellido contiene la letra <strong>{letraPista}</strong>.</p>
+          ) : (
+            <button className="botonAyudaJuego" type="button" onClick={revelarPista} disabled={juegoTerminado || !palabraSecreta}>
+              Darme una pista de letra
+            </button>
+          )}
+        </div>
         <Keyboard onTecla={manejarTecla} usadas={usadas} />
         {juegoTerminado && (
           <ResultCard
+            juego="wordle"
             gano={gano}
             titulo={gano ? "¡Ganaste!" : "Se terminaron los intentos"}
             detalle={mensaje}
@@ -284,6 +319,7 @@ function WordleGame() {
 
 // WordleGame llega como `children`, pero no se monta hasta que GameLobby pasa a "jugando".
 // Así sus llamadas a useGameSession quedan debajo del Provider que crea el lobby.
+// Instala el lobby online alrededor del tablero de Wordle.
 export default function WordlePage() {
   return (
     <GameLobby game="wordle">
