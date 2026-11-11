@@ -3390,6 +3390,1088 @@ main {
   }
 }
 
+/* Convierte los logros en una pestaña plegable que combina con la identidad del estadio. */
+.logrosPanel {
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid rgba(181, 232, 202, .2);
+  border-radius: 18px;
+  background: linear-gradient(125deg, rgba(7, 39, 34, .96), rgba(7, 25, 32, .96));
+  box-shadow: 0 12px 34px rgba(0, 0, 0, .2);
+}
+
+/* El resumen completo se puede tocar o usar con teclado para abrir y cerrar la colección. */
+.logrosPanelResumen {
+  display: flex;
+  min-height: 78px;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  cursor: pointer;
+  list-style: none;
+  transition: background .2s ease;
+}
+
+.logrosPanelResumen::-webkit-details-marker { display: none; }
+.logrosPanelResumen:hover { background: rgba(213, 255, 66, .055); }
+.logrosPanelResumen:focus-visible { outline: 2px solid #d5ff42; outline-offset: -4px; }
+
+/* Dibuja el trofeo como insignia y hace clara la jerarquía del título. */
+.logrosPanelEmblema {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+  place-items: center;
+  border: 1px solid rgba(213, 255, 66, .32);
+  border-radius: 14px;
+  background: rgba(213, 255, 66, .1);
+  font-size: 1.4rem;
+}
+
+.logrosPanelTitulo { display: grid; gap: 2px; }
+.logrosPanelTitulo .lobbyEtiqueta { margin: 0; }
+.logrosPanelTitulo > strong { color: #f2fff7; font-size: 1.15rem; }
+
+/* El contador y la flecha indican el avance y el estado de la pestaña. */
+.logrosPanelProgresoTexto {
+  margin-left: auto;
+  padding: 7px 11px;
+  border: 1px solid rgba(213, 255, 66, .25);
+  border-radius: 999px;
+  background: rgba(213, 255, 66, .08);
+  color: #e4ff75;
+  font-size: .88rem;
+  font-weight: 800;
+}
+
+.logrosPanelFlecha {
+  color: #d5ff42;
+  font-size: 1.5rem;
+  transition: transform .25s ease;
+}
+
+.logrosPanel[open] .logrosPanelFlecha { transform: rotate(180deg); }
+
+/* El contenido se despliega debajo de la pestaña con una entrada corta y suave. */
+.logrosPanelContenido {
+  padding: 0 18px 18px;
+  animation: logrosDesplegar .28s ease both;
+}
+
+.logrosBarra {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .1);
+}
+
+.logrosBarra > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #43e4cb, #d5ff42);
+  box-shadow: 0 0 14px rgba(213, 255, 66, .35);
+  transition: width .45s ease;
+}
+
+.logrosAyuda { margin: 9px 0 14px; color: #b8d1c0; font-size: .9rem; }
+
+@keyframes logrosDesplegar {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Reduce la densidad visual de la lista manteniendo las mismas insignias y estados. */
+.logrosLista { gap: 10px; }
+.logroItem {
+  border-color: rgba(181, 232, 202, .12);
+  border-radius: 14px;
+  background: rgba(0, 0, 0, .18);
+}
+.logroItemDesbloqueado {
+  border-color: rgba(213, 255, 66, .38);
+  background: linear-gradient(110deg, rgba(213, 255, 66, .1), rgba(67, 228, 203, .06));
+}
+.logroIcono { background: rgba(213, 255, 66, .09); }
+.logroItemDesbloqueado .logroIcono { background: rgba(213, 255, 66, .16); }
+.logroEstado { color: #d5ff42; }
+
+@media (max-width: 600px) {
+  .logrosPanelResumen { min-height: 68px; gap: 10px; padding: 12px; }
+  .logrosPanelEmblema { width: 40px; height: 40px; flex-basis: 40px; }
+  .logrosPanelContenido { padding: 0 12px 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logrosPanelFlecha, .logrosBarra > span { transition: none; }
+  .logrosPanelContenido { animation: none; }
+}
+
+/* Ajuste final del encabezado: altura, alineación y espacios uniformes en todas las páginas. */
+.siteHeader {
+  width: min(100% - 32px, 1200px);
+  min-height: 74px;
+  margin: 14px auto 24px;
+  padding: 10px 18px;
+  border: 1px solid rgba(190, 235, 210, .22);
+  border-top: 2px solid rgba(213, 255, 66, .72);
+  border-radius: 16px;
+  background: rgba(5, 24, 28, .92);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .24);
+}
+
+/* Conserva la marca en una línea y evita que el nombre se aplaste. */
+.siteHeaderMarca {
+  align-items: center;
+  gap: 12px;
+}
+
+/* Alinea navegación y perfil como un grupo con una separación constante. */
+.siteHeaderNav {
+  gap: 10px;
+}
+
+/* Mantiene los enlaces del encabezado del mismo tamaño y con un foco visible. */
+.siteHeaderLink {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 14px;
+  border: 1px solid rgba(181, 232, 202, .2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .045);
+  color: #effff7;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.siteHeaderLink:hover {
+  border-color: rgba(213, 255, 66, .58);
+  background: rgba(213, 255, 66, .1);
+  color: #e4ff75;
+}
+
+/* Reduce la intensidad del dibujo de cancha para que el contenido tenga más aire. */
+body::before { opacity: .16; }
+body::after { opacity: .34; }
+
+/* Deja los balones decorativos discretos hasta que se interactúa con ellos. */
+.menuHero::after {
+  top: 0;
+  right: 22px;
+  opacity: .34;
+  font-size: clamp(3rem, 6vw, 4.5rem);
+  animation: none;
+}
+
+.juegoTarjeta::after { opacity: .3; }
+
+/* Gira las pelotas emoji cuando se pasa el mouse por el botón o tarjeta correspondiente. */
+.portadaBoton:hover .portadaBotonPelota,
+.juegoTarjeta:hover .juegoTarjetaBalon,
+.sorpresaMenuBoton:hover .sorpresaMenuPelota,
+.dificultad:hover span,
+.galeriaCompanero:hover .galeriaCompaneroVacio,
+.imagenDeportiva:hover .imagenDeportivaVacia {
+  animation: pelotaGiraHover .68s cubic-bezier(.2, .75, .25, 1) both;
+}
+
+/* El balón grande gira al pasar por el encabezado del menú o por una tarjeta de juego. */
+.menuHero:hover::after,
+.juegoTarjeta:hover::after {
+  animation: pelotaGiraHover .72s cubic-bezier(.2, .75, .25, 1) both;
+}
+
+@media (max-width: 560px) {
+  /* En pantallas angostas se reduce el margen y se permite que el encabezado respire. */
+  .siteHeader {
+    width: calc(100% - 20px);
+    margin: 10px auto 18px;
+    padding: 9px 10px;
+    gap: 8px;
+  }
+
+  .siteHeaderNav { gap: 6px; }
+  .siteHeaderLink { min-height: 36px; padding: 7px 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Respeta la preferencia del sistema y deja las pelotas quietas si se pidió menos movimiento. */
+  .menuHero:hover::after,
+  .juegoTarjeta:hover::after,
+  .portadaBoton:hover .portadaBotonPelota,
+  .juegoTarjeta:hover .juegoTarjetaBalon,
+  .sorpresaMenuBoton:hover .sorpresaMenuPelota,
+  .dificultad:hover span,
+  .galeriaCompanero:hover .galeriaCompaneroVacio,
+  .imagenDeportiva:hover .imagenDeportivaVacia {
+    animation: none;
+  }
+}
+
+/* Ordena el encabezado como una barra única: marca a la izquierda y controles agrupados a la derecha. */
+.siteHeader {
+  display: flex;
+  min-height: 72px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 10px 18px;
+  border: 1px solid rgba(181, 232, 202, .18);
+  border-top: 2px solid rgba(213, 255, 66, .62);
+  border-radius: 0 0 16px 16px;
+  background: rgba(5, 25, 29, .88);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, .22);
+  backdrop-filter: blur(14px);
+}
+
+/* Mantiene el nombre y el escudo juntos como una sola marca. */
+.siteHeaderMarca {
+  flex: 0 1 auto;
+  min-width: 0;
+  gap: 12px;
+}
+
+/* Agrupa el enlace de navegación y el avatar, evitando que queden sueltos en el encabezado. */
+.siteHeaderNav {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* Presenta el destino de navegación como una etiqueta compacta y legible. */
+.siteHeaderLink {
+  padding: 9px 14px;
+  border: 1px solid rgba(181, 232, 202, .16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .035);
+  color: #effff7;
+  white-space: nowrap;
+  transition: color .2s ease, border-color .2s ease, background .2s ease;
+}
+
+.siteHeaderLink:hover {
+  border-color: rgba(213, 255, 66, .5);
+  background: rgba(213, 255, 66, .08);
+  color: #d5ff42;
+}
+
+/* Quita el subrayado anterior porque el enlace ya tiene forma de botón. */
+.siteHeaderLink::after {
+  display: none;
+}
+
+/* Convierte el perfil en una insignia circular consistente con el avatar del juego. */
+.siteHeaderPerfil {
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  border: 2px solid rgba(213, 255, 66, .68);
+  box-shadow: 0 0 0 3px rgba(213, 255, 66, .09);
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.siteHeaderPerfil:hover {
+  transform: translateY(-2px) scale(1.06);
+  box-shadow: 0 0 0 5px rgba(213, 255, 66, .14), 0 0 20px rgba(213, 255, 66, .24);
+}
+
+/* Baja la intensidad de las líneas de cancha de fondo para que no compitan con el contenido. */
+body::before {
+  opacity: .3;
+}
+
+body::after {
+  opacity: .55;
+}
+
+/* Reduce la pelota decorativa del menú y la deja girar solo al interactuar con la cabecera. */
+.menuHero::after {
+  top: -10px;
+  right: 20px;
+  opacity: .58;
+  font-size: clamp(3.5rem, 7vw, 5.2rem);
+  animation: none;
+}
+
+/* Hace más sutil la pelota decorativa dentro de cada tarjeta de juego. */
+.juegoTarjeta::after {
+  right: 14px;
+  bottom: 10px;
+  opacity: .52;
+  font-size: 1.15rem;
+  animation: none;
+}
+
+/* Unifica el giro de todas las pelotas emoji al pasar por el control que las contiene. */
+.portadaBoton:hover .portadaBotonPelota,
+.juegoTarjeta:hover .juegoTarjetaBalon,
+.sorpresaMenuBoton:hover .sorpresaMenuPelota,
+.dificultad:hover span,
+.galeriaCompanero:hover .galeriaCompaneroVacio,
+.imagenDeportiva:hover .imagenDeportivaVacia {
+  animation: pelotaGiraHover .68s cubic-bezier(.2, .75, .25, 1) both;
+}
+
+/* También gira la pelota de fondo cuando se pasa sobre la cabecera del menú o una tarjeta. */
+.menuHero:hover::after,
+.juegoTarjeta:hover::after {
+  animation: pelotaGiraHover .72s cubic-bezier(.2, .75, .25, 1) both;
+}
+
+/* Gira de forma limpia en el centro de cada emoji y vuelve al reposo al terminar. */
+@keyframes pelotaGiraHover {
+  0% { transform: rotate(0) scale(1); }
+  55% { transform: rotate(220deg) scale(1.18); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+/* Conserva el giro accesible pero lo desactiva si el sistema pide menos movimiento. */
+@media (prefers-reduced-motion: reduce) {
+  .menuHero:hover::after,
+  .juegoTarjeta:hover::after,
+  .portadaBoton:hover .portadaBotonPelota,
+  .juegoTarjeta:hover .juegoTarjetaBalon,
+  .sorpresaMenuBoton:hover .sorpresaMenuPelota,
+  .dificultad:hover span,
+  .galeriaCompanero:hover .galeriaCompaneroVacio,
+  .imagenDeportiva:hover .imagenDeportivaVacia {
+    animation: none;
+  }
+}
+
+/* Identidad de transmisión: césped nocturno, luces de estadio, líneas de cancha y verde marcador. */
+:root {
+  --color-fondo-claro: #15583c;
+  --color-fondo-oscuro: #06171f;
+  --color-texto: #f2fff7;
+  --color-texto-oscuro: #0d2118;
+  --color-boton: #d5ff42;
+  --color-boton-hover: #e7ff86;
+  --superficie-menu: rgba(7, 29, 30, .94);
+  --borde-menu: rgba(188, 244, 205, .2);
+  --texto-suave: #b8d1c0;
+  --verde-vivo: #91f2c6;
+  --acento-estadio: #43e4cb;
+  --acento-naranja: #ff704d;
+}
+
+/* Crea un fondo de estadio con focos arriba y franjas de césped apenas visibles. */
+body {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse at 12% 0%, rgba(48, 145, 88, .4), transparent 32%),
+    radial-gradient(ellipse at 88% 4%, rgba(46, 155, 167, .28), transparent 30%),
+    linear-gradient(145deg, #103d2b 0%, #09262a 48%, #06151d 100%);
+  background-attachment: fixed;
+}
+
+/* Dibuja líneas de cancha a escala de fondo como textura gráfica de la aplicación. */
+body::before {
+  position: fixed;
+  z-index: -1;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 52%, transparent 0 145px, rgba(206, 255, 225, .075) 146px 148px, transparent 149px),
+    linear-gradient(90deg, transparent calc(50% - 1px), rgba(206, 255, 225, .07) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)),
+    linear-gradient(0deg, transparent 14%, rgba(206, 255, 225, .045) 14.1%, transparent 14.2%),
+    linear-gradient(0deg, transparent 86%, rgba(206, 255, 225, .045) 86.1%, transparent 86.2%),
+    repeating-linear-gradient(90deg, rgba(206, 255, 225, .012) 0 9vw, transparent 9vw 18vw);
+  content: "";
+  opacity: .7;
+  pointer-events: none;
+}
+
+/* Agrega conos de luz de estadio en las esquinas sin cubrir ni bloquear la interfaz. */
+body::after {
+  position: fixed;
+  z-index: -1;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 25rem 10rem at 0% 0%, rgba(214, 255, 119, .12), transparent 72%),
+    radial-gradient(ellipse 25rem 10rem at 100% 0%, rgba(67, 228, 203, .13), transparent 72%);
+  content: "";
+  pointer-events: none;
+  animation: focosEstadio 8s ease-in-out infinite alternate;
+}
+
+/* Añade una franja de marcador a la cabecera y la integra con la textura del campo. */
+.siteHeader {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(213, 255, 66, .16);
+  border-top: 2px solid rgba(213, 255, 66, .62);
+  border-radius: 0 0 18px 18px;
+  background: linear-gradient(100deg, rgba(5, 24, 27, .94), rgba(12, 49, 39, .86));
+  box-shadow: 0 14px 40px rgba(0, 0, 0, .28), inset 0 1px 0 rgba(255, 255, 255, .05);
+  backdrop-filter: blur(18px);
+}
+
+/* Convierte el escudo pequeño del encabezado en una insignia iluminada. */
+.siteHeaderLogo {
+  border: 1px solid rgba(213, 255, 66, .38);
+  border-radius: 14px;
+  background: linear-gradient(145deg, rgba(213, 255, 66, .16), rgba(67, 228, 203, .1));
+  box-shadow: 0 0 22px rgba(213, 255, 66, .12);
+}
+
+/* Da al enlace de navegación un subrayado rápido como marcador de transmisión. */
+.siteHeaderLink::after {
+  height: 3px;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--color-boton), var(--acento-estadio));
+}
+
+/* Convierte la portada en una presentación de partido con líneas diagonales de cancha. */
+.portadaContenido {
+  border: 1px solid rgba(213, 255, 66, .3);
+  border-radius: 30px;
+  background:
+    linear-gradient(125deg, transparent 0 48%, rgba(255, 255, 255, .025) 48% 49%, transparent 49% 100%),
+    radial-gradient(ellipse at 50% 0%, rgba(91, 218, 145, .28), transparent 45%),
+    linear-gradient(145deg, rgba(8, 42, 31, .98), rgba(5, 22, 29, .98));
+  box-shadow: 0 30px 90px rgba(0, 0, 0, .45), 0 0 60px rgba(67, 228, 203, .08), inset 0 1px 0 rgba(255, 255, 255, .08);
+}
+
+/* Enmarca el escudo con una órbita punteada inspirada en el círculo central de la cancha. */
+.portadaLogoMarco {
+  position: relative;
+  border: 1px solid rgba(213, 255, 66, .5);
+  background: radial-gradient(circle, rgba(213, 255, 66, .18), rgba(67, 228, 203, .05));
+  box-shadow: 0 0 46px rgba(213, 255, 66, .18), inset 0 0 20px rgba(67, 228, 203, .1);
+}
+
+.portadaLogoMarco::after {
+  position: absolute;
+  inset: -10px;
+  border: 1px dashed rgba(213, 255, 66, .45);
+  border-radius: 50%;
+  content: "";
+  animation: orbitaCancha 24s linear infinite;
+}
+
+/* Vuelve el título principal más parecido a una gráfica de partido televisado. */
+.portadaContenido h2 {
+  background-image: linear-gradient(105deg, #fff 5%, #d5ff42 48%, #43e4cb 82%, #fff 100%);
+  background-size: 200% auto;
+  animation: titularBrilla 6s linear infinite;
+}
+
+/* Inclina el botón de entrada como una etiqueta deportiva e incluye un brillo al pasar. */
+.portadaBoton {
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, .55);
+  background: linear-gradient(105deg, #d5ff42, #9bf273 52%, #43e4cb);
+  box-shadow: 0 12px 34px rgba(155, 242, 115, .25), inset 0 1px 0 rgba(255, 255, 255, .7);
+}
+
+.portadaBoton::after {
+  position: absolute;
+  top: -50%;
+  left: -40%;
+  width: 30%;
+  height: 200%;
+  transform: rotate(25deg);
+  background: rgba(255, 255, 255, .35);
+  content: "";
+  transition: left .45s ease;
+}
+
+.portadaBoton:hover::after {
+  left: 115%;
+}
+
+/* Añade más aire de estadio a la cabecera del menú y una pelota gigante decorativa. */
+.menuHero {
+  position: relative;
+  overflow: hidden;
+  padding: 22px 24px;
+  border: 1px solid rgba(193, 244, 206, .16);
+  border-left: 5px solid var(--color-boton);
+  border-radius: 4px 20px 20px 4px;
+  background: linear-gradient(100deg, rgba(7, 36, 30, .88), rgba(9, 34, 37, .5));
+  box-shadow: 0 15px 38px rgba(0, 0, 0, .16);
+}
+
+.menuHero::after {
+  position: absolute;
+  top: -32px;
+  right: 30px;
+  color: rgba(213, 255, 66, .12);
+  content: "⚽";
+  font-size: clamp(5rem, 12vw, 9rem);
+  line-height: 1;
+  transform: rotate(-18deg);
+  animation: pelotaFlota 5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Presenta cada juego como una placa de transmisión con filetes de campo y número de camiseta. */
+.juegoTarjeta {
+  min-height: 174px;
+  border: 1px solid rgba(210, 245, 222, .18);
+  border-left: 5px solid var(--acento-juego);
+  border-radius: 6px 20px 20px 6px;
+  background:
+    linear-gradient(110deg, rgba(16, 55, 39, .98), rgba(7, 31, 35, .97)),
+    var(--superficie-menu);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, .26), inset 0 1px 0 rgba(255, 255, 255, .05);
+}
+
+.juegoTarjeta::before {
+  background-image:
+    radial-gradient(circle at 88% 50%, transparent 0 31px, color-mix(in srgb, var(--acento-juego), transparent 35%) 32px 33px, transparent 34px),
+    linear-gradient(90deg, transparent calc(88% - 1px), rgba(255, 255, 255, .13) calc(88% - 1px) calc(88% + 1px), transparent calc(88% + 1px)),
+    repeating-linear-gradient(0deg, transparent 0 23px, rgba(255, 255, 255, .025) 23px 24px);
+  opacity: .8;
+}
+
+.juegoTarjeta::after {
+  position: absolute;
+  right: 13px;
+  bottom: 7px;
+  color: color-mix(in srgb, var(--acento-juego), transparent 80%);
+  content: "⚽";
+  font-size: 1.7rem;
+  line-height: 1;
+  transform: rotate(-15deg);
+  transition: transform .3s ease, color .3s ease;
+  pointer-events: none;
+}
+
+/* Al pasar el puntero, la ficha entra como una placa que ocupa el primer plano. */
+.juegoTarjeta:hover {
+  transform: translateY(-7px) scale(1.018);
+  border-color: var(--acento-juego);
+  box-shadow: 0 24px 52px rgba(0, 0, 0, .38), 0 0 32px color-mix(in srgb, var(--acento-juego), transparent 78%);
+}
+
+.juegoTarjeta:hover::after {
+  color: var(--acento-juego);
+  transform: rotate(15deg) scale(1.24);
+}
+
+/* Convierte los iconos del menú en placas de escudo con un filo luminoso. */
+.juegoTarjetaImagen {
+  position: relative;
+  border: 2px solid color-mix(in srgb, var(--acento-juego), transparent 55%);
+  border-radius: 14px;
+  background: linear-gradient(145deg, #f1ffe5, #d6f4e7);
+  box-shadow: 0 7px 20px rgba(0, 0, 0, .26);
+}
+
+/* Añade movimiento breve al icono de la pelota al resaltar el juego. */
+.juegoTarjetaSorteada {
+  border-color: var(--acento-juego);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--acento-juego), transparent 45%), 0 0 38px color-mix(in srgb, var(--acento-juego), transparent 70%);
+}
+
+/* Da al desafío diario un aspecto de marcador de fecha y partido. */
+.desafioDiario {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(213, 255, 66, .34);
+  border-left: 5px solid var(--color-boton);
+  border-radius: 5px 18px 18px 5px;
+  background:
+    repeating-linear-gradient(135deg, transparent 0 16px, rgba(255, 255, 255, .025) 16px 18px),
+    linear-gradient(105deg, rgba(26, 88, 54, .92), rgba(8, 46, 50, .92));
+  box-shadow: 0 18px 42px rgba(0, 0, 0, .24);
+}
+
+/* Hace que la etiqueta diaria parezca una chapita de campeonato. */
+.desafioDiario .lobbyEtiqueta {
+  display: inline-block;
+  padding: 5px 9px;
+  border: 1px solid rgba(213, 255, 66, .35);
+  border-radius: 4px;
+  background: rgba(5, 27, 25, .45);
+}
+
+/* Corta las esquinas de los botones principales y les da brillo de equipamiento deportivo. */
+.desafioDiarioBoton,
+.sorpresaMenuBoton,
+.lobbyAcciones button,
+.lobbyUnirse button,
+.codigoSalaCompartir button {
+  border: 1px solid rgba(255, 255, 255, .48);
+  border-radius: 7px 15px 7px 15px;
+  background: linear-gradient(110deg, #d5ff42, #91f2c6);
+  box-shadow: 0 8px 22px rgba(128, 233, 127, .2), inset 0 1px 0 rgba(255, 255, 255, .55);
+  text-transform: uppercase;
+  letter-spacing: .045em;
+}
+
+/* Convierte el chat en un panel de prensa con mensajes tipo burbuja y borde de cancha. */
+.chat-global {
+  border: 1px solid rgba(67, 228, 203, .24);
+  border-top: 3px solid rgba(67, 228, 203, .7);
+  border-radius: 5px 18px 18px 18px;
+  background: linear-gradient(160deg, rgba(8, 36, 37, .96), rgba(8, 29, 32, .94));
+  box-shadow: 0 18px 42px rgba(0, 0, 0, .25);
+}
+
+.chat-mensajes p {
+  border-left: 3px solid rgba(67, 228, 203, .6);
+  border-radius: 3px 10px 10px 3px;
+  background: linear-gradient(90deg, rgba(67, 228, 203, .09), rgba(255, 255, 255, .035));
+}
+
+/* Convierte el lobby en un túnel de salida con marcas geométricas y luz de vestuario. */
+.lobbyTarjeta {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(213, 255, 66, .25);
+  border-radius: 7px 26px 7px 26px;
+  background:
+    radial-gradient(ellipse at 100% 0%, rgba(67, 228, 203, .2), transparent 40%),
+    repeating-linear-gradient(135deg, transparent 0 26px, rgba(255, 255, 255, .02) 26px 28px),
+    linear-gradient(145deg, rgba(8, 44, 34, .98), rgba(5, 25, 32, .98));
+  box-shadow: 0 30px 90px rgba(0, 0, 0, .42), inset 0 1px 0 rgba(255, 255, 255, .08);
+}
+
+/* Decora la tarjeta de lobby con un círculo central y su línea de medio campo. */
+.lobbyTarjeta::before {
+  position: absolute;
+  top: -94px;
+  right: -83px;
+  width: 270px;
+  height: 270px;
+  border: 1px solid rgba(213, 255, 66, .12);
+  border-radius: 50%;
+  box-shadow: 0 0 0 42px rgba(213, 255, 66, .025), 0 0 0 84px rgba(67, 228, 203, .02);
+  content: "";
+  pointer-events: none;
+}
+
+/* Eleva el contenido por encima de las líneas decorativas del túnel. */
+.lobbyTarjeta > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Hace que el código de sala se lea como un número grande de camiseta. */
+.codigoSalaCompartir strong {
+  color: #d5ff42;
+  text-shadow: 0 0 28px rgba(213, 255, 66, .22);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Convierte el seguimiento online en un marcador de TV fijado sobre el juego. */
+.barraSesionOnline {
+  border: 1px solid rgba(67, 228, 203, .32);
+  border-left: 4px solid var(--acento-estadio);
+  border-radius: 4px 14px 14px 4px;
+  background: rgba(3, 21, 27, .94);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .36);
+}
+
+/* Añade una placa de comentarista al panel de progreso del rival. */
+.panelProgresoRival {
+  border: 1px solid rgba(67, 228, 203, .36);
+  border-top: 3px solid var(--acento-estadio);
+  border-radius: 5px 18px 18px 18px;
+  background: linear-gradient(155deg, rgba(5, 31, 34, .97), rgba(7, 24, 30, .98));
+  box-shadow: 0 24px 64px rgba(0, 0, 0, .45), 0 0 28px rgba(67, 228, 203, .08);
+}
+
+/* Refuerza el avance del rival como barra de marcador con una punta brillante. */
+.barraProgresoRival {
+  height: 11px;
+  border: 1px solid rgba(213, 255, 66, .2);
+  background: rgba(1, 14, 19, .8);
+}
+
+.barraProgresoRival > div {
+  background: linear-gradient(90deg, #d5ff42, #91f2c6, #43e4cb);
+  box-shadow: 0 0 17px rgba(67, 228, 203, .55);
+}
+
+/* Lleva el tablero de Wordle a un aspecto de panel electrónico de estadio. */
+.wordle-main {
+  width: min(560px, 96%);
+  padding: 24px 16px 36px;
+}
+
+.tablero {
+  gap: 8px;
+  padding: 18px;
+  border: 1px solid rgba(67, 228, 203, .18);
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(3, 22, 27, .58), rgba(12, 45, 36, .46));
+  box-shadow: 0 20px 42px rgba(0, 0, 0, .28), inset 0 1px 0 rgba(255, 255, 255, .04);
+}
+
+.letra {
+  border: 2px solid rgba(205, 255, 224, .32);
+  border-radius: 9px;
+  background-color: rgba(1, 16, 22, .52);
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, .18);
+  transition: background .22s ease, transform .18s ease, border-color .18s ease;
+}
+
+.letra:not(:empty) {
+  animation: letraPuesta .24s cubic-bezier(.2, .8, .2, 1) both;
+}
+
+/* Convierte el teclado en piezas con volumen y respuesta de botón físico. */
+.tecla {
+  border: 1px solid rgba(205, 255, 224, .2);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(31, 70, 57, .98), rgba(13, 39, 41, .98));
+  box-shadow: 0 3px 0 rgba(0, 0, 0, .38);
+  transition: transform .12s ease, filter .12s ease, background .18s ease;
+}
+
+.tecla:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(180deg, #d5ff42, #91f2c6);
+  filter: brightness(1.08);
+}
+
+.tecla.ok {
+  border-color: #d5ff42;
+  background: linear-gradient(145deg, #b3eb38, #4b9c57);
+  color: #092119;
+}
+
+.tecla.cerca {
+  border-color: #ffb454;
+  background: linear-gradient(145deg, #ffbc58, #bd671e);
+  color: #251609;
+}
+
+.tecla.no {
+  border-color: #54716f;
+  background: linear-gradient(145deg, #496763, #263f44);
+}
+
+/* Enmarca Grid como una pizarra táctica y separa sus celdas con pequeños brillos. */
+.grid {
+  gap: 9px;
+  border: 1px solid rgba(67, 228, 203, .22);
+  border-radius: 18px;
+  background:
+    repeating-linear-gradient(135deg, rgba(67, 228, 203, .025) 0 10px, transparent 10px 20px),
+    rgba(5, 27, 30, .82);
+  box-shadow: 0 22px 48px rgba(0, 0, 0, .32), inset 0 1px 0 rgba(255, 255, 255, .05);
+}
+
+.cell {
+  border: 1px solid rgba(180, 237, 207, .2);
+  border-radius: 11px;
+  background: linear-gradient(145deg, #e9f8e9, #cfe9da);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .8), 0 6px 14px rgba(0, 0, 0, .14);
+  transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+
+.cell.title {
+  border-color: rgba(213, 255, 66, .65);
+  background: linear-gradient(145deg, #d5ff42, #91f2c6);
+  box-shadow: 0 6px 18px rgba(145, 242, 198, .14);
+}
+
+.cell.clickable:hover {
+  transform: translateY(-3px) scale(1.035);
+  border-color: #43e4cb;
+  box-shadow: 0 12px 22px rgba(0, 0, 0, .24), 0 0 20px rgba(67, 228, 203, .18);
+}
+
+.cell.found {
+  border-color: rgba(213, 255, 66, .8);
+  background: linear-gradient(145deg, #d7f880, #95e6b4);
+  animation: celdaGol .45s cubic-bezier(.2, .8, .2, 1) both;
+}
+
+/* Añade líneas de área y arcos sutiles sobre la cancha del modo Fútbol 11. */
+.cancha {
+  overflow: hidden;
+  border: 5px solid rgba(244, 255, 229, .92);
+  border-radius: 24px;
+  background:
+    radial-gradient(ellipse at 50% 50%, transparent 0 12%, rgba(244, 255, 229, .22) 12.1% 12.35%, transparent 12.45%),
+    linear-gradient(90deg, transparent calc(50% - 1px), rgba(244, 255, 229, .38) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)),
+    repeating-linear-gradient(90deg, #1f8959 0 70px, #237c53 70px 140px);
+  box-shadow: 0 26px 58px rgba(0, 0, 0, .36), inset 0 0 46px rgba(2, 53, 31, .25);
+}
+
+.cancha .fila.delanteros::before,
+.cancha .fila.arquero::before {
+  position: absolute;
+  left: 50%;
+  width: min(45%, 350px);
+  height: 66px;
+  border: 2px solid rgba(244, 255, 229, .48);
+  content: "";
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+.cancha .fila.delanteros::before { top: -24px; border-top: 0; }
+.cancha .fila.arquero::before { bottom: -24px; border-bottom: 0; }
+
+.cancha .fila button {
+  border: 1px solid rgba(180, 255, 222, .54);
+  border-radius: 10px 17px 10px 17px;
+  background: linear-gradient(155deg, rgba(8, 45, 43, .96), rgba(8, 34, 48, .95));
+  box-shadow: 0 9px 20px rgba(0, 0, 0, .32), inset 0 1px 0 rgba(255, 255, 255, .12);
+}
+
+.cancha .fila button span {
+  color: #d5ff42;
+}
+
+.cancha .fila button:hover {
+  border-color: #d5ff42;
+  background: linear-gradient(155deg, #1b7657, #105b55);
+  box-shadow: 0 0 0 3px rgba(213, 255, 66, .12), 0 12px 26px rgba(0, 0, 0, .32);
+}
+
+.cancha .fila button.casilleroSeleccionado {
+  border-color: #ff704d;
+  box-shadow: 0 0 0 4px rgba(255, 112, 77, .2), 0 0 26px rgba(255, 112, 77, .32);
+  animation: puestoActivo .85s ease-in-out infinite alternate;
+}
+
+.cancha .fila button.casilleroOcupado {
+  border: 2px solid #43e4cb !important;
+  background: linear-gradient(155deg, #237e68, #124a51) !important;
+}
+
+/* Refuerza las pistas y respuestas de Adivina el jugador con etiquetas tipo ficha técnica. */
+#caja-respuestas {
+  border: 1px solid rgba(67, 228, 203, .35);
+  border-top: 3px solid var(--acento-estadio);
+  border-radius: 5px 18px 18px 18px;
+  background: linear-gradient(145deg, rgba(4, 28, 33, .94), rgba(8, 42, 39, .88));
+  box-shadow: inset 0 8px 22px rgba(0, 0, 0, .26), 0 17px 36px rgba(0, 0, 0, .2);
+}
+
+.respuesta {
+  border-left-color: var(--color-boton);
+  border-radius: 3px 11px 11px 3px;
+  background: linear-gradient(90deg, rgba(213, 255, 66, .1), rgba(255, 255, 255, .035));
+}
+
+.pista.visible {
+  color: #d5ff42;
+  text-shadow: 0 0 18px rgba(213, 255, 66, .22);
+}
+
+/* Rediseña Link como árbol de conexiones con neón turquesa y nodos de scouting. */
+.link-arbol-contenedor {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(67, 228, 203, .4);
+  border-radius: 8px 24px 8px 24px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(67, 228, 203, .2), transparent 42%),
+    repeating-linear-gradient(135deg, rgba(67, 228, 203, .025) 0 12px, transparent 12px 24px),
+    linear-gradient(145deg, rgba(5, 36, 42, .97), rgba(15, 26, 52, .96));
+  box-shadow: 0 24px 54px rgba(0, 0, 0, .34), inset 0 1px 0 rgba(255, 255, 255, .06);
+}
+
+.link-titulo {
+  color: #69ffe2;
+  letter-spacing: .15em;
+  text-shadow: 0 0 25px rgba(67, 228, 203, .42);
+}
+
+.link-jugador-objetivo {
+  border: 2px solid #ff704d;
+  border-radius: 6px 19px 6px 19px;
+  background: linear-gradient(145deg, rgba(92, 39, 40, .96), rgba(47, 30, 57, .96));
+  box-shadow: 0 0 32px rgba(255, 112, 77, .2);
+}
+
+.link-tarjeta-pista {
+  border: 1px solid rgba(67, 228, 203, .55);
+  border-radius: 5px 15px 5px 15px;
+  background: linear-gradient(145deg, rgba(8, 69, 72, .94), rgba(10, 41, 63, .94));
+  box-shadow: 0 12px 26px rgba(0, 0, 0, .24);
+}
+
+.link-linea-horizontal,
+.link-linea-vertical {
+  background: #43e4cb;
+  box-shadow: 0 0 12px rgba(67, 228, 203, .6);
+}
+
+.link-caja-preguntas {
+  border: 1px solid rgba(255, 112, 77, .28);
+  border-top: 3px solid #ff704d;
+  border-radius: 5px 18px 18px 18px;
+  background: linear-gradient(145deg, rgba(23, 31, 53, .96), rgba(11, 27, 36, .96));
+  box-shadow: 0 16px 34px rgba(0, 0, 0, .22);
+}
+
+/* Lleva ¿Quién tiene más? a una placa de duelo con colores de local y visitante. */
+.quienMasJugador {
+  border: 1px solid rgba(213, 255, 66, .52);
+  border-bottom: 5px solid #d5ff42;
+  border-radius: 5px 22px 5px 22px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(213, 255, 66, .13), transparent 44%),
+    linear-gradient(155deg, rgba(18, 66, 44, .98), rgba(5, 31, 35, .98));
+  box-shadow: 0 20px 42px rgba(0, 0, 0, .34), inset 0 1px 0 rgba(255, 255, 255, .07);
+}
+
+.quienMasJugador:nth-child(2) {
+  border-color: rgba(67, 228, 203, .55);
+  border-bottom-color: #43e4cb;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(67, 228, 203, .14), transparent 44%),
+    linear-gradient(155deg, rgba(11, 56, 67, .98), rgba(7, 28, 40, .98));
+}
+
+.quienMasCategoria {
+  border: 1px solid rgba(255, 255, 255, .46);
+  border-radius: 4px 15px 4px 15px;
+  background: linear-gradient(105deg, #d5ff42, #91f2c6);
+  box-shadow: 0 8px 23px rgba(145, 242, 198, .16);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.quienMasMarcador span {
+  border: 1px solid rgba(67, 228, 203, .35);
+  border-radius: 4px 12px 4px 12px;
+  background: rgba(3, 26, 31, .82);
+  color: #c8fff0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Convierte el resumen final en el panel de marcador después del último silbato. */
+.result {
+  border: 1px solid rgba(213, 255, 66, .34);
+  border-top: 4px solid var(--color-boton);
+  border-radius: 5px 22px 5px 22px;
+  background:
+    radial-gradient(ellipse at top, rgba(213, 255, 66, .1), transparent 52%),
+    linear-gradient(145deg, rgba(7, 34, 32, .98), rgba(5, 22, 29, .98));
+  box-shadow: 0 24px 56px rgba(0, 0, 0, .38), inset 0 1px 0 rgba(255, 255, 255, .06);
+}
+
+.result-ok {
+  border-top-color: #d5ff42;
+  box-shadow: 0 0 34px rgba(213, 255, 66, .12), 0 24px 56px rgba(0, 0, 0, .38);
+}
+
+.result-mal {
+  border-top-color: #ff704d;
+}
+
+/* Destaca los logros desbloqueados como insignias de torneo. */
+.logrosPanel {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(213, 255, 66, .27);
+  border-radius: 5px 22px 5px 22px;
+  background:
+    repeating-linear-gradient(135deg, rgba(213, 255, 66, .025) 0 14px, transparent 14px 28px),
+    linear-gradient(120deg, rgba(12, 55, 40, .95), rgba(6, 32, 37, .95));
+}
+
+.logroItemDesbloqueado {
+  border-color: rgba(213, 255, 66, .52);
+  border-left: 3px solid #d5ff42;
+  background: linear-gradient(90deg, rgba(213, 255, 66, .11), rgba(67, 228, 203, .045));
+}
+
+/* Redondea los paneles de cuenta y administración como vestuarios de un club. */
+.login,
+.registro,
+.adminSeccion,
+.perfilTarjeta {
+  border-color: rgba(67, 228, 203, .26);
+  border-radius: 6px 22px 6px 22px;
+  background:
+    repeating-linear-gradient(135deg, rgba(67, 228, 203, .02) 0 18px, transparent 18px 36px),
+    linear-gradient(145deg, rgba(7, 35, 34, .98), rgba(8, 27, 34, .98));
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .34), inset 0 1px 0 rgba(255, 255, 255, .06);
+}
+
+/* Lleva las cajas de búsqueda a la estética de panel táctico. */
+input,
+textarea,
+select {
+  accent-color: #d5ff42;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  box-shadow: 0 0 0 4px rgba(67, 228, 203, .1);
+}
+
+/* Añade un rebote corto a las interacciones principales y conserva la respuesta al teclado. */
+button:not(:disabled):active {
+  transform: translateY(1px) scale(.975);
+}
+
+/* Estira una luz breve sobre el título al cambiar de página. */
+@keyframes titularBrilla {
+  to { background-position: 200% center; }
+}
+
+/* Gira las líneas orbitales alrededor del escudo de portada. */
+@keyframes orbitaCancha {
+  to { transform: rotate(360deg); }
+}
+
+/* Hace flotar lentamente la pelota decorativa del encabezado del menú. */
+@keyframes pelotaFlota {
+  0%, 100% { transform: translateY(0) rotate(-18deg); }
+  50% { transform: translateY(9px) rotate(5deg); }
+}
+
+/* Hace variar de forma sutil los focos ambientales del fondo. */
+@keyframes focosEstadio {
+  from { opacity: .65; }
+  to { opacity: 1; }
+}
+
+/* Anima la entrada de una letra como una ficha que cae en el tablero. */
+@keyframes letraPuesta {
+  0% { transform: scale(.78) rotate(-4deg); }
+  75% { transform: scale(1.08) rotate(1deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+
+/* Celebra una celda correcta de Grid con un destello corto. */
+@keyframes celdaGol {
+  0% { transform: scale(.88); filter: brightness(1.6); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+/* Hace latir suavemente el puesto seleccionado en la cancha. */
+@keyframes puestoActivo {
+  from { box-shadow: 0 0 0 2px rgba(255, 112, 77, .12), 0 0 12px rgba(255, 112, 77, .18); }
+  to { box-shadow: 0 0 0 5px rgba(255, 112, 77, .22), 0 0 28px rgba(255, 112, 77, .4); }
+}
+
+/* Apaga las nuevas animaciones ambientales si el sistema pide reducir movimiento. */
+@media (prefers-reduced-motion: reduce) {
+  body::after,
+  .portadaLogoMarco::after,
+  .portadaContenido h2,
+  .menuHero::after,
+  .cancha .fila button.casilleroSeleccionado {
+    animation: none;
+  }
+
+  .portadaBoton::after {
+    display: none;
+  }
+}
+
 /* Agrupa las ayudas opcionales para que sean fáciles de encontrar y no se confundan con la acción principal. */
 .ayudaJuego,
 .opcionesAyudaJuego {
@@ -3751,4 +4833,55 @@ main {
   .logroEstado {
     grid-column: 2;
   }
+}
+
+/* Estilos finales de la pestaña de logros; van al final para prevalecer sobre reglas anteriores. */
+.logrosPanel {
+  width: min(100%, 1120px);
+  padding: 0;
+  border-color: rgba(181, 232, 202, .2);
+  background: linear-gradient(125deg, rgba(7, 39, 34, .96), rgba(7, 25, 32, .96));
+  box-shadow: 0 12px 34px rgba(0, 0, 0, .2);
+}
+
+.logrosPanelResumen {
+  display: flex;
+  min-height: 78px;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  cursor: pointer;
+  list-style: none;
+  transition: background .2s ease;
+}
+
+.logrosPanelResumen::-webkit-details-marker { display: none; }
+.logrosPanelResumen:hover { background: rgba(213, 255, 66, .055); }
+.logrosPanelResumen:focus-visible { outline: 2px solid #d5ff42; outline-offset: -4px; }
+.logrosPanelEmblema { display: grid; width: 46px; height: 46px; flex: 0 0 46px; place-items: center; border: 1px solid rgba(213, 255, 66, .32); border-radius: 14px; background: rgba(213, 255, 66, .1); font-size: 1.4rem; }
+.logrosPanelTitulo { display: grid; gap: 2px; }
+.logrosPanelTitulo .lobbyEtiqueta { margin: 0; }
+.logrosPanelTitulo > strong { color: #f2fff7; font-size: 1.15rem; }
+.logrosPanelProgresoTexto { margin-left: auto; padding: 7px 11px; border: 1px solid rgba(213, 255, 66, .25); border-radius: 999px; background: rgba(213, 255, 66, .08); color: #e4ff75; font-size: .88rem; font-weight: 800; }
+.logrosPanelFlecha { color: #d5ff42; font-size: 1.5rem; transition: transform .25s ease; }
+.logrosPanel[open] .logrosPanelFlecha { transform: rotate(180deg); }
+.logrosPanelContenido { padding: 0 18px 18px; animation: logrosDesplegar .28s ease both; }
+.logrosBarra { height: 7px; overflow: hidden; border-radius: 999px; background: rgba(255, 255, 255, .1); }
+.logrosBarra > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #43e4cb, #d5ff42); box-shadow: 0 0 14px rgba(213, 255, 66, .35); transition: width .45s ease; }
+.logrosAyuda { margin: 9px 0 14px; color: #b8d1c0; font-size: .9rem; }
+.logroItem { border-color: rgba(181, 232, 202, .12); border-radius: 14px; }
+.logroItemDesbloqueado { border-color: rgba(213, 255, 66, .38); background: linear-gradient(110deg, rgba(213, 255, 66, .1), rgba(67, 228, 203, .06)); }
+.logroIcono { background: rgba(213, 255, 66, .09); }
+.logroItemDesbloqueado .logroIcono { background: rgba(213, 255, 66, .16); }
+.logroEstado { color: #d5ff42; }
+
+@media (max-width: 600px) {
+  .logrosPanelResumen { min-height: 68px; gap: 10px; padding: 12px; }
+  .logrosPanelEmblema { width: 40px; height: 40px; flex-basis: 40px; }
+  .logrosPanelContenido { padding: 0 12px 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logrosPanelFlecha, .logrosBarra > span { transition: none; }
+  .logrosPanelContenido { animation: none; }
 }

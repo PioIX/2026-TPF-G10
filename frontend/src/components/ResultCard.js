@@ -27,9 +27,13 @@ export default function ResultCard({ gano, titulo, detalle, onReiniciar, classNa
     const condiciones = {
       "primera-partida": partidas >= 1,
       "primera-victoria": victorias >= 1,
+      "cinco-partidas": partidas >= 5,
+      "diez-partidas": partidas >= 10,
       "cinco-victorias": victorias >= 5,
+      "diez-victorias": victorias >= 10,
       "tres-juegos": juegosGanados.length >= 3,
       "racha-tres": rachaVictorias >= 3,
+      "racha-cinco": rachaVictorias >= 5,
       coleccionista: juegosJugados.length >= 5,
     };
     const nuevos = LOGROS.filter((logro) => condiciones[logro.id] && !yaDesbloqueados.includes(logro.id));
