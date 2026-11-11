@@ -5269,3 +5269,128 @@ button:not(:disabled):active {
   filter: none;
   cursor: default;
 }
+/* ===== Perfil de usuario (/perfil) ===== */
+.pfPagina {
+    width: min(520px, calc(100% - 32px));
+    margin: 40px auto 64px;
+}
+
+.pfTarjeta {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    overflow: hidden;
+    padding: 46px 26px 28px;
+    border: 1px solid rgba(205, 231, 211, 0.16);
+    border-radius: 20px;
+    background: linear-gradient(180deg, rgba(155, 214, 165, 0.12), rgba(16, 41, 31, 0.94) 45%);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+    text-align: center;
+}
+
+/* Franja de colores arriba de la tarjeta */
+.pfTarjeta::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 4px;
+    background: linear-gradient(90deg, #9bd6a5, #c2e447, #fbbf24);
+}
+
+.pfAvatar {
+    display: grid;
+    width: 104px;
+    height: 104px;
+    place-items: center;
+    border: 3px solid rgba(194, 228, 71, 0.7);
+    border-radius: 50%;
+    background: linear-gradient(145deg, #2e7d32, #0a2e13);
+    box-shadow: 0 0 0 6px rgba(194, 228, 71, 0.12), 0 12px 30px rgba(0, 0, 0, 0.4);
+    color: #f8fafc;
+    font-size: 3rem;
+    font-weight: 800;
+}
+
+.pfEtiqueta {
+    margin-top: 6px;
+    color: #9bd6a5;
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+}
+
+.pfNombre {
+    margin-bottom: 10px;
+    color: #f5fbf6;
+    font-size: clamp(1.9rem, 7vw, 2.6rem);
+    letter-spacing: -0.03em;
+    overflow-wrap: anywhere;
+}
+
+.pfStats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    width: 100%;
+}
+
+.pfStat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 18px 10px;
+    border: 1px solid rgba(205, 231, 211, 0.16);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.pfStatIcono {
+    font-size: 1.5rem;
+}
+
+.pfStatNumero {
+    color: #c2e447;
+    font-size: 2.4rem;
+    line-height: 1;
+}
+
+.pfStatTexto {
+    color: #b7c8bc;
+    font-size: 0.82rem;
+    font-weight: 650;
+}
+
+.pfEfectividad {
+    width: 100%;
+    margin: 6px 0 12px;
+}
+
+.pfEfectividadTexto {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    color: #b7c8bc;
+    font-size: 0.85rem;
+    font-weight: 650;
+}
+
+.pfEfectividadTexto strong {
+    color: #f5fbf6;
+}
+
+.pfBarra {
+    height: 10px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.pfBarraRelleno {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #9bd6a5, #c2e447);
+    transition: width 600ms ease;
+}
