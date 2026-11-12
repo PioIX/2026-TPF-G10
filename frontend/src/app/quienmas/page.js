@@ -118,6 +118,7 @@ function QuienMasGame() {
     const jugadorCorrecto = duelo.valorPrimero > duelo.valorSegundo ? duelo.primero : duelo.segundo;
     const valorCorrecto = Math.max(duelo.valorPrimero, duelo.valorSegundo);
     const valorOtro = Math.min(duelo.valorPrimero, duelo.valorSegundo);
+    //operador ternario, el ? es si es verdadero y el : es si es falso, se asigna un mensaje distinto según si acertó o no
     setMensajeRespuesta(jugadorElegido === respuestaCorrecta
       ? `Pregunta anterior: ¡correcto! ${jugadorCorrecto.nombre} tiene más ${duelo.categoria.nombre} (${valorCorrecto} contra ${valorOtro}).`
       : `Pregunta anterior: no era esa. ${jugadorCorrecto.nombre} tiene más ${duelo.categoria.nombre} (${valorCorrecto} contra ${valorOtro}).`);
@@ -145,7 +146,7 @@ function QuienMasGame() {
         <>
           <div className="quienMasMarcador">
             <span>Pregunta {ronda + 1} de {duelos.length}</span>
-            <span>{puntaje} aciertos</span>
+            <span key={puntaje}>{puntaje} aciertos</span>
           </div>
           <p className="quienMasCategoria">¿Quién tiene más {dueloActual.categoria.nombre}?</p>
           {mensajeRespuesta && <p className="quienMasMensaje" role="status">{mensajeRespuesta}</p>}

@@ -299,8 +299,8 @@ function WordleGame() {
           {letraPista ? (
             <p>Una pista: el apellido contiene la letra <strong>{letraPista}</strong>.</p>
           ) : (
-            <button className="botonAyudaJuego" type="button" onClick={revelarPista} disabled={juegoTerminado || !palabraSecreta}>
-              Darme una pista de letra
+            <button className="botonAyudaJuego comodinJuego" type="button" onClick={revelarPista} disabled={juegoTerminado || !palabraSecreta}>
+              Comodín · pista de letra
             </button>
           )}
         </div>

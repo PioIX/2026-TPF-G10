@@ -269,7 +269,7 @@ function LinkGame() {
               const visible = estadoPartida !== "jugando" || index < cantidadPistasVisibles;
 
               return (
-                <div key={index} className="link-pista-wrapper">
+                <div key={index} className={`link-pista-wrapper ${visible ? "link-pista-revelada" : ""}`}>
                   <TarjetaJugadorLink nombre={pista.nombre} visible={visible} />
                 </div>
               );
@@ -309,8 +309,8 @@ function LinkGame() {
             </button>
           </div>
           {estadoPartida === "jugando" && cantidadPistasVisibles < PISTAS_TOTALES && (
-            <button className="botonAyudaJuego" type="button" onClick={mostrarOtraPista}>
-              Mostrar otra pista sin gastar un intento
+            <button className="botonAyudaJuego comodinJuego" type="button" onClick={mostrarOtraPista}>
+              Comodín · revelar conexión ({PISTAS_TOTALES - cantidadPistasVisibles} restantes)
             </button>
           )}
           {estadoPartida !== "jugando" && (

@@ -17,8 +17,8 @@ export default function WordleBoard({ filas }) {
           {fila.map((celda, indiceColumna) => (
             <div
               key={indiceColumna}
-              className="letra"
-              style={{ background: celda.color }}
+              className={`letra ${celda.color === "#4caf50" ? "letraCorrecta" : celda.color === "#f1c40f" ? "letraCercana" : celda.color === "#7f8c8d" ? "letraIncorrecta" : ""}`}
+              style={{ background: celda.color, "--retraso-ficha": `${indiceColumna * 100}ms` }}
             >
               {celda.letra}
             </div>

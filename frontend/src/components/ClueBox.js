@@ -11,10 +11,10 @@ export default function ClueBox({ pista, usada, onPedir, deshabilitada = false }
       <button
         id="btn-camara"
         type="button"
-        className="btn-icono"
+        className="btn-icono comodinIcono"
         onClick={onPedir}
         disabled={usada || deshabilitada}
-        aria-label="Pedir pista"
+        aria-label="Usar comodín para revelar una pista"
       >
         📸
       </button>

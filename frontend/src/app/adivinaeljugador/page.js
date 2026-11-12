@@ -598,15 +598,15 @@ function AdivinaElJugadorGame() {
 
         {/* Ayuda opcional para quien no conozca muchos nombres de futbolistas. */}
         {!opcionesAyudaUsada && !terminoLaPartida && (
-          <button className="botonAyudaJuego" type="button" onClick={pedirOpcionesAyuda}>
-            Necesito opciones para adivinar
+          <button className="botonAyudaJuego comodinJuego" type="button" onClick={pedirOpcionesAyuda}>
+            Comodín · ver opciones
           </button>
         )}
         {opcionesAyuda.length > 0 && !terminoLaPartida && (
           <div className="opcionesAyudaJuego" aria-label="Opciones para adivinar">
             <p>Elegir una opción cuenta como intento:</p>
             {opcionesAyuda.map((nombre) => (
-              <button className="botonAyudaJuego" type="button" key={nombre} onClick={() => elegirOpcionAyuda(nombre)}>
+              <button className="botonAyudaJuego comodinOpcion" type="button" key={nombre} onClick={() => elegirOpcionAyuda(nombre)}>
                 {nombre}
               </button>
             ))}

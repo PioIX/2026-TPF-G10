@@ -13,7 +13,12 @@ export default function AnswerList({
       {respuestas.length === 0 && <p className="vacio">Todavía no hiciste ninguna pregunta.</p>}
       {/* slice(0, 10) toma como máximo diez elementos; map dibuja un bloque por respuesta. */}
       {respuestas.slice(0, 10).map((t, i) => (
-        <div key={i} className={`respuesta ${t.startsWith("🏁") ? "marcada" : ""}`}>{t}</div>
+        <div
+          key={i}
+          className={`respuesta ${t.startsWith("🏁") ? "marcada" : ""} ${t.startsWith("✅") ? "respuestaCorrecta" : t.startsWith("❌") ? "respuestaIncorrecta" : ""}`}
+        >
+          {t}
+        </div>
       ))}
       <button
         id="btn-marcar"

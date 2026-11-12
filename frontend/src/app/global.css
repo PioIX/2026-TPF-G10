@@ -5397,3 +5397,209 @@ button:not(:disabled):active {
     background: linear-gradient(90deg, #9bd6a5, #c2e447);
     transition: width 600ms ease;
 }
+
+/* Comodines: marca las ayudas disponibles como recursos especiales sin alterar sus reglas. */
+.comodinJuego {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(213, 255, 66, .42);
+  background: linear-gradient(115deg, rgba(47, 71, 39, .9), rgba(14, 48, 47, .92));
+  box-shadow: 0 5px 18px rgba(67, 228, 203, .1), inset 0 1px 0 rgba(255, 255, 255, .08);
+}
+.comodinJuego::before {
+  margin-right: .42rem;
+  color: #d5ff42;
+  content: "✦";
+}
+.comodinJuego:hover:not(:disabled) {
+  border-color: #d5ff42;
+  box-shadow: 0 0 0 3px rgba(213, 255, 66, .09), 0 8px 22px rgba(67, 228, 203, .16);
+}
+.comodinOpcion { border-color: rgba(67, 228, 203, .32); }
+.comodinIcono { border: 1px solid rgba(213, 255, 66, .38); box-shadow: 0 0 12px rgba(213, 255, 66, .1); }
+
+/* El relator aparece con el resultado como una pequeña reacción de tribuna. */
+.fraseRelator {
+  width: fit-content;
+  max-width: 100%;
+  margin: .75rem auto !important;
+  padding: .55rem .9rem;
+  border: 1px solid rgba(67, 228, 203, .25);
+  border-radius: 999px;
+  background: rgba(67, 228, 203, .07);
+  color: #bfffee;
+  font-weight: 700;
+  animation: fraseRelatorEntra .38s ease both;
+}
+.result-ok .fraseRelator { border-color: rgba(213, 255, 66, .32); color: #e6ff95; background: rgba(213, 255, 66, .08); }
+@keyframes fraseRelatorEntra {
+  from { opacity: 0; transform: translateY(7px) scale(.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Entradas cortas y escalonadas: cada juego se siente como una presentación de partido. */
+.wordle-main .tablero { animation: presentacionJuego .42s ease both; }
+.gridDesbordamiento .grid { animation: presentacionJuego .46s .05s ease both; }
+.panelJuego .cancha { animation: presentacionJuego .5s ease both; }
+#main .link-arbol-contenedor { animation: presentacionJuego .5s ease both; }
+.quienMasDuelo .quienMasJugador:first-child { animation: presentacionJuego .42s ease both; }
+.quienMasDuelo .quienMasJugador:nth-child(2) { animation: presentacionJuego .42s .08s ease both; }
+@keyframes presentacionJuego {
+  from { opacity: 0; transform: translateY(9px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fraseRelator,
+  .wordle-main .tablero,
+  .gridDesbordamiento .grid,
+  .panelJuego .cancha,
+  #main .link-arbol-contenedor,
+  .quienMasDuelo .quienMasJugador { animation: none; }
+}
+
+/* Wordle: las fichas giran al revelar su color, con un pequeño retraso por columna. */
+.letra.letraCorrecta,
+.letra.letraCercana,
+.letra.letraIncorrecta {
+  animation: fichaRevelada .48s var(--retraso-ficha, 0ms) cubic-bezier(.2, .75, .25, 1) both;
+  backface-visibility: hidden;
+}
+@keyframes fichaRevelada {
+  0% { transform: rotateX(0) scale(1); }
+  48% { transform: rotateX(88deg) scale(.96); }
+  100% { transform: rotateX(0) scale(1); }
+}
+
+/* Grid: al acertar, una onda luminosa sale de la casilla completada. */
+.cell.found { position: relative; }
+.cell.found::after {
+  position: absolute;
+  z-index: 1;
+  inset: 2px;
+  border: 2px solid rgba(213, 255, 66, .8);
+  border-radius: inherit;
+  content: "";
+  pointer-events: none;
+  animation: ondaAcierto .72s ease-out both;
+}
+@keyframes ondaAcierto {
+  from { opacity: .9; transform: scale(.78); }
+  to { opacity: 0; transform: scale(1.12); }
+}
+
+/* Fulbo 11: la foto entra nítida en la ficha y queda enmarcada como una figurita. */
+.cancha .fila button.casilleroOcupado img {
+  display: block;
+  border: 1px solid rgba(213, 255, 66, .58);
+  border-radius: 50%;
+  box-shadow: 0 0 12px rgba(67, 228, 203, .2);
+  animation: fichaJugadorEntra .34s cubic-bezier(.2, .8, .2, 1) both;
+}
+@keyframes fichaJugadorEntra {
+  from { opacity: 0; transform: scale(.72); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Adivina el jugador: transforma la última respuesta en una línea de informe de scouting. */
+#caja-respuestas .respuesta:first-of-type { animation: respuestaScout .3s ease both; }
+#caja-respuestas .respuesta.marcada {
+  border-left-color: #43e4cb;
+  background: linear-gradient(90deg, rgba(67, 228, 203, .15), rgba(255, 255, 255, .035));
+}
+@keyframes respuestaScout {
+  from { opacity: .45; transform: translateX(-7px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Link: el nodo y su conector pulsan juntos cuando se revela una nueva conexión. */
+.link-pista-visible {
+  animation: linkRevelar .42s cubic-bezier(.2, .75, .3, 1) both, linkNodoDestella .78s ease-out both;
+}
+@keyframes linkNodoDestella {
+  0% { box-shadow: 0 0 0 rgba(67, 228, 203, 0); }
+  45% { box-shadow: 0 0 26px rgba(67, 228, 203, .46); }
+  100% { box-shadow: 0 12px 26px rgba(0, 0, 0, .24); }
+}
+
+/* ¿Quién tiene más?: sella la tarjeta mientras se mantiene pulsada para confirmar la elección. */
+.quienMasJugador:active::before { content: "ELEGIDO"; background: rgba(213, 255, 66, .2); }
+.quienMasJugador:nth-child(2):active::before { color: #effff7; background: rgba(67, 228, 203, .22); }
+.quienMasMensaje { animation: respuestaScout .28s ease both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .letra.letraCorrecta,
+  .letra.letraCercana,
+  .letra.letraIncorrecta,
+  .cell.found::after,
+  .cancha .fila button.casilleroOcupado img,
+  #caja-respuestas .respuesta:first-of-type,
+  .link-pista-visible,
+  .quienMasMensaje { animation: none; }
+}
+
+/* Las respuestas correctas e incorrectas de Adivina se distinguen también por color. */
+#caja-respuestas .respuestaCorrecta { border-left-color: #d5ff42; }
+#caja-respuestas .respuestaIncorrecta { border-left-color: #ff704d; }
+
+/* El conector de Link emite un pulso corto en el momento en que se descubre el nodo. */
+.link-pista-revelada { animation: linkConexion .62s ease-out both; }
+@keyframes linkConexion {
+  0% { filter: drop-shadow(0 0 0 rgba(67, 228, 203, 0)); }
+  45% { filter: drop-shadow(0 0 13px rgba(67, 228, 203, .48)); }
+  100% { filter: drop-shadow(0 0 0 rgba(67, 228, 203, 0)); }
+}
+
+/* El puntaje de ¿Quién tiene más? rebota brevemente cuando suma un acierto. */
+.quienMasMarcador span:last-child { animation: marcadorAcierto .3s ease both; }
+@keyframes marcadorAcierto {
+  0% { transform: scale(.94); }
+  65% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .link-pista-revelada,
+  .quienMasMarcador span:last-child { animation: none; }
+}
+
+/* El festejo de gol se ilumina como una cancha cuando cualquier juego termina en victoria. */
+.festejoGol::before,
+.festejoGol::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+}
+.festejoGol::before {
+  background:
+    radial-gradient(ellipse at 8% 0%, rgba(213, 255, 66, .22), transparent 34%),
+    radial-gradient(ellipse at 92% 0%, rgba(67, 228, 203, .2), transparent 36%);
+  animation: tribunaIlumina 1.2s ease-in-out both;
+}
+.festejoGol::after {
+  background: repeating-linear-gradient(90deg, transparent 0 32px, rgba(213, 255, 230, .08) 33px 34px), repeating-linear-gradient(0deg, transparent 0 32px, rgba(213, 255, 230, .06) 33px 34px);
+  opacity: .3;
+  mask-image: radial-gradient(ellipse at center, #000 0%, transparent 75%);
+}
+.festejoGolTarjeta { z-index: 1; }
+@keyframes tribunaIlumina {
+  0% { opacity: 0; }
+  35% { opacity: 1; }
+  100% { opacity: .5; }
+}
+
+/* En Fulbo 11 el dorsal queda como una pequeña etiqueta de camiseta sobre la foto. */
+.cancha .fila button.casilleroOcupado strong:first-child {
+  padding: 2px 7px;
+  border: 1px solid rgba(213, 255, 66, .28);
+  border-radius: 999px;
+  background: rgba(3, 24, 27, .55);
+  color: #e6ff95;
+  font-size: .68rem;
+  letter-spacing: .04em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .festejoGol::before { animation: none; }
+}

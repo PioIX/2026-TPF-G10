@@ -53,6 +53,8 @@ export default function ResultCard({ gano, titulo, detalle, onReiniciar, classNa
     <section className={`result ${gano ? "result-ok" : "result-mal"} ${className}`.trim()} aria-live="polite">
       <h2>{titulo ?? (gano ? "¡Ganaste!" : "Perdiste")}</h2>
       {detalle && <p>{detalle}</p>}
+      {/* Frase corta de relator: acompaña el resultado sin afectar el puntaje ni la partida. */}
+      <p className="fraseRelator">{gano ? "¡Se festeja en las tribunas!" : "Final del partido. La revancha espera."}</p>
       {logros.length > 0 && <div className="logrosDesbloqueados" role="status"><strong>Logros desbloqueados</strong>{logros.map((logro) => <p key={logro}>{logro}</p>)}</div>}
       <div className="result-acciones">
         <Button type="button" onClick={onReiniciar}>Jugar de nuevo</Button>

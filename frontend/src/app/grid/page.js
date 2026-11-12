@@ -467,8 +467,8 @@ useRegistrarResultado("grid", terminoLaPartida, true, celdasCompletadas);
             {pistaCelda ? (
               <p role="status">{pistaCelda}</p>
             ) : (
-              <button className="botonAyudaJuego" type="button" onClick={revelarPistaCelda}>
-                Darme una pista
+              <button className="botonAyudaJuego comodinJuego" type="button" onClick={revelarPistaCelda}>
+                Comodín · letra inicial
               </button>
             )}
           </div>
