@@ -45,7 +45,7 @@ export default function LogrosPanel() {
           <strong id="tituloLogros">Logros</strong>
         </span>
         <span className="logrosPanelProgresoTexto">{cantidadDesbloqueados} / {LOGROS.length}</span>
-        <span className="logrosPanelFlecha" aria-hidden="true">⌄</span>
+        <span className="logrosPanelFlecha" aria-hidden="true">▽</span>
       </summary>
       <div className="logrosPanelContenido" id="contenidoLogros">
         <div className="logrosBarra" role="progressbar" aria-label="Progreso de logros" aria-valuenow={progreso} aria-valuemin="0" aria-valuemax="100">

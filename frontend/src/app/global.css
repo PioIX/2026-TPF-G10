@@ -509,7 +509,7 @@ input[type="range"] { min-height: 0; padding: 0; accent-color: var(--lima); }
 .logrosPanelTitulo .lobbyEtiqueta { margin: 0; }
 .logrosPanelTitulo strong { font-size: 1.08rem; }
 .logrosPanelProgresoTexto { margin-left: auto; padding: 6px 10px; border: 1px solid rgba(201, 243, 107, .23); border-radius: 999px; color: var(--lima-claro); font-size: .79rem; font-weight: 850; }
-.logrosPanelFlecha { color: var(--texto-tenue); font-size: 1.35rem; transition: transform .2s ease; }
+.logrosPanelFlecha {color: rgba(201, 243, 107, .23); font-size: 1.15rem; transition: transform .2s ease; }
 .logrosPanel[open] .logrosPanelFlecha { transform: rotate(180deg); }
 .logrosPanelContenido { padding: 0 16px 16px; animation: tarjetaEntra .22s ease both; }
 .logrosBarra, .pfBarra { height: 7px; overflow: hidden; border-radius: 999px; background: rgba(255, 255, 255, .09); }
