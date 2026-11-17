@@ -11,10 +11,7 @@ export default function LogrosPanel() {
   // Lee solo los logros del usuario conectado para no mostrar los de otra cuenta.
   useEffect(() => {
     const idUsuario = window.localStorage.getItem("usuarioId");
-    if (!idUsuario) {
-      setDesbloqueados([]);
-      return;
-    }
+    if (!idUsuario) return;
 
     // El identificador es un query param; el backend devuelve { logros: [id, ...] }.
     // El AbortController evita actualizar el componente si el menú se desmonta durante la consulta.

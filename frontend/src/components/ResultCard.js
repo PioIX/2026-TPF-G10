@@ -46,6 +46,8 @@ export default function ResultCard({ gano, titulo, detalle, onReiniciar, classNa
     const nuevos = LOGROS.filter((logro) => condiciones[logro.id] && !yaDesbloqueados.includes(logro.id));
     const desbloqueados = [...yaDesbloqueados, ...nuevos.map((logro) => logro.id)];
     window.localStorage.setItem(clave, JSON.stringify({ partidas, victorias, logros: desbloqueados, juegosJugados, juegosGanados, rachaVictorias }));
+    // El aviso depende del cálculo recién persistido; actualizamos el mensaje una sola vez al cerrar el partido.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLogros(nuevos.map((logro) => logro.nombre));
   }, [gano, juego]);
 

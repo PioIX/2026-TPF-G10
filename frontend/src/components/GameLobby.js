@@ -65,16 +65,9 @@ export default function GameLobby({ game, children }) {
   // sin destruir y registrar de nuevo todos los listeners cada vez que cambia la sala.
   const salaActual = useRef(null);
 
-  // Informa cuando el primer intento de conexión tarda, incluso si el hook todavía no expone el socket.
+  // Informa cuando el primer intento de conexión tarda.
   useEffect(() => {
-    if (isConnected) {
-      setAviso((actual) => (
-        actual.startsWith("No se pudo conectar con el servidor")
-          ? ""
-          : actual
-      ));
-      return undefined;
-    }
+    if (isConnected) return undefined;
 
     const temporizador = setTimeout(() => {
       setAviso((actual) => actual || "El servidor todavía no responde. Revisá que backend esté iniciado en el puerto 4000.");
@@ -82,6 +75,8 @@ export default function GameLobby({ game, children }) {
 
     return () => clearTimeout(temporizador);
   }, [isConnected]);
+
+  const avisoVisible = isConnected && aviso.startsWith("No se pudo conectar con el servidor") ? "" : aviso;
 
   // Mantiene una referencia inmediata para filtrar eventos de salas viejas.
   useEffect(() => {
@@ -429,7 +424,7 @@ export default function GameLobby({ game, children }) {
             </>
           )}
           {error && <p className="errorSocket" role="alert">{error}</p>}
-          {aviso && <p className="avisoSocket" role="status">{aviso}</p>}
+          {avisoVisible && <p className="avisoSocket" role="status">{avisoVisible}</p>}
         </section>
       </main>
     );
@@ -447,7 +442,7 @@ export default function GameLobby({ game, children }) {
             <button type="button" onClick={salirDePartida}>Salir de la partida</button>
           </div>
         )}
-        {aviso && <p className="avisoSocket" role="status">{aviso}</p>}
+        {avisoVisible && <p className="avisoSocket" role="status">{avisoVisible}</p>}
         <div key={numeroPartida}>{children}</div>
         {modo === "online" && partidaPropiaTerminada && (
           <div className="accionesRevancha" role="status">

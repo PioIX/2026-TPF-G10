@@ -10,12 +10,12 @@ import LogrosPanel from "../../components/LogrosPanel";
 
 // Catálogo que alimenta las tarjetas y el selector aleatorio de juegos del menú.
 const juegos = [
-  { titulo: "Fulbo 11", imagen: "/fulbo11.png", href: "/fulbo11", detalle: "Completá tu equipo titular", estilo: "fulbo" },
-  { titulo: "Wordle", imagen: "/wordle.png", href: "/wordle", detalle: "Descifrá el jugador", estilo: "wordle" },
-  { titulo: "Grid", imagen: "/grid.png", href: "/grid", detalle: "Encontrá jugadores para cada cruce", estilo: "grid" },
-  { titulo: "Adivina el jugador", imagen: "/adivinaeljugador.png", href: "/adivinaeljugador", detalle: "Adivina al jugador oculto", estilo: "adivina" },
-  { titulo: "Link", imagen: "/link.png", href: "/link", detalle: "Descubrí al jugador oculto", estilo: "link" },
-  { titulo: "¿Quién tiene más?", imagen: "/quientienemas.png", href: "/quienmas", detalle: "Compará goles, asistencias y títulos", estilo: "quienmas" },
+  { titulo: "Fulbo 11", href: "/fulbo11", detalle: "Armá tu equipo titular", estilo: "fulbo" },
+  { titulo: "Wordle", href: "/wordle", detalle: "Descifrá el jugador", estilo: "wordle" },
+  { titulo: "Grid", href: "/grid", detalle: "Completá cada cruce", estilo: "grid" },
+  { titulo: "Adivina el jugador", href: "/adivinaeljugador", detalle: "¿Quién está detrás de la pista?", estilo: "adivina" },
+  { titulo: "Link", href: "/link", detalle: "Conectá las pistas", estilo: "link" },
+  { titulo: "¿Quién tiene más?", href: "/quienmas", detalle: "Compará números y títulos", estilo: "quienmas" },
 ];
 
 // El desafío diario cambia de juego según la fecha, para que todas las personas vean la misma propuesta ese día.
@@ -33,18 +33,19 @@ export default function MenuPage() {
   const [juegoSorpresa, setJuegoSorpresa] = useState(null);
   const [sorteando, setSorteando] = useState(false);
   const [rachaDiaria, setRachaDiaria] = useState(0);
-  const [juegoDelDia, setJuegoDelDia] = useState(juegos[0]);
+  const [juegoDelDia] = useState(obtenerJuegoDelDia);
   const temporizadorSorpresa = useRef(null);
 
   // Cancela la navegación diferida si la persona elige otra opción antes de que termine el sorteo.
   useEffect(() => {
-    setJuegoDelDia(obtenerJuegoDelDia());
     return () => window.clearTimeout(temporizadorSorpresa.current);
   }, []);
 
   // Recupera del navegador la racha personal de desafíos diarios sin agregar tablas a MySQL.
   useEffect(() => {
     const datos = JSON.parse(window.localStorage.getItem("fulboDesafioDiario") || "{}");
+    // LocalStorage solo existe tras montar: cargarlo acá evita diferencias de hidratación SSR.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setRachaDiaria(Number(datos.racha || 0));
   }, []);
 
@@ -91,8 +92,9 @@ export default function MenuPage() {
     <main className="menuPagina">
       <section className="menuHero" aria-labelledby="tituloMenu">
         <div>
-          <h2 id="tituloMenu">Elegí un juego</h2>
-          <p>Todos los desafíos de fútbol, en un solo lugar.</p>
+          <span className="menuHeroEtiqueta">FULBO CLUB <i /> TEMPORADA 2026</span>
+          <h2 id="tituloMenu">El partido<br />empieza acá.</h2>
+          <p>Elegí tu desafío, armá la estrategia y salí a jugar.</p>
         </div>
       </section>
 
@@ -100,6 +102,7 @@ export default function MenuPage() {
       <LogrosPanel />
 
       {/* Presenta el desafío del día: un juego destacado compartido por fecha y guardado como jugado en este navegador. */}
+      <div className="menuDestacados">
       <section className="desafioDiario" aria-labelledby="tituloDesafioDiario">
         <div>
           <p className="lobbyEtiqueta">Desafío del día</p>
@@ -129,17 +132,20 @@ export default function MenuPage() {
           {sorteando ? "¡Vamos!" : "Sorprendeme"}
         </button>
       </section>
+      </div>
 
       <div className="menuConChat">
-        <section className="juegos" aria-label="Juegos disponibles">
-          {juegos.map((juego) => (
-            <GameCard
-              key={juego.href}
-              {...juego}
-              sorteada={juegoSorpresa?.href === juego.href}
-            />
-          ))}
-        </section>
+        <div className="menuJuegosColumna">
+          <div className="menuJuegosCabecera">
+            <div><span>ENCUENTROS DISPONIBLES</span><h3>Elegí tu próximo desafío</h3></div>
+            <span className="menuJuegosCantidad">{String(juegos.length).padStart(2, "0")} MODOS</span>
+          </div>
+          <section className="juegos" aria-label="Juegos disponibles">
+            {juegos.map((juego) => (
+              <GameCard key={juego.href} {...juego} sorteada={juegoSorpresa?.href === juego.href} />
+            ))}
+          </section>
+        </div>
 
         <GlobalChat />
       </div>

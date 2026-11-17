@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 import { BACKEND_URL } from "../config/backend";
 
@@ -20,8 +20,7 @@ export default function useSocket(
 ) {
   // Estado React para que la interfaz pueda mostrar "Conectado" y habilitar botones.
   const [isConnected, setIsConnected] = useState(false);
-  // El objeto socket es mutable; guardarlo en ref no renderiza por sí solo.
-  const socketRef = useRef(null);
+  const [socket, setSocket] = useState(null);
 
   useEffect(() => {
     // Este efecto se ejecuta al montar y se limpia al desmontar o si cambia serverUrl/options.
@@ -38,17 +37,17 @@ export default function useSocket(
       ...options,
       query: { ...options.query, userId },
     });
-    socketRef.current = socket;
-
     // Este hook escucha SOLO el estado de la conexión. Los eventos de sala se escuchan
     // en GameLobby y los del chat en GlobalChat. `connect` también hace renderizar al padre:
     // antes de eso, socketRef.current ya tiene valor pero React todavía no se enteró del ref.
     const alConectar = () => {
+      setSocket(socket);
       setIsConnected(true);
       console.log("WebSocket conectado");
     };
 
     const alDesconectar = () => {
+      setSocket(null);
       setIsConnected(false);
       console.log("WebSocket desconectado");
     };
@@ -62,12 +61,9 @@ export default function useSocket(
       socket.off("connect", alConectar);
       socket.off("disconnect", alDesconectar);
       socket.disconnect(); // Cierra el vínculo con el servidor; el backend recibe su evento disconnect.
-      socketRef.current = null;
     };
     // Si cambia la URL/opciones, React limpia la conexión anterior y crea otra.
   }, [serverUrl, options]);
 
-  // En el primer render `socket` puede ser null. Tras el evento connect, setIsConnected causa
-  // otro render y el componente consumidor ya recibe socketRef.current.
-  return { socket: socketRef.current, isConnected };
+  return { socket, isConnected };
 }

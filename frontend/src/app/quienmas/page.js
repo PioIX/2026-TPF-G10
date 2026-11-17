@@ -70,8 +70,6 @@ function QuienMasGame() {
 
   // Descarga jugadores y estadísticas; los dos pedidos se unen por id_jugador.
   const cargarDuelos = useCallback(async () => {
-    setCargando(true);
-    setError("");
     try {
       const [respuestaJugadores, respuestaEstadisticas] = await Promise.all([
         fetch(`${BACKEND_URL}/jugadores`),
@@ -98,6 +96,8 @@ function QuienMasGame() {
   }, []);
 
   // Carga una partida al entrar; el mismo botón vuelve a llamar esta función al reiniciar.
+  // La carga async sincroniza datos remotos cuando se monta el juego.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { cargarDuelos(); }, [cargarDuelos]);
 
   // Guarda el resultado en las partidas del usuario al terminar las cinco preguntas.
