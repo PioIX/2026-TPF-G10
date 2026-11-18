@@ -21,8 +21,9 @@ function unirJugadoresConEstadisticas(filasJugadores, filasEstadisticas) {
   const nombres = new Map();
   // El primer endpoint puede repetir jugadores por trayectoria. El Map indexa una sola ficha por ID.
   filasJugadores.forEach((fila) => {
-    if (fila.id_jugador && !nombres.has(Number(fila.id_jugador))) {
-      nombres.set(Number(fila.id_jugador), {
+    const id = Number(fila.id_jugador);
+    if (Number.isFinite(id) && !nombres.has(id)) {
+      nombres.set(id, {
         nombre: `${fila.nombre || ""} ${fila.apellido || ""}`.trim(),
         club: fila.club_actual || "",
       });
@@ -30,28 +31,48 @@ function unirJugadoresConEstadisticas(filasJugadores, filasEstadisticas) {
   });
 
   // map recorre estadísticas y agrega nombre/ID desde el Map; filter descarta filas sin jugador.
-  return filasEstadisticas
-    .map((fila) => ({ ...fila, id: Number(fila.id_jugador), ...nombres.get(Number(fila.id_jugador)) }))
-    .filter((jugador) => jugador.nombre);
+  return filasEstadisticas.flatMap((fila) => {
+    const id = Number(fila.id_jugador);
+    const jugador = nombres.get(id);
+    return jugador && Number.isFinite(id) ? [{ ...fila, id, ...jugador }] : [];
+  });
 }
 
-// Prepara cinco duelos sencillos y evita comparar jugadores que tengan el mismo número.
+// Prepara hasta cinco duelos, buscando pares distintos por categoría para no depender de reintentos al azar.
 function crearDuelos(jugadores) {
   const duelos = [];
-  // Se intenta crear una comparación por ronda; cada jugador se elige por índice aleatorio del arreglo.
-  for (let ronda = 0; ronda < 5; ronda += 1) {
-    let duelo = null;
-    for (let intento = 0; intento < 80 && !duelo; intento += 1) {
-      const categoria = CATEGORIAS[Math.floor(Math.random() * CATEGORIAS.length)];
-      const primero = jugadores[Math.floor(Math.random() * jugadores.length)];
-      const segundo = jugadores[Math.floor(Math.random() * jugadores.length)];
-      const valorPrimero = Number(primero?.[categoria.campo]);
-      const valorSegundo = Number(segundo?.[categoria.campo]);
-      if (primero?.[categoria.campo] != null && segundo?.[categoria.campo] != null && primero.id !== segundo.id && Number.isFinite(valorPrimero) && Number.isFinite(valorSegundo) && valorPrimero !== valorSegundo) {
-        duelo = { categoria, primero, segundo, valorPrimero, valorSegundo };
-      }
-    }
-    if (duelo) duelos.push(duelo);
+  const categoriasMezcladas = [...CATEGORIAS].sort(() => Math.random() - 0.5);
+
+  categoriasMezcladas.forEach((categoria) => {
+    if (duelos.length >= 5) return;
+    const grupos = new Map();
+    jugadores.forEach((jugador) => {
+      const valorOriginal = jugador[categoria.campo];
+      if (valorOriginal == null || valorOriginal === "") return;
+      const valor = Number(valorOriginal);
+      if (!Number.isFinite(valor)) return;
+      if (!grupos.has(valor)) grupos.set(valor, []);
+      grupos.get(valor).push(jugador);
+    });
+
+    const valoresDistintos = [...grupos.keys()];
+    if (valoresDistintos.length < 2) return;
+    const valoresMezclados = valoresDistintos.sort(() => Math.random() - 0.5);
+    const valorPrimero = valoresMezclados[0];
+    const valorSegundo = valoresMezclados.find((valor) => valor !== valorPrimero);
+    const primero = grupos.get(valorPrimero)[Math.floor(Math.random() * grupos.get(valorPrimero).length)];
+    const segundo = grupos.get(valorSegundo)[Math.floor(Math.random() * grupos.get(valorSegundo).length)];
+    duelos.push({ categoria, primero, segundo, valorPrimero, valorSegundo });
+  });
+
+  // Si alguna categoría no ofrece dos valores distintos, se repiten las categorías que sí pueden jugarse.
+  while (duelos.length > 0 && duelos.length < 5) {
+    const anterior = duelos[Math.floor(Math.random() * duelos.length)];
+    const grupoMayor = jugadores.filter((jugador) => Number(jugador[anterior.categoria.campo]) === anterior.valorPrimero);
+    const grupoMenor = jugadores.filter((jugador) => Number(jugador[anterior.categoria.campo]) === anterior.valorSegundo);
+    const primero = grupoMayor[Math.floor(Math.random() * grupoMayor.length)];
+    const segundo = grupoMenor[Math.floor(Math.random() * grupoMenor.length)];
+    duelos.push({ ...anterior, primero, segundo });
   }
   return duelos;
 }
@@ -62,6 +83,7 @@ function QuienMasGame() {
   const [duelos, setDuelos] = useState([]);
   const [ronda, setRonda] = useState(0);
   const [puntaje, setPuntaje] = useState(0);
+  const [historial, setHistorial] = useState([]);
   const [mensajeRespuesta, setMensajeRespuesta] = useState("");
   const [terminado, setTerminado] = useState(false);
   const [gano, setGano] = useState(false);
@@ -71,6 +93,8 @@ function QuienMasGame() {
   // Descarga jugadores y estadísticas; los dos pedidos se unen por id_jugador.
   const cargarDuelos = useCallback(async () => {
     try {
+      setError("");
+      setCargando(true);
       const [respuestaJugadores, respuestaEstadisticas] = await Promise.all([
         fetch(`${BACKEND_URL}/jugadores`),
         fetch(`${BACKEND_URL}/estadisticas`),
@@ -80,16 +104,21 @@ function QuienMasGame() {
         respuestaJugadores.json(),
         respuestaEstadisticas.json(),
       ]);
+      if (!Array.isArray(filasJugadores) || !Array.isArray(filasEstadisticas)) {
+        throw new Error("El servidor devolvió los datos del juego en un formato inesperado.");
+      }
       const duelosPreparados = crearDuelos(unirJugadoresConEstadisticas(filasJugadores, filasEstadisticas));
-      if (!duelosPreparados.length) throw new Error("Todavía no hay estadísticas suficientes para comparar.");
+      if (!duelosPreparados.length) throw new Error("No hay dos jugadores con valores distintos en las estadísticas. Revisá que la base tenga datos cargados.");
       setDuelos(duelosPreparados);
       setRonda(0);
       setPuntaje(0);
+      setHistorial([]);
       setMensajeRespuesta("");
       setTerminado(false);
       setGano(false);
     } catch (errorCarga) {
-      setError(errorCarga.message);
+      setDuelos([]);
+      setError(errorCarga instanceof Error ? errorCarga.message : "No se pudo iniciar ¿Quién tiene más?.");
     } finally {
       setCargando(false);
     }
@@ -106,9 +135,9 @@ function QuienMasGame() {
   // Publica al rival solo la cantidad contestada y el puntaje, sin enviar la respuesta correcta.
   useEffect(() => {
     if (modo !== "online" || sala?.status !== "jugando") return;
-    enviarProgreso({ comparaciones: ronda, puntaje, terminado, gano: terminado && gano });
+    enviarProgreso({ comparaciones: ronda, puntaje, historial, terminado, gano: terminado && gano });
     if (terminado) marcarPartidaTerminada();
-  }, [modo, sala?.status, ronda, puntaje, terminado, gano, enviarProgreso, marcarPartidaTerminada]);
+  }, [modo, sala?.status, ronda, puntaje, historial, terminado, gano, enviarProgreso, marcarPartidaTerminada]);
 
   // Comprueba cuál de los dos números es mayor y pasa a la siguiente pregunta.
   const responder = (jugadorElegido) => {
@@ -124,6 +153,16 @@ function QuienMasGame() {
       : `Pregunta anterior: no era esa. ${jugadorCorrecto.nombre} tiene más ${duelo.categoria.nombre} (${valorCorrecto} contra ${valorOtro}).`);
     // El puntaje solo suma uno si el ID elegido coincide con el ID de mayor estadística.
     const nuevoPuntaje = puntaje + (jugadorElegido === respuestaCorrecta ? 1 : 0);
+    setHistorial((actual) => [...actual, {
+      categoria: duelo.categoria.nombre,
+      correcto: jugadorElegido === respuestaCorrecta,
+      ganador: jugadorCorrecto.nombre,
+      elegido: duelo.primero.id === jugadorElegido ? duelo.primero.nombre : duelo.segundo.nombre,
+      primero: duelo.primero.nombre,
+      valorPrimero: duelo.valorPrimero,
+      segundo: duelo.segundo.nombre,
+      valorSegundo: duelo.valorSegundo,
+    }]);
     const nuevaRonda = ronda + 1;
     setPuntaje(nuevoPuntaje);
     setRonda(nuevaRonda);

@@ -1,5 +1,7 @@
 "use client";
 
+import SportsImage from "./SportsImage";
+
 // Define el contador principal y su límite para cada minijuego.
 // Traduce cada juego a su contador y límite para que la tarjeta rival use un formato común.
 const DETALLES_PROGRESO = {
@@ -109,19 +111,41 @@ export default function OpponentProgress({ game, player, expanded = false, onClo
 
       {/* En Quién tiene más se muestra cuántas comparaciones respondió el rival y su puntaje. */}
       {progreso && game === "quienmas" && (
-        <div className="historialRival">
-          <p>Comparaciones respondidas: {progreso.comparaciones} de 5</p>
-          <p>Aciertos: {progreso.puntaje}</p>
+        <div className="historialRival historialComparaciones">
+          <div className="historialComparacionesTitulo"><strong>Rondas jugadas</strong><span>{progreso.puntaje} / 5 aciertos</span></div>
+          {Array.isArray(progreso.historial) && progreso.historial.length ? (
+            <ol>{progreso.historial.map((ronda, indice) => (
+              <li className={ronda.correcto ? "comparacionCorrecta" : "comparacionIncorrecta"} key={`${indice}-${ronda.categoria}`}>
+                <span className="comparacionNumero">{String(indice + 1).padStart(2, "0")}</span>
+                <span className="comparacionDetalle"><strong>{ronda.categoria}</strong><small>Eligió: {ronda.elegido || "—"}</small></span>
+                <span className="comparacionEstado">{ronda.correcto ? "✓" : "×"}</span>
+                <div className="comparacionJugadores">
+                  {[{ nombre: ronda.primero, valor: ronda.valorPrimero }, { nombre: ronda.segundo, valor: ronda.valorSegundo }].map((jugador, jugadorIndice) => (
+                    <div className={jugador.nombre === ronda.ganador ? "comparacionJugador ganador" : "comparacionJugador"} key={`${jugador.nombre}-${jugadorIndice}`}>
+                      <SportsImage tipo="player" nombre={jugador.nombre} alt="" size={40} />
+                      <span>{jugador.nombre}</span>
+                      <strong>{jugador.valor}</strong>
+                    </div>
+                  ))}
+                </div>
+              </li>
+            ))}</ol>
+          ) : <p>Esperando la primera comparación…</p>}
         </div>
       )}
 
       {/* Fútbol 11 muestra solo los jugadores que ya se ven en la cancha rival. */}
       {progreso && game === "futbol11" && Array.isArray(progreso.formacion) && (
-        <div className="formacionRival">
+        <div className="formacionRival canchaRival">
           {progreso.paisActual && <p>País actual: {progreso.paisActual}</p>}
-          {progreso.formacion.map((jugador, indice) => (
-            <div key={indice}><strong>{indice + 1}.</strong> {jugador || "Vacío"}</div>
-          ))}
+          <div className="canchaRivalCampo">
+            {progreso.formacion.map((jugador, indice) => (
+              <div className={`canchaRivalPuesto ${jugador ? "ocupado" : ""}`} key={indice} style={{ "--puesto-x": `${[18, 50, 82, 30, 50, 70, 14, 38, 62, 86, 50][indice]}%`, "--puesto-y": `${[22, 18, 22, 45, 50, 55, 74, 79, 79, 74, 92][indice]}%` }}>
+                <span className="canchaRivalCamiseta" aria-hidden="true" />
+                <span className="canchaRivalNombre">{jugador || `Puesto ${indice + 1}`}</span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

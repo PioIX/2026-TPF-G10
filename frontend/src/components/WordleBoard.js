@@ -8,19 +8,19 @@ export function estadoLetra(intento, i, secreta) {
 }
 
 // Pinta las seis filas del tablero y marca cada letra según la evaluación del juego.
-export default function WordleBoard({ filas }) {
+export default function WordleBoard({ filas, filaRevelando = -1, filaRechazada = -1 }) {
   return (
     <div id="tablero" className="tablero">
       {/* El primer map dibuja filas y el segundo dibuja cada celda de esa fila. */}
       {filas.map((fila, indiceFila) => (
-        <div className="fila" key={indiceFila}>
+        <div className={`fila ${indiceFila === filaRevelando ? "filaRevelando" : ""} ${indiceFila === filaRechazada ? "filaRechazada" : ""}`} key={indiceFila}>
           {fila.map((celda, indiceColumna) => (
             <div
               key={indiceColumna}
               className={`letra ${celda.color === "#4caf50" ? "letraCorrecta" : celda.color === "#f1c40f" ? "letraCercana" : celda.color === "#7f8c8d" ? "letraIncorrecta" : ""}`}
-              style={{ background: celda.color, "--retraso-ficha": `${indiceColumna * 100}ms` }}
+              style={{ background: celda.color, "--retraso-ficha": `${indiceColumna * 120}ms`, "--color-revelado": celda.color }}
             >
-              {celda.letra}
+              {celda.letra === "_" ? "" : celda.letra}
             </div>
           ))}
         </div>

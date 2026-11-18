@@ -10,6 +10,7 @@ import ResultCard from "../../components/ResultCard";
 import { BACKEND_URL } from "../../config/backend";
 import { comentarioFutbolero } from "../../utils/comentariosFutboleros";
 import useRegistrarResultado from "../../hooks/useRegistrarResultado";
+import { normalizarTexto } from "../../utils/normalizarTexto";
 
 // Endpoint base y mínimo de respuestas por cruce que se intenta lograr al sortear el tablero.
 const BACKEND = BACKEND_URL;
@@ -25,14 +26,6 @@ const MINIMO_JUGADORES = 3;
  */
 
 // Normaliza países y clubes para que una tilde o diferencia de mayúsculas no rompa una coincidencia.
-function normalizarTexto(texto) {
-  return String(texto || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim();
-}
-
 // Ordena texto normalizado por código de caracteres para que ambos navegadores evalúen el mismo orden.
 function compararTexto(a, b) {
   const textoA = normalizarTexto(a);
@@ -323,9 +316,26 @@ function GridGame() {
       );
 
       // Primero se arma el índice jugador->clubes; luego se cruza con país para cada respuesta.
+      let trayectoriasParaGrid = trayectorias;
+      const equiposHistoricos = crearEquiposJugador(trayectorias);
+      const hayTrayectoriasVinculadas = jugadores.some(
+        (jugador) => equiposHistoricos[jugador.id_jugador]?.size > 0
+      );
+
+      // Si la base todavía no cargó Trayectoria, el Grid sigue siendo jugable con clubes actuales.
+      // Se excluye Agente Libre FC: no representa un club real para una respuesta.
+      if (!hayTrayectoriasVinculadas) {
+        trayectoriasParaGrid = jugadores
+          .filter((jugador) => Number(jugador.id_equipo_actual) > 1)
+          .map((jugador) => ({
+            id_jugador: jugador.id_jugador,
+            id_equipo: jugador.id_equipo_actual,
+          }));
+      }
+
       const conexiones = crearConexiones(
         jugadores,
-        crearEquiposJugador(trayectorias)
+        crearEquiposJugador(trayectoriasParaGrid)
       );
       const listaEquipos = equipos.map((e) => ({
         id: e.id_equipo,

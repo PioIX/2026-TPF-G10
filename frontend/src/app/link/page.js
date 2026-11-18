@@ -9,6 +9,8 @@ import { comentarioFutbolero } from "../../utils/comentariosFutboleros";
 import SportsImage from "../../components/SportsImage";
 import ResultCard from "../../components/ResultCard";
 import useRegistrarResultado from "../../hooks/useRegistrarResultado";
+import AutocompleteInput from "../../components/AutocompleteInput";
+import { normalizarTexto } from "../../utils/normalizarTexto";
 
 // Dirección base de las consultas HTTP de este juego.
 const API_URL = BACKEND_URL;
@@ -33,15 +35,7 @@ function TarjetaJugadorLink({ nombre, visible, objetivo = false }) {
   );
 }
 
-// Homogeneiza nombres de personas y clubes antes de comparar respuestas.
-function limpiarTexto(texto) {
-  return String(texto || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-zA-Z0-9 ]/g, "")
-    .toLowerCase()
-    .trim();
-}
+const limpiarTexto = normalizarTexto;
 
 // Comprueba si dos jugadores coincidieron en un mismo club durante años que se solapan.
 function compartieronCanchaTemporalmente(trayectoriaA, trayectoriaB) {
@@ -283,21 +277,17 @@ function LinkGame() {
           </p>
 
           <div id="caja-adivinar" className="link-caja-adivinar">
-            <input
-              type="text"
-              id="input-adivinar"
-              className="input-pill"
-              list="sugerencias-nombres"
+            <AutocompleteInput
+              opciones={nombresSugerencias}
               placeholder="¿Quién es el objetivo?"
-              value={inputAdivinar}
-              onChange={(e) => setInputAdivinar(e.target.value)}
+              valor={inputAdivinar}
+              onCambio={setInputAdivinar}
+              onEnter={intentarAdivinar}
+              inputId="input-adivinar"
+              className="input-pill"
               disabled={estadoPartida !== "jugando"}
+              ariaLabel="Nombre del jugador objetivo"
             />
-            <datalist id="sugerencias-nombres">
-              {nombresSugerencias.map((nombre, idx) => (
-                <option key={idx} value={nombre} />
-              ))}
-            </datalist>
             <button
               id="btn-adivinar"
               type="button"

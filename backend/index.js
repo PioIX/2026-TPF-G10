@@ -35,6 +35,14 @@ const duracionCacheImagenVacia = 60 * 1000;
 function normalizarClaveImagen(texto) {
     // Quita tildes, espacios y signos para comparar nombres de la base con los del proveedor.
     return String(texto || '')
+        .replace(/[Øø]/g, 'o')
+        .replace(/[Ææ]/g, 'ae')
+        .replace(/[Œœ]/g, 'oe')
+        .replace(/[ßẞ]/g, 'ss')
+        .replace(/[Łł]/g, 'l')
+        .replace(/[ĐđÐð]/g, 'd')
+        .replace(/[Þþ]/g, 'th')
+        .replace(/ı/g, 'i')
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
         .replace(/[^a-zA-Z0-9]/g, '')
@@ -312,12 +320,25 @@ function limpiarProgreso(juego, progreso) {
 
     // Quién tiene más: comparte preguntas resueltas y puntos, no los valores de cada jugador.
     if (juego === 'quienmas' && estaEnRango(progreso.comparaciones, 0, 5) && estaEnRango(progreso.puntaje, 0, 5) && typeof progreso.terminado === 'boolean') {
-        return {
+        const limpio = {
             comparaciones: progreso.comparaciones,
             puntaje: progreso.puntaje,
             terminado: progreso.terminado,
             gano: progreso.terminado ? Boolean(progreso.gano) : false
         };
+        if (Array.isArray(progreso.historial)) {
+            limpio.historial = progreso.historial.slice(0, 5).map((ronda) => ({
+                categoria: typeof ronda.categoria === 'string' ? ronda.categoria.slice(0, 48) : 'Comparación',
+                correcto: Boolean(ronda.correcto),
+                ganador: typeof ronda.ganador === 'string' ? ronda.ganador.slice(0, 64) : 'Jugador',
+                elegido: typeof ronda.elegido === 'string' ? ronda.elegido.slice(0, 64) : 'Jugador',
+                primero: typeof ronda.primero === 'string' ? ronda.primero.slice(0, 64) : 'Jugador',
+                valorPrimero: Number.isFinite(Number(ronda.valorPrimero)) ? Number(ronda.valorPrimero) : 0,
+                segundo: typeof ronda.segundo === 'string' ? ronda.segundo.slice(0, 64) : 'Jugador',
+                valorSegundo: Number.isFinite(Number(ronda.valorSegundo)) ? Number(ronda.valorSegundo) : 0,
+            }));
+        }
+        return limpio;
     }
 
     return null;
@@ -794,7 +815,7 @@ app.get('/equipos', async function(req,res){
 // Un solo fetch para Grid: devuelve jugadores, equipos y trayectorias en un objeto JSON.
 app.get('/grid', async function(req, res) {
     try {
-        const jugadores = await realizarQuery("SELECT id_jugador, nombre, apellido, pais FROM Jugadores");
+        const jugadores = await realizarQuery("SELECT id_jugador, nombre, apellido, pais, id_equipo AS id_equipo_actual FROM Jugadores");
         const equipos = await realizarQuery("SELECT id_equipo, nombre_equipo FROM Equipos");
         const trayectorias = await realizarQuery("SELECT id_jugador, id_equipo FROM Trayectoria");
         return res.json({ equipos, jugadores, trayectorias });
@@ -1049,6 +1070,7 @@ app.get('/perfil', async function(req, res) {
         return res.status(500).json({ error: 'Error al obtener el perfil.' });
     }
 });
+
 // El servidor HTTP recibe solicitudes Express y conexiones Socket.IO en el mismo puerto.
 // Inicia Express y Socket.IO juntos. Con el puerto por defecto, ambos están en :4000.
 server.listen(port, "0.0.0.0", function(){
