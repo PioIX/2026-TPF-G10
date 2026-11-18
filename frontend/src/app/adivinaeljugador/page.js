@@ -16,6 +16,7 @@ import { BACKEND_URL } from "../../config/backend";
 import { obtenerImagenesDeportivas } from "../../utils/imagenes";
 import { comentarioFutbolero } from "../../utils/comentariosFutboleros";
 import useRegistrarResultado from "../../hooks/useRegistrarResultado";
+import { normalizarTexto } from "../../utils/normalizarTexto";
 
 // Dirección HTTP del backend que entrega el conjunto de jugadores del desafío.
 const API_URL = BACKEND_URL;
@@ -34,14 +35,7 @@ const OPCIONES_POSICION = Array.from({ length: 11 }, (_, indice) =>
  */
 
 // Normaliza la escritura para comparar nombres y respuestas ignorando tildes, signos y mayúsculas.
-function limpiarTexto(texto) {
-  return String(texto || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-zA-Z0-9 ]/g, "")
-    .toLowerCase()
-    .trim();
-}
+const limpiarTexto = normalizarTexto;
 
 // /jugadores trae una fila por cada paso de trayectoria. Este armado vuelve a dejar un jugador
 // por ID, guarda sus clubes en orden y separa el equipo actual de los clubes anteriores.

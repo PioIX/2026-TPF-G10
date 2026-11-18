@@ -358,19 +358,24 @@ header h1::first-letter {
    PORTADA DE BIENVENIDA (/frontend/src/app/page.js)
    ========================================================================== */
 .portada {
-  width: min(1100px, 100%);
+  width: min(1480px, calc(100% - 48px));
   flex: 1;
   display: grid;
   place-items: center;
-  padding: 28px 20px 64px;
+  padding: 26px 0 48px;
 }
 
 .portadaContenido {
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(360px, .88fr);
+  align-items: center;
+  gap: clamp(26px, 5vw, 76px);
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  width: min(100%, 860px);
-  padding: clamp(32px, 6vw, 58px) clamp(20px, 5vw, 44px) 38px;
+  width: 100%;
+  min-height: 570px;
+  padding: clamp(30px, 5vw, 72px);
   border: 1px solid rgba(213, 255, 66, 0.3);
   border-radius: 28px;
   background:
@@ -378,7 +383,16 @@ header h1::first-letter {
     radial-gradient(ellipse at 50% 0%, rgba(91, 218, 145, 0.28), transparent 45%),
     linear-gradient(145deg, rgba(8, 42, 31, 0.98), rgba(5, 22, 29, 0.98));
   box-shadow: 0 30px 90px rgba(0, 0, 0, 0.45), 0 0 60px rgba(67, 228, 203, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  text-align: center;
+  text-align: left;
+}
+
+.portadaPresentacion {
+  display: grid;
+  grid-template-columns: clamp(96px, 12vw, 148px) minmax(0, 1fr);
+  align-content: center;
+  align-items: center;
+  column-gap: clamp(18px, 3vw, 34px);
+  min-width: 0;
 }
 
 .portadaContenido::before {
@@ -394,10 +408,12 @@ header h1::first-letter {
 .portadaLogoMarco {
   position: relative;
   display: grid;
-  width: 132px;
-  height: 132px;
+  grid-column: 1;
+  grid-row: 1 / span 5;
+  width: clamp(96px, 12vw, 148px);
+  height: clamp(96px, 12vw, 148px);
   place-items: center;
-  margin: 0 auto 22px;
+  margin: 0;
   border: 1px solid rgba(213, 255, 66, 0.5);
   border-radius: 50%;
   background: radial-gradient(circle, rgba(213, 255, 66, 0.18), rgba(67, 228, 203, 0.05));
@@ -414,12 +430,13 @@ header h1::first-letter {
 }
 
 .portadaLogoMarco img {
-  width: 102px;
-  height: 102px;
+  width: 78%;
+  height: 78%;
   object-fit: contain;
 }
 
 .portadaEtiqueta {
+  grid-column: 2;
   margin-bottom: 10px;
   color: var(--verde-vivo);
   font-size: 0.76rem;
@@ -429,7 +446,8 @@ header h1::first-letter {
 }
 
 .portadaContenido h2 {
-  display: inline-block;
+  grid-column: 2;
+  display: block;
   font-size: clamp(2.8rem, 8.5vw, 5.2rem);
   font-weight: 900;
   letter-spacing: 0.06em;
@@ -443,14 +461,17 @@ header h1::first-letter {
 }
 
 .portadaDescripcion {
-  max-width: 540px;
-  margin: 16px auto 26px;
+  grid-column: 2;
+  max-width: 560px;
+  margin: 16px 0 26px;
   color: rgba(242, 255, 247, 0.84);
   font-size: clamp(0.98rem, 2.3vw, 1.12rem);
   line-height: 1.6;
 }
 
 .portadaBoton {
+  grid-column: 2;
+  justify-self: start;
   min-width: 230px;
   min-height: 54px;
   padding: 14px 32px;
@@ -462,8 +483,11 @@ header h1::first-letter {
   display: inline-block;
   font-size: 1.25rem;
 }
+.portadaBoton:hover .portadaBotonPelota,
+.portadaBoton:focus-visible .portadaBotonPelota { animation: girarPelota 1.1s linear; }
 
 .portadaAyuda {
+  grid-column: 2;
   margin-top: 14px;
   color: var(--texto-suave);
   font-size: 0.88rem;
@@ -471,25 +495,44 @@ header h1::first-letter {
 
 .portadaJuegos {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 30px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 24px;
 }
+
+.portadaJuegosPanel {
+  position: relative;
+  padding: clamp(22px, 3vw, 36px);
+  border: 1px solid rgba(188,244,205,.2);
+  border-radius: 22px;
+  background: linear-gradient(145deg, rgba(4,25,30,.72), rgba(5,35,28,.72));
+  box-shadow: 0 18px 44px rgba(0,0,0,.2), inset 0 1px rgba(255,255,255,.04);
+}
+
+.portadaJuegosEtiqueta { color: var(--verde-vivo); font-size: .72rem; font-weight: 850; letter-spacing: .16em; }
+.portadaJuegosPanel h3 { margin-top: 8px; color: #f4fff7; font-size: clamp(1.35rem, 2vw, 1.8rem); }
+.portadaJuegosNota { margin-top: 16px; color: var(--texto-suave); font-size: .86rem; }
 
 .portadaJuegos span,
 .portadaJuegoItem {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  justify-content: center;
-  gap: 3px;
-  padding: 11px 12px;
+  justify-content: flex-start;
+  gap: 10px;
+  min-height: 54px;
+  padding: 10px 12px;
   border: 1px solid rgba(188, 244, 205, 0.16);
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.045);
   color: rgba(255, 255, 255, 0.9);
-  font-size: 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  transition: border-color 180ms ease, background-color 180ms ease, transform 180ms ease;
 }
+
+.portadaJuegos span:hover { transform: translateY(-2px); border-color: rgba(213,255,66,.42); background: rgba(213,255,66,.07); }
+.portadaJuegos i { display: grid; flex: 0 0 30px; width: 30px; height: 30px; place-items: center; border-radius: 9px; background: rgba(213,255,66,.09); font-style: normal; }
 
 .portadaJuegoItem strong {
   color: #f2fff7;
@@ -517,10 +560,15 @@ header h1::first-letter {
 
 .menuHero,
 .logrosPanel,
+.menuDestacados,
 .menuConChat,
 .menuAcciones {
   grid-column: 1 / -1;
 }
+
+.menuDestacados { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; min-width: 0; align-items: stretch; }
+.menuJuegosColumna { min-width: 0; }
+.menuJuegosCabecera { display: flex; align-items: end; justify-content: space-between; gap: 12px; margin: 0 0 14px; }
 
 /* Hero del menú con pelota esférica 3D y recorte circular limpio */
 .menuHero {
@@ -748,6 +796,7 @@ header h1::first-letter {
   border-radius: 16px;
   background: linear-gradient(115deg, rgba(16, 62, 43, 0.94), rgba(8, 36, 40, 0.94));
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+  min-height: 138px;
 }
 
 .sorpresaMenu {
@@ -784,6 +833,10 @@ header h1::first-letter {
   flex-shrink: 0;
   white-space: nowrap;
 }
+
+.desafioDiarioAcciones { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; }
+.desafioCompletado { display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; border: 1px solid rgba(116,239,173,.3); border-radius: 999px; background: rgba(67,228,203,.09); color: #a7f4c4; font-size: .74rem; font-weight: 800; white-space: nowrap; }
+.desafioCompletado span { display: grid; width: 18px; height: 18px; place-items: center; border-radius: 50%; background: rgba(116,239,173,.18); }
 
 .sorpresaMenuPelota {
   display: inline-block;
@@ -827,7 +880,7 @@ header h1::first-letter {
   align-items: center;
   gap: 14px;
   overflow: hidden;
-  min-height: 158px;
+  min-height: 148px;
   padding: 12px;
   border: 1px solid rgba(210, 245, 222, 0.18);
   border-left: 5px solid var(--acento-juego);
@@ -851,6 +904,39 @@ header h1::first-letter {
   opacity: 0.65;
   pointer-events: none;
 }
+
+.juegoTarjetaCancha {
+  position: absolute;
+  z-index: 0;
+  inset: 10px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--acento-juego), transparent 78%);
+  border-radius: 10px;
+  color: color-mix(in srgb, var(--acento-juego), transparent 64%);
+  opacity: .58;
+  pointer-events: none;
+  transition: color 220ms ease, opacity 220ms ease, border-color 220ms ease;
+}
+.juegoCanchaLineaCentral { position: absolute; top: 0; bottom: 0; left: 50%; border-left: 1px solid currentColor; }
+.juegoCanchaCirculoCentral { position: absolute; top: 50%; left: 50%; width: 32px; aspect-ratio: 1; border: 1px solid currentColor; border-radius: 50%; transform: translate(-50%, -50%); }
+.juegoCanchaPuntoCentral { position: absolute; top: 50%; left: 50%; width: 3px; height: 3px; border-radius: 50%; background: currentColor; transform: translate(-50%, -50%); }
+.juegoCanchaArea,
+.juegoCanchaAreaChica { position: absolute; top: 28%; bottom: 28%; width: 12%; border: 1px solid currentColor; }
+.juegoCanchaAreaIzquierda { left: 0; border-left: 0; }
+.juegoCanchaAreaDerecha { right: 0; border-right: 0; }
+.juegoCanchaAreaChica { top: 38%; bottom: 38%; width: 5%; }
+.juegoCanchaAreaChicaIzquierda { left: 0; border-left: 0; }
+.juegoCanchaAreaChicaDerecha { right: 0; border-right: 0; }
+.juegoTarjeta:hover .juegoTarjetaCancha,
+.juegoTarjeta:focus-visible .juegoTarjetaCancha { color: color-mix(in srgb, var(--acento-juego), transparent 28%); border-color: color-mix(in srgb, var(--acento-juego), transparent 50%); opacity: .9; }
+.juegoTarjetaPelota { position: absolute; top: 48%; left: 86%; width: 13px; height: 13px; border: 1px solid rgba(255,255,255,.72); border-radius: 50%; background: radial-gradient(circle at 34% 30%, #fff 0 20%, #dce8d9 22% 46%, #233a31 49% 54%, #f7fff8 58%); opacity: .56; transform: translate(-50%,-50%); }
+.juegoTarjeta:hover .juegoTarjetaPelota,
+.juegoTarjeta:focus-visible .juegoTarjetaPelota { opacity: 1; animation: pelotaJuegoFulbo 850ms cubic-bezier(.2,.7,.2,1); }
+.juegoTarjeta-wordle:hover .juegoTarjetaPelota { animation-name: pelotaJuegoWordle; }
+.juegoTarjeta-grid:hover .juegoTarjetaPelota { animation-name: pelotaJuegoGrid; }
+.juegoTarjeta-adivina:hover .juegoTarjetaPelota { animation-name: pelotaJuegoAdivina; }
+.juegoTarjeta-link:hover .juegoTarjetaPelota { animation-name: pelotaJuegoLink; }
+.juegoTarjeta-quienmas:hover .juegoTarjetaPelota { animation-name: pelotaJuegoQuienMas; }
 
 .juegoTarjetaImagen,
 .juegoTarjetaInfo {
@@ -879,14 +965,15 @@ header h1::first-letter {
 
 .juegoTarjetaImagen {
   display: block;
-  flex: 0 0 122px;
+  flex: 0 0 116px;
   overflow: hidden;
-  width: 122px;
-  height: 122px;
-  border: 2px solid color-mix(in srgb, var(--acento-juego), transparent 55%);
-  border-radius: 12px;
-  background: linear-gradient(145deg, #f1ffe5, #d6f4e7);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.24);
+  width: 116px;
+  height: 116px;
+  padding: 5px;
+  border: 4px solid color-mix(in srgb, var(--acento-juego), transparent 20%);
+  border-radius: 15px;
+  background: #f3f8ed;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .32), inset 0 0 0 2px rgba(255,255,255,.8);
 }
 
 .juegoTarjetaImagen img {
@@ -895,8 +982,10 @@ header h1::first-letter {
   height: 100%;
   margin: 0;
   object-fit: contain;
+  mix-blend-mode: multiply;
   transition: transform 240ms ease;
 }
+.juegoTarjetaIconoFallback { display: none; }
 
 .juegoTarjeta:hover .juegoTarjetaImagen img {
   transform: scale(1.06);
@@ -1449,7 +1538,77 @@ header h1::first-letter {
   grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
 }
 
-.formacionRival > div,
+.canchaRival { display: block; }
+.canchaRival > p { margin: 8px 0 12px; color: #e8f4eb; font-weight: 700; }
+.canchaRivalCampo {
+  position: relative;
+  width: min(100%, 440px);
+  aspect-ratio: 0.78;
+  margin: 12px auto 4px;
+  overflow: hidden;
+  border: 2px solid rgba(220, 255, 235, .78);
+  border-radius: 18px;
+  background:
+    linear-gradient(90deg, transparent 49.7%, rgba(238,255,243,.4) 49.7% 50.3%, transparent 50.3%),
+    repeating-linear-gradient(0deg, rgba(255,255,255,.035) 0 34px, rgba(0,0,0,.035) 34px 68px),
+    linear-gradient(145deg, #187345, #0d5737 54%, #176c42);
+  box-shadow: inset 0 0 0 12px rgba(4, 46, 29, .12), 0 12px 28px rgba(0,0,0,.24);
+}
+.canchaRivalCampo::before {
+  position: absolute;
+  inset: 5%;
+  border: 1px solid rgba(238,255,243,.52);
+  border-radius: 5px;
+  content: "";
+  pointer-events: none;
+}
+.canchaRivalCampo::after {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 27%; aspect-ratio: 1;
+  border: 1px solid rgba(238,255,243,.5);
+  border-radius: 50%;
+  content: "";
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.canchaRivalPuesto {
+  position: absolute;
+  z-index: 1;
+  top: var(--puesto-y); left: var(--puesto-x);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: clamp(42px, 12vw, 68px);
+  gap: 2px;
+  transform: translate(-50%, -50%);
+}
+.canchaRivalCamiseta { position: relative; display: block; width: clamp(25px, 6vw, 34px); height: clamp(26px, 6.5vw, 36px); clip-path: polygon(25% 0, 40% 9%, 60% 9%, 75% 0, 100% 19%, 84% 43%, 72% 36%, 72% 100%, 28% 100%, 28% 36%, 16% 43%, 0 19%); background: linear-gradient(135deg, #162725, #273a35); filter: drop-shadow(0 2px 3px rgba(0,0,0,.5)); transition: transform 220ms ease, filter 220ms ease, background 220ms ease; }
+.canchaRivalCamiseta::after { position: absolute; top: 19%; bottom: 8%; left: 48%; border-left: 1px solid rgba(255,255,255,.28); content: ""; }
+.canchaRivalPuesto.ocupado .canchaRivalCamiseta { background: linear-gradient(145deg, #efffc2, #d5ff42 70%, #a6d830); filter: drop-shadow(0 0 6px rgba(213,255,66,.52)); animation: camisetaEntra 480ms cubic-bezier(.2,.8,.2,1) both; }
+.canchaRivalNombre { max-width: 100%; padding: 2px 5px; overflow: hidden; border: 1px solid rgba(255,255,255,.14); border-radius: 5px; background: rgba(4,24,21,.8); color: rgba(255,255,255,.86); font-size: clamp(.48rem, 1.6vw, .62rem); font-weight: 800; line-height: 1.05; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
+.canchaRivalPuesto.ocupado .canchaRivalNombre { border-color: rgba(213,255,66,.35); color: #f4ffe5; }
+
+.historialComparaciones { gap: 12px; }
+.historialComparacionesTitulo { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: #f4fff6; }
+.historialComparacionesTitulo span { color: #d5ff42; font-size: .83rem; font-weight: 800; }
+.historialComparaciones ol { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.historialComparaciones li { display: grid; grid-template-columns: 34px minmax(0, 1fr) 30px; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid rgba(213,255,66,.18); border-radius: 12px; background: rgba(2,20,20,.44); }
+.comparacionNumero { color: #8fa89b; font-size: .75rem; font-weight: 900; }
+.comparacionDetalle { display: grid; gap: 2px; min-width: 0; }
+.comparacionDetalle strong { color: #f2fff6; text-transform: capitalize; }
+.comparacionDetalle small { overflow: hidden; color: #b8d0c2; text-overflow: ellipsis; white-space: nowrap; }
+.comparacionEstado { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; font-size: 1rem; font-weight: 900; }
+.comparacionCorrecta .comparacionEstado { background: rgba(83,226,161,.16); color: #74efad; }
+.comparacionIncorrecta .comparacionEstado { background: rgba(255,129,107,.15); color: #ff987f; }
+.comparacionJugadores { display: grid; grid-column: 2 / 4; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; }
+.comparacionJugador { display: grid; grid-template-columns: 36px minmax(0,1fr) auto; align-items: center; gap: 6px; min-width: 0; padding: 6px; border: 1px solid rgba(255,255,255,.1); border-radius: 9px; background: rgba(255,255,255,.035); color: #d6e4db; font-size: .68rem; }
+.comparacionJugador .imagenDeportiva { width: 34px !important; height: 34px !important; border-radius: 50%; }
+.comparacionJugador > span:not(.imagenDeportiva) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.comparacionJugador strong { color: #eff8f1; }
+.comparacionJugador.ganador { border-color: rgba(213,255,66,.28); background: rgba(213,255,66,.055); }
+
+.formacionRival:not(.canchaRival) > div,
 .filaGrillaRival > * {
   padding: 9px;
   background: rgba(255, 255, 255, 0.08);
@@ -1527,6 +1686,14 @@ header h1::first-letter {
 .letra:not(:empty) {
   animation: letraPuesta 0.24s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
+
+.filaRevelando .letra {
+  animation: palabraVoltear 560ms cubic-bezier(.2,.7,.2,1) both;
+  animation-delay: var(--retraso-ficha);
+  backface-visibility: hidden;
+}
+
+.filaRechazada { animation: temblorFila 360ms ease-in-out both; }
 
 #teclado {
   display: flex;
@@ -2046,6 +2213,65 @@ header h1::first-letter {
   border-color: var(--color-boton);
 }
 
+.autocompletadoContenedor {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.autocompletadoContenedor > input {
+  width: 100%;
+}
+
+.areaEntrada .autocompletadoContenedor {
+  flex: 0 1 420px;
+}
+
+#caja-adivinar .autocompletadoContenedor,
+.link-caja-adivinar .autocompletadoContenedor {
+  flex: 0 1 320px;
+}
+
+.autocompletadoLista {
+  position: absolute;
+  z-index: 80;
+  top: calc(100% + 6px);
+  right: 0;
+  left: 0;
+  max-height: min(280px, 45vh);
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid rgba(145, 242, 198, 0.38);
+  border-radius: 12px;
+  background: #09231f;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.42);
+  list-style: none;
+}
+
+.autocompletadoOpcion {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #f2fff7;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.autocompletadoOpcion:hover,
+.autocompletadoOpcion.activa {
+  background: rgba(145, 242, 198, 0.16);
+  color: #baff74;
+}
+
+.autocompletadoOpcion:focus-visible {
+  outline: 2px solid var(--verde-vivo);
+  outline-offset: -2px;
+}
+
 #preguntas-restantes {
   font-size: 18px;
   font-weight: bold;
@@ -2397,6 +2623,38 @@ header h1::first-letter {
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.34);
 }
 
+/* Perfil: panel ancho con identidad y estadísticas en una sola composición. */
+.pfPagina { width: min(1120px, calc(100% - 40px)); margin: 34px auto 64px; }
+.pfTarjeta { position: relative; display: grid; grid-template-columns: minmax(150px, 220px) minmax(0, 1fr); align-items: center; gap: 12px 30px; min-height: 390px; padding: clamp(26px, 5vw, 58px); overflow: hidden; border: 1px solid rgba(67,228,203,.26); border-radius: 24px; background: radial-gradient(ellipse at 8% 12%, rgba(213,255,66,.12), transparent 32%), linear-gradient(135deg, rgba(7,35,34,.98), rgba(6,24,33,.98)); box-shadow: 0 26px 70px rgba(0,0,0,.36), inset 0 1px rgba(255,255,255,.06); }
+.pfTarjeta::before { position: absolute; top: -100px; left: -100px; width: 320px; aspect-ratio: 1; border: 1px solid rgba(213,255,66,.11); border-radius: 50%; box-shadow: 0 0 0 24px rgba(213,255,66,.025), 0 0 0 56px rgba(67,228,203,.025); content: ""; pointer-events: none; }
+.pfAvatar { position: relative; display: grid; grid-column: 1; grid-row: 1 / span 5; width: clamp(120px, 15vw, 184px); aspect-ratio: 1; place-items: center; border: 2px solid rgba(213,255,66,.72); border-radius: 50%; background: radial-gradient(circle at 35% 25%, #318665, #103c35 62%, #0b282b); color: #f5ffe4; font-size: clamp(3rem, 7vw, 5rem); font-weight: 900; box-shadow: 0 0 0 9px rgba(213,255,66,.07), 0 16px 38px rgba(0,0,0,.3); }
+.pfEtiqueta, .pfNombre, .pfStats, .pfEfectividad, .pfSelector, .pfTarjeta > .btn, .pfTarjeta > .errorSocket { grid-column: 2; }
+.pfAvatarImagen { padding: 0; object-fit: cover; }
+.pfAvatarImagen .imagenDeportivaVacia { background: radial-gradient(circle at 35% 25%, #318665, #103c35 62%, #0b282b); }
+.pfSelector { display: grid; gap: 12px; width: 100%; padding: 18px; border: 1px solid rgba(188,244,205,.16); border-radius: 16px; background: rgba(255,255,255,.045); }
+.pfSelectorEtiqueta { margin-bottom: 5px; color: #91f2c6; font-size: .68rem; font-weight: 850; letter-spacing: .14em; }
+.pfSelector h3 { color: #f2fff7; font-size: 1rem; }
+.pfSelector .autocompletadoContenedor { width: 100%; flex: initial; }
+.pfSelectorInput { width: 100%; min-height: 46px; padding: 10px 14px; border: 1px solid rgba(188,244,205,.26); border-radius: 10px; background: rgba(3,17,11,.45); color: #fff; font: inherit; }
+.pfSelectorInput::placeholder { color: #a3b6a8; }
+.pfSelectorAcciones { display: flex; flex-wrap: wrap; gap: 10px; }
+.pfSelectorAcciones .btn { margin: 0; }
+.pfSelectorError { color: #ffad9c; font-size: .86rem; }
+.pfSelectorNota { color: #a3b6a8; font-size: .78rem; }
+.pfEtiqueta { color: #91f2c6; font-size: .75rem; font-weight: 850; letter-spacing: .18em; }
+.pfNombre { color: #f5fff8; font-size: clamp(1.8rem, 4vw, 3rem); line-height: 1.05; overflow-wrap: anywhere; }
+.pfStats { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; width: 100%; }
+.pfStat { display: grid; grid-template-columns: 40px 1fr; align-items: center; gap: 0 12px; min-height: 88px; padding: 14px 16px; border: 1px solid rgba(188,244,205,.16); border-radius: 15px; background: rgba(255,255,255,.045); }
+.pfStatIcono { display: grid; grid-row: 1 / span 2; width: 38px; height: 38px; place-items: center; border: 1px solid rgba(213,255,66,.2); border-radius: 11px; background: rgba(213,255,66,.08); font-size: 1.1rem; }
+.pfStatNumero { color: #efffc2; font-size: 1.55rem; line-height: 1; }
+.pfStatTexto { color: #adc5b6; font-size: .77rem; }
+.pfEfectividad { display: grid; gap: 9px; width: 100%; }
+.pfEfectividadTexto { display: flex; justify-content: space-between; gap: 12px; color: #c6d9cd; font-size: .86rem; }
+.pfEfectividadTexto strong { color: #d5ff42; }
+.pfBarra { height: 9px; overflow: hidden; border: 1px solid rgba(213,255,66,.18); border-radius: 99px; background: rgba(0,0,0,.28); }
+.pfBarraRelleno { height: 100%; border-radius: inherit; background: linear-gradient(90deg,#43e4cb,#d5ff42); box-shadow: 0 0 16px rgba(213,255,66,.25); transition: width .8s cubic-bezier(.2,.7,.2,1); }
+.pfTarjeta > .btn { justify-self: start; margin-top: 7px; }
+
 .adminFormulario {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -2692,6 +2950,34 @@ header h1::first-letter {
   100% { transform: scale(1) rotate(0); }
 }
 
+@keyframes palabraVoltear {
+  0% { transform: rotateX(0); background-color: rgba(1, 16, 22, .52); border-color: rgba(205,255,224,.32); }
+  48% { transform: rotateX(90deg); background-color: rgba(1, 16, 22, .52); }
+  52% { transform: rotateX(90deg); background-color: var(--color-revelado); }
+  100% { transform: rotateX(0); background-color: var(--color-revelado); }
+}
+
+@keyframes temblorFila {
+  0%, 100% { transform: translateX(0); }
+  22% { transform: translateX(-8px); }
+  45% { transform: translateX(7px); }
+  68% { transform: translateX(-4px); }
+  86% { transform: translateX(3px); }
+}
+
+@keyframes camisetaEntra {
+  0% { opacity: 0; transform: translateY(8px) scale(.55) rotate(-12deg); }
+  65% { opacity: 1; transform: translateY(-2px) scale(1.15) rotate(4deg); }
+  100% { transform: translateY(0) scale(1) rotate(0); }
+}
+
+@keyframes pelotaJuegoFulbo { 0% { transform: translate(-50%,-50%) rotate(0); } 45% { transform: translate(-160%,-120%) rotate(240deg) scale(1.25); } 100% { transform: translate(-50%,-50%) rotate(520deg); } }
+@keyframes pelotaJuegoWordle { 0%,100% { transform: translate(-50%,-50%); } 50% { transform: translate(-50%,-175%) rotate(180deg); } }
+@keyframes pelotaJuegoGrid { 0%,100% { transform: translate(-50%,-50%); } 50% { transform: translate(-260%,-50%) rotate(270deg); } }
+@keyframes pelotaJuegoAdivina { 0%,100% { transform: translate(-50%,-50%); } 50% { transform: translate(-50%,-50%) scale(1.6); filter: brightness(1.7); } }
+@keyframes pelotaJuegoLink { 0% { transform: translate(-50%,-50%); } 50% { transform: translate(-280%,55%) rotate(360deg); } 100% { transform: translate(-50%,-50%); } }
+@keyframes pelotaJuegoQuienMas { 0%,100% { transform: translate(-50%,-50%); } 35% { transform: translate(-90%,-150%) rotate(160deg); } 70% { transform: translate(-230%,-50%) rotate(320deg); } }
+
 @keyframes celdaGol {
   0% { transform: scale(0.88); filter: brightness(1.6); }
   100% { transform: scale(1); filter: brightness(1); }
@@ -2753,17 +3039,44 @@ header h1::first-letter {
   }
 }
 
+@media (max-width: 900px) {
+  .portadaContenido { grid-template-columns: 1fr; min-height: 0; gap: 28px; }
+  .portadaPresentacion { max-width: 720px; }
+}
+
 @media (max-width: 768px) {
   .menuPagina {
     grid-template-columns: 1fr;
   }
 
+  .menuDestacados { grid-template-columns: 1fr; }
+
   .portadaJuegos {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .pfPagina { width: min(620px, calc(100% - 28px)); margin: 22px auto 42px; }
+  .pfTarjeta { grid-template-columns: 1fr; justify-items: center; gap: 14px; padding: 26px 20px; text-align: center; }
+  .pfAvatar, .pfEtiqueta, .pfNombre, .pfStats, .pfEfectividad, .pfSelector, .pfTarjeta > .btn, .pfTarjeta > .errorSocket { grid-column: 1; grid-row: auto; }
+  .pfTarjeta > .btn { justify-self: center; }
+  .pfTarjeta > .errorSocket { width: 100%; }
 }
 
 @media (max-width: 640px) {
+  .portada { width: calc(100% - 24px); padding: 14px 0 30px; }
+  .portadaContenido { gap: 22px; padding: 24px 18px; border-radius: 20px; }
+  .portadaPresentacion { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+  .portadaLogoMarco { grid-column: 1; grid-row: auto; width: 92px; height: 92px; margin-bottom: 8px; }
+  .portadaEtiqueta, .portadaContenido h2, .portadaDescripcion, .portadaBoton, .portadaAyuda { grid-column: 1; }
+  .portadaContenido h2 { font-size: clamp(2.6rem, 13vw, 4rem); }
+  .portadaDescripcion { margin: 12px 0 20px; }
+  .portadaBoton { justify-self: center; }
+  .portadaJuegosPanel { padding: 19px 14px; }
+  .portadaJuegos { gap: 8px; }
+  .portadaJuegos span { min-height: 50px; gap: 7px; padding: 8px; font-size: .74rem; }
+  .portadaJuegos i { flex-basis: 26px; width: 26px; height: 26px; }
+  .pfStats { grid-template-columns: 1fr; }
+
   .menuConChat .juegos,
   .logrosLista,
   .adminFormulario .adminFormSection {
@@ -2784,6 +3097,10 @@ header h1::first-letter {
     align-items: stretch;
   }
 
+  .desafioDiarioAcciones { justify-content: stretch; }
+  .desafioDiarioAcciones > * { width: 100%; }
+  .comparacionJugadores { grid-template-columns: 1fr; }
+
   .cancha .fila {
     gap: 8px;
     padding: 0 8px;
@@ -2799,6 +3116,10 @@ header h1::first-letter {
   .menuHero {
     padding-right: 92px;
   }
+
+  .juegoTarjeta { min-height: 124px; gap: 11px; padding: 10px; }
+  .juegoTarjetaImagen { flex-basis: 88px; width: 88px; height: 88px; padding: 4px; border-width: 3px; }
+  .juegoTarjetaDetalle { font-size: .76rem; }
 
   .menuHero::after {
     width: 60px;

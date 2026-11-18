@@ -10,12 +10,12 @@ import LogrosPanel from "../../components/LogrosPanel";
 
 // Catálogo que alimenta las tarjetas y el selector aleatorio de juegos del menú.
 const juegos = [
-  { titulo: "Fulbo 11", href: "/fulbo11", detalle: "Armá tu equipo titular", estilo: "fulbo" },
-  { titulo: "Wordle", href: "/wordle", detalle: "Descifrá el jugador", estilo: "wordle" },
-  { titulo: "Grid", href: "/grid", detalle: "Completá cada cruce", estilo: "grid" },
-  { titulo: "Adivina el jugador", href: "/adivinaeljugador", detalle: "¿Quién está detrás de la pista?", estilo: "adivina" },
-  { titulo: "Link", href: "/link", detalle: "Conectá las pistas", estilo: "link" },
-  { titulo: "¿Quién tiene más?", href: "/quienmas", detalle: "Compará números y títulos", estilo: "quienmas" },
+  { titulo: "Fulbo 11", imagen: "/fulbo11.png", href: "/fulbo11", detalle: "Armá tu equipo titular", estilo: "fulbo" },
+  { titulo: "Wordle", imagen: "/wordle.png", href: "/wordle", detalle: "Descifrá el jugador", estilo: "wordle" },
+  { titulo: "Grid", imagen: "/grid.png", href: "/grid", detalle: "Completá cada cruce", estilo: "grid" },
+  { titulo: "Adivina el jugador", imagen: "/adivinaeljugador.png", href: "/adivinaeljugador", detalle: "¿Quién está detrás de la pista?", estilo: "adivina" },
+  { titulo: "Link", imagen: "/link.png", href: "/link", detalle: "Conectá las pistas", estilo: "link" },
+  { titulo: "¿Quién tiene más?", imagen: "/quientienemas.png", href: "/quienmas", detalle: "Compará números y títulos", estilo: "quienmas" },
 ];
 
 // El desafío diario cambia de juego según la fecha, para que todas las personas vean la misma propuesta ese día.
@@ -26,6 +26,11 @@ function obtenerJuegoDelDia() {
   return juegos[semilla % juegos.length];
 }
 
+function fechaLocal() {
+  const ahora = new Date();
+  return `${ahora.getFullYear()}-${ahora.getMonth() + 1}-${ahora.getDate()}`;
+}
+
 // Página protegida con el catálogo, chat global, perfil de navegación y cierre de sesión.
 export default function MenuPage() {
   // Guarda la navegación, el resultado del sorteo aleatorio y el temporizador que la retrasa.
@@ -33,6 +38,7 @@ export default function MenuPage() {
   const [juegoSorpresa, setJuegoSorpresa] = useState(null);
   const [sorteando, setSorteando] = useState(false);
   const [rachaDiaria, setRachaDiaria] = useState(0);
+  const [desafioCompletado, setDesafioCompletado] = useState(false);
   const [juegoDelDia] = useState(obtenerJuegoDelDia);
   const temporizadorSorpresa = useRef(null);
 
@@ -47,17 +53,25 @@ export default function MenuPage() {
     // LocalStorage solo existe tras montar: cargarlo acá evita diferencias de hidratación SSR.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setRachaDiaria(Number(datos.racha || 0));
-  }, []);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setDesafioCompletado(datos.fecha === fechaLocal() && datos.completado === true && datos.juego === juegoDelDia.href);
+    const actualizarDesafio = () => {
+      const actual = JSON.parse(window.localStorage.getItem("fulboDesafioDiario") || "{}");
+      setDesafioCompletado(actual.fecha === fechaLocal() && actual.completado === true && actual.juego === juegoDelDia.href);
+    };
+    window.addEventListener("desafioDiarioActualizado", actualizarDesafio);
+    return () => window.removeEventListener("desafioDiarioActualizado", actualizarDesafio);
+  }, [juegoDelDia.href]);
 
   // Registra el día actual una sola vez y actualiza la racha consecutiva antes de abrir el juego elegido.
   const jugarDesafioDiario = () => {
     const ahora = new Date();
-    const fecha = `${ahora.getFullYear()}-${ahora.getMonth() + 1}-${ahora.getDate()}`;
+    const fecha = fechaLocal();
     const ayerDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() - 1);
     const ayer = `${ayerDate.getFullYear()}-${ayerDate.getMonth() + 1}-${ayerDate.getDate()}`;
     const datos = JSON.parse(window.localStorage.getItem("fulboDesafioDiario") || "{}");
     const racha = datos.fecha === fecha ? Number(datos.racha || 1) : datos.fecha === ayer ? Number(datos.racha || 0) + 1 : 1;
-    window.localStorage.setItem("fulboDesafioDiario", JSON.stringify({ fecha, racha }));
+    window.localStorage.setItem("fulboDesafioDiario", JSON.stringify({ fecha, racha, juego: juegoDelDia.href, completado: datos.completado === true && datos.fecha === fecha && datos.juego === juegoDelDia.href }));
     setRachaDiaria(racha);
     router.push(juegoDelDia.href);
   };
@@ -92,7 +106,7 @@ export default function MenuPage() {
     <main className="menuPagina">
       <section className="menuHero" aria-labelledby="tituloMenu">
         <div>
-          <span className="menuHeroEtiqueta">FULBO CLUB <i /> TEMPORADA 2026</span>
+          <span className="menuHeroEtiqueta">FULBO 11 <i/></span>
           <h2 id="tituloMenu">El partido<br />empieza acá.</h2>
           <p>Elegí tu desafío, armá la estrategia y salí a jugar.</p>
         </div>
@@ -109,7 +123,10 @@ export default function MenuPage() {
           <h3 id="tituloDesafioDiario">Hoy toca {juegoDelDia.titulo}</h3>
           <p>{juegoDelDia.detalle}. Racha diaria: {rachaDiaria} días.</p>
         </div>
-        <button className="desafioDiarioBoton" type="button" onClick={jugarDesafioDiario}>Jugar desafío</button>
+        <div className="desafioDiarioAcciones">
+          {desafioCompletado && <span className="desafioCompletado"><span aria-hidden="true">✓</span> Completado hoy</span>}
+          <button className="desafioDiarioBoton" type="button" onClick={jugarDesafioDiario}>{desafioCompletado ? "Volver a jugar" : "Jugar desafío"}</button>
+        </div>
       </section>
 
       {/* Sección interactiva separada: deja que la pelota elija por dónde arrancar. */}

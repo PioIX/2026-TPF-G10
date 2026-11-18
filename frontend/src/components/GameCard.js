@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 // Íconos vectoriales propios: conservan el contraste sobre césped sin placas ni fondos negros.
 function IconoJuego({ estilo }) {
@@ -23,7 +24,7 @@ function IconoJuego({ estilo }) {
 }
 
 // Tarjeta del menú: la cancha ocupa todo el botón y el ícono queda transparente sobre el césped.
-export default function GameCard({ titulo, detalle, href, estilo, sorteada = false }) {
+export default function GameCard({ titulo, detalle, imagen, href, estilo, sorteada = false }) {
   return (
     <Link
       className={`juegoTarjeta juegoTarjeta-${estilo || "default"} ${sorteada ? "juegoTarjetaSorteada" : ""}`}
@@ -37,8 +38,9 @@ export default function GameCard({ titulo, detalle, href, estilo, sorteada = fal
         <span className="juegoCanchaArea juegoCanchaAreaDerecha" />
         <span className="juegoCanchaAreaChica juegoCanchaAreaChicaIzquierda" />
         <span className="juegoCanchaAreaChica juegoCanchaAreaChicaDerecha" />
+        <span className="juegoTarjetaPelota" />
       </span>
-      <span className="juegoTarjetaImagen"><IconoJuego estilo={estilo} /></span>
+      <span className="juegoTarjetaImagen"><Image src={imagen} alt="" width={240} height={240} loading={imagen === "/fulbo11.png" ? "eager" : "lazy"} /><span className="juegoTarjetaIconoFallback"><IconoJuego estilo={estilo} /></span></span>
       <span className="juegoTarjetaInfo">
         <span className="juegoTarjetaTitulo">{titulo}</span>
         <span className="juegoTarjetaDetalle">{detalle}</span>

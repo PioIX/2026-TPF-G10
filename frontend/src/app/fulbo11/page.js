@@ -12,6 +12,7 @@ import AutocompleteInput from "../../components/AutocompleteInput";
 import { BACKEND_URL } from "../../config/backend";
 import { comentarioFutbolero } from "../../utils/comentariosFutboleros";
 import useRegistrarResultado from "../../hooks/useRegistrarResultado";
+import { normalizarTexto } from "../../utils/normalizarTexto";
 
 // URL del servidor Express que entrega la lista de jugadores.
 const URL_API = BACKEND_URL;
@@ -44,15 +45,7 @@ const POSICIONES = [
   { numero: 1, nombre: "ARQ", grupo: "arquero" },
 ];
 
-// Quita tildes y signos y pone el texto en mayúsculas para comparar nombres escritos por la persona.
-function normalizarTexto(texto) {
-  return String(texto || "")
-    .normalize("NFD")
-    .replace(/[^a-zA-Z]/g, "")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toUpperCase();
-}
-
+// La comparación compartida ignora tildes, signos y variantes como Ø/ø.
 // Lee los códigos de rol de una posición, por ejemplo "10-7" se transforma en ["10", "7"].
 function obtenerCodigosPosicion(posicion) {
   return String(posicion || "").match(/\d+/g) || [];
@@ -215,9 +208,12 @@ function Fulbo11Game() {
     // 3. Busca coincidencias exactas por nombre. La lista sugerida no autoriza una respuesta por sí sola.
     // filter no devuelve un solo resultado: devuelve un arreglo con todos los nombres coincidentes,
     // porque puede haber homónimos. Más abajo se elige el que corresponde al país de esta ronda.
-    const coincidencias = jugadores.filter(
-      (j) => normalizarTexto(j.nombre) === normalizarTexto(texto)
-    );
+    const respuestaNormalizada = normalizarTexto(texto);
+    const coincidencias = jugadores.filter((j) => (
+      normalizarTexto(j.nombre) === respuestaNormalizada ||
+      normalizarTexto(`${j.nombre} ${j.apellido}`) === respuestaNormalizada ||
+      normalizarTexto(j.apellido) === respuestaNormalizada
+    ));
 
     if (coincidencias.length === 0) {
       setMensaje("No encontré ese jugador.");
@@ -299,7 +295,7 @@ useRegistrarResultado("futbol11", terminoLaPartida, true);
   const sugerenciasJugadores = useMemo(() => {
     const nombres = new Map();
     jugadores.forEach((jugador) => {
-      const nombre = String(jugador.nombre || "").trim();
+      const nombre = `${jugador.nombre || ""} ${jugador.apellido || ""}`.trim();
       const clave = normalizarTexto(nombre);
       if (clave && !nombres.has(clave)) nombres.set(clave, nombre);
     });

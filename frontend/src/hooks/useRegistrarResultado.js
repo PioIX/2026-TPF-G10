@@ -14,6 +14,20 @@ export default function useRegistrarResultado(juego, terminado, gano, puntaje = 
     if (yaRegistrado.current) return;
     yaRegistrado.current = true;
 
+    // Si esta partida era el desafío del día, marca su cierre real al terminar el juego.
+    let desafio = {};
+    try {
+      desafio = JSON.parse(window.localStorage.getItem("fulboDesafioDiario") || "{}");
+    } catch {
+      desafio = {};
+    }
+    const ahora = new Date();
+    const fecha = `${ahora.getFullYear()}-${ahora.getMonth() + 1}-${ahora.getDate()}`;
+    if (desafio.fecha === fecha && desafio.juego === `/${juego}` && !desafio.completado) {
+      window.localStorage.setItem("fulboDesafioDiario", JSON.stringify({ ...desafio, completado: true }));
+      window.dispatchEvent(new Event("desafioDiarioActualizado"));
+    }
+
     const idUsuario = Number(window.localStorage.getItem("usuarioId"));
     if (!idUsuario) return;
 

@@ -11,6 +11,7 @@ import { BACKEND_URL } from "../../config/backend";
 import { comentarioFutbolero } from "../../utils/comentariosFutboleros";
 import useRegistrarResultado from "../../hooks/useRegistrarResultado";
 import SportsImage from "../../components/SportsImage";
+import { normalizarPalabra } from "../../utils/normalizarTexto";
 
 // Dirección de la API de jugadores que se usa para sortear el apellido secreto.
 const API_URL = BACKEND_URL;
@@ -18,7 +19,7 @@ const MAX_INTENTOS = 6;
 
 /*
  * Reglas de Wordle:
- * - Se sortea un apellido de tres a ocho letras y se normaliza quitando tildes y signos.
+ * - Se sortea un apellido de tres a ocho letras y se aceptan intentos con cualquier combinación de letras.
  * - Hay seis intentos; cada letra queda verde si coincide en posición, amarilla si está en otra
  *   posición y gris si no aparece en la palabra.
  * - El teclado de pantalla y el físico llaman a las mismas acciones.
@@ -31,13 +32,7 @@ const COLOR_CERCANO = "#f1c40f";
 const COLOR_INCORRECTO = "#7f8c8d";
 
 // Convierte el apellido en la palabra que se juega: solo letras A-Z, sin tildes.
-function limpiarTexto(texto) {
-  return String(texto || "")
-    .normalize("NFD")
-    .replace(/[^a-zA-Z]/g, "")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toUpperCase();
-}
+const limpiarTexto = normalizarPalabra;
 
 // Uso: contenido del lobby de Wordle. Cada jugador recibe una palabra secreta sorteada por separado.
 function WordleGame() {
@@ -50,6 +45,8 @@ function WordleGame() {
   const [filas, setFilas] = useState([]); // Matriz [fila][col] con { letra, color }
   const [intentoActual, setIntentoActual] = useState(0);
   const [letraActual, setLetraActual] = useState(0);
+  const [filaRevelando, setFilaRevelando] = useState(-1);
+  const [filaRechazada, setFilaRechazada] = useState(-1);
   const [juegoTerminado, setJuegoTerminado] = useState(false);
   // Guarda una única pista opcional para esta palabra; no modifica el tablero ni un intento.
   const [letraPista, setLetraPista] = useState("");
@@ -65,7 +62,6 @@ function WordleGame() {
         const apellido = limpiarTexto(jugador.apellido || "");
         return apellido.length >= 3 && apellido.length <= 8;
       });
-
       if (jugadoresValidos.length === 0) {
         setMensaje("No hay jugadores para jugar");
         return;
@@ -79,6 +75,8 @@ function WordleGame() {
       setNombreJugadorSecreto(`${jugador.nombre || ""} ${jugador.apellido || ""}`.trim());
       setIntentoActual(0);
       setLetraActual(0);
+      setFilaRevelando(-1);
+      setFilaRechazada(-1);
       setJuegoTerminado(false);
       setLetraPista("");
       setMensaje("Adivina el apellido");
@@ -153,8 +151,12 @@ function WordleGame() {
 
     if (intento.length !== palabraSecreta.length) {
       setMensaje("Faltan letras");
+      setFilaRechazada(intentoActual);
+      window.setTimeout(() => setFilaRechazada((fila) => fila === intentoActual ? -1 : fila), 420);
       return;
     }
+
+    setFilaRevelando(intentoActual);
 
     // Coloreamos las letras de la fila actual
     setFilas((prevFilas) => {
@@ -294,7 +296,7 @@ function WordleGame() {
           />
         )}
         <div id="mensaje">{juegoTerminado ? "" : mensaje}</div>
-        <WordleBoard filas={filas} />
+        <WordleBoard filas={filas} filaRevelando={filaRevelando} filaRechazada={filaRechazada} />
         <div className="ayudaJuego">
           {letraPista ? (
             <p>Una pista: el apellido contiene la letra <strong>{letraPista}</strong>.</p>
