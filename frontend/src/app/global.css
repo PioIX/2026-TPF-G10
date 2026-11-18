@@ -2658,20 +2658,78 @@ header h1::first-letter {
 .adminFormulario {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 10px;
+  gap: 14px;
 }
 
 .adminFormulario .adminFormSection {
   grid-column: 1 / -1;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: 12px;
   border: 0;
+}
+
+/* Separador visual cuando hay una subsección (ej. Trayectoria) */
+.adminFormulario .adminFormSection + .adminFormSection {
+  margin-top: 6px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(188, 244, 205, 0.16);
+}
+
+/* Título y descripción de la subsección ocupando todo el ancho */
+.adminFormulario .adminFormSection > :not(.field):not(:has(.field)):not(button) {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 4px;
+  margin-bottom: 2px;
+}
+
+.adminFormulario .adminFormSection > :not(.field):not(:has(.field)):not(button) :first-child {
+  color: #f5fbf6;
+  font-size: 1.02rem;
+  font-weight: 800;
+}
+
+.adminFormulario .adminFormSection > :not(.field):not(:has(.field)):not(button) p,
+.adminFormulario .adminFormSection > :not(.field):not(:has(.field)):not(button) span {
+  color: var(--texto-suave);
+  font-size: 0.84rem;
+}
+
+/* Cada fila agregada en Trayectoria como tarjeta horizontal */
+.adminFormulario .adminFormSection > div:has(.field):not(.field) {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(188, 244, 205, 0.18);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.adminFormulario .adminFormSection > div:has(.field):not(.field) > button {
+  align-self: end;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 112, 77, 0.4);
+  border-radius: 10px;
+  background: rgba(255, 112, 77, 0.12);
+  box-shadow: none;
+  color: #ffad9c;
+  font-size: 0.78rem;
+}
+
+.adminFormulario .adminFormSection > div:has(.field):not(.field) > button:hover:not(:disabled) {
+  border-color: rgba(255, 112, 77, 0.75);
+  background: rgba(255, 112, 77, 0.22);
+  box-shadow: none;
+  filter: none;
 }
 
 .adminFormulario .field {
   display: grid;
-  gap: 5px;
+  gap: 6px;
   color: var(--texto-suave);
   font-size: 0.78rem;
   font-weight: 700;
@@ -2686,6 +2744,42 @@ header h1::first-letter {
   background: rgba(3, 17, 11, 0.45);
   color: #fff;
   font: inherit;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.adminFormulario input:focus {
+  border-color: var(--acento-estadio);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(67, 228, 203, 0.15);
+}
+
+/* Botón secundario interno (+ AGREGAR FILA) */
+.adminFormulario .adminFormSection > .adminBoton {
+  grid-column: 1 / -1;
+  justify-self: start;
+  min-height: 40px;
+  padding: 8px 16px;
+  border: 1px dashed rgba(213, 255, 66, 0.45);
+  background: rgba(213, 255, 66, 0.08);
+  box-shadow: none;
+  color: #e4ff75;
+  font-size: 0.8rem;
+}
+
+.adminFormulario .adminFormSection > .adminBoton:hover:not(:disabled) {
+  border-style: solid;
+  border-color: rgba(213, 255, 66, 0.75);
+  background: rgba(213, 255, 66, 0.16);
+  box-shadow: none;
+  filter: none;
+}
+
+/* Botón principal de guardado al pie del formulario */
+.adminFormulario > .adminBoton {
+  grid-column: 1 / -1;
+  width: 100%;
+  min-height: 48px;
+  margin-top: 6px;
 }
 
 .imagenDeportiva {
@@ -3079,7 +3173,8 @@ header h1::first-letter {
 
   .menuConChat .juegos,
   .logrosLista,
-  .adminFormulario .adminFormSection {
+  .adminFormulario .adminFormSection,
+  .adminFormulario .adminFormSection > div:has(.field):not(.field) {
     grid-template-columns: 1fr;
   }
 
